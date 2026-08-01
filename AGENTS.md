@@ -57,3 +57,9 @@ This repository is a **coding agent evaluation harness** built around the [Pi co
 - `make pi-eval-quick` — run a small smoke subset.
 - `make pi-config-check` — run deterministic harness-config checks (no API key needed).
 - `bash scripts/verify-harness.sh` — one-shot environment/setup verification.
+
+<!-- This section is maintained by the coding agent via lore (https://github.com/BYK/loreai) -->
+## Long-term Knowledge
+
+For long-term knowledge entries managed by [lore](https://github.com/BYK/loreai) (gotchas, patterns, decisions, architecture), see [`.lore.md`](.lore.md) in the project root.
+<!-- End lore-managed section -->

@@ -1,6 +1,6 @@
 {
-  "defaultProvider": "openrouter",
-  "defaultModel": "openai/gpt-4o",
+  "defaultProvider": "openai",
+  "defaultModel": "gpt-4o",
   "defaultThinkingLevel": "medium",
   "theme": "dark",
   "quietStartup": false,

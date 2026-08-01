@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Demo</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        body { background-color: #f8f9fa; }
+        #chatbox { width: 100%; max-width: 600px; margin: 100px auto; }
+        #messages { border: solid 1px #ccc; padding: 10px; height: 400px; overflow-y: scroll; background: #fff; }
+        #input { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div id="chatbox">
+        <h2>Chatbot Demo</h2>
+        <div id="messages"></div>
+        <div id="input" class="input-group">
+            <input id="message" type="text" class="form-control" placeholder="Type your message...">
+            <div class="input-group-append">
+                <button id="send" class="btn btn-primary">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#send').click(function() {
+                var userMessage = $('#message').val();
+                $('#messages').append('<div><strong>You:</strong> ' + userMessage + '</div>');
+                $.post('/chat', {message: userMessage}, function(data) {
+                    $('#messages').append('<div><strong>Bot:</strong> ' + data.response + '</div>');
+                });
+                $('#message').val('');
+            });
+        });
+    </script>
+</body>
+</html>

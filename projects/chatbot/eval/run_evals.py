@@ -33,7 +33,7 @@ def load_cases(path: Path) -> list[dict[str, Any]]:
 
 def online_response(case_input: str) -> str:
     completed = subprocess.run(
-        ["npm", "run", "eval-response"],
+        ["npm", "run", "--silent", "eval-response"],
         cwd=ROOT,
         input=json.dumps({"input": case_input}),
         text=True,

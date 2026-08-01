@@ -1,0 +1,17 @@
+apiVersion: repo.example.com/v1
+kind: GitHubRepository
+metadata:
+  labels:
+    app.kubernetes.io/name: githubrepository
+    app.kubernetes.io/instance: githubrepository-sample
+    app.kubernetes.io/part-of: github-repo-controller
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: github-repo-controller
+  name: githubrepository-sample
+spec:
+  owner: myorg
+  name: sample
+  description: A sample repository managed by Kubernetes
+  visibility: public
+  initializeReadme: true
+  licenseTemplate: mit

@@ -1,0 +1,9 @@
+.pi/sessions/
+eval/.venv/
+eval/__pycache__/
+eval/tests/__pycache__/
+eval/.pytest_cache/
+eval/outputs/
+.env
+*.pyc
+.DS_Store

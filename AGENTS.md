@@ -34,7 +34,7 @@ This repository is a **coding agent evaluation harness** built around the [Pi co
 1. Configure provider credentials via environment variables or `/login`. Keys
    are stored in **Bitwarden** (CLI `bw`, folder "Dev API Keys") and resolved
    on demand with `~/bin/bw_get <ENV_VAR>` — no static keys live in shell rc
-   files. The harness defaults to **OpenAI** (`OPENAI_API_KEY`, `gpt-4o`
+   files. The harness defaults to **OpenAI** (`OPENAI_API_KEY`, `gpt-5.6-terra`
    through the OpenAI API directly); `OPENROUTER_API_KEY` is the fallback
    router. Legacy providers (e.g. `KIMI_API_KEY`) remain configured.
    Unlock the vault first: `bw unlock` (or `export BW_SESSION=...`).

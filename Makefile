@@ -23,10 +23,10 @@ pi:
 	@source ~/.nvm/nvm.sh && nvm use v22.19.0 && { \
 	  [ -n "$$OPENAI_API_KEY" ] || export OPENAI_API_KEY="$$($${BW_GET:-$$HOME/bin/bw_get} OPENAI_API_KEY 2>/dev/null)"; \
 	  if [ -n "$$OPENAI_API_KEY" ]; then \
-	    pi --provider openai --model gpt-4o; \
+	    pi --provider openai --model openai/gpt-5.6-terra; \
 	  else \
 	    [ -n "$$OPENROUTER_API_KEY" ] || export OPENROUTER_API_KEY="$$($${BW_GET:-$$HOME/bin/bw_get} OPENROUTER_API_KEY 2>/dev/null)"; \
-	    pi --provider openrouter --model openai/gpt-4o; \
+	    pi --provider openrouter --model openai/gpt-5.6-terra; \
 	  fi; \
 	}
 
@@ -34,10 +34,10 @@ pi-print:
 	@source ~/.nvm/nvm.sh && nvm use v22.19.0 && { \
 	  [ -n "$$OPENAI_API_KEY" ] || export OPENAI_API_KEY="$$($${BW_GET:-$$HOME/bin/bw_get} OPENAI_API_KEY 2>/dev/null)"; \
 	  if [ -n "$$OPENAI_API_KEY" ]; then \
-	    pi --provider openai --model gpt-4o -p --no-session "$(PROMPT)"; \
+	    pi --provider openai --model openai/gpt-5.6-terra -p --no-session "$(PROMPT)"; \
 	  else \
 	    [ -n "$$OPENROUTER_API_KEY" ] || export OPENROUTER_API_KEY="$$($${BW_GET:-$$HOME/bin/bw_get} OPENROUTER_API_KEY 2>/dev/null)"; \
-	    pi --provider openrouter --model openai/gpt-4o -p --no-session "$(PROMPT)"; \
+	    pi --provider openrouter --model openai/gpt-5.6-terra -p --no-session "$(PROMPT)"; \
 	  fi; \
 	}
 

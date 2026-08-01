@@ -33,7 +33,7 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
   == env var name) — no static keys live in shell rc files. See
   [API Key Resolution (Bitwarden)](#api-key-resolution-bitwarden). Relevant keys:
   - `OPENAI_API_KEY` (preferred) — Pi talks to the OpenAI provider directly with
-    `gpt-4o` via api.openai.com.
+    `gpt-5.6-terra` via api.openai.com.
   - `OPENROUTER_API_KEY` — fallback router (https://openrouter.ai) when no
     OpenAI key is set; also used for `openrouter/*` models selected via `/model`.
     Create a key at https://openrouter.ai/keys (starts with `sk-or-v1-`).
@@ -65,7 +65,7 @@ bw unlock          # unlock the vault (or export BW_SESSION); make pi fetches ke
 make pi-config-check
 bash scripts/verify-harness.sh
 
-# 4. Launch Pi interactively (OpenAI -> gpt-4o by default)
+# 4. Launch Pi interactively (OpenAI -> gpt-5.6-terra by default)
 pi-harness
 
 # 5. Or run a quick print-mode query
@@ -86,9 +86,9 @@ shell functions `pi-harness` / `pi-harness-print` (in `~/.zshrc` and
 2. Bitwarden via `bw_get` (requires an unlocked vault: `bw unlock`)
 3. `OPENROUTER_API_KEY` env var / Bitwarden (fallback router)
 
-With an OpenAI key they launch `pi --provider openai --model gpt-4o` (direct
+With an OpenAI key they launch `pi --provider openai --model openai/gpt-5.6-terra` (direct
 OpenAI API); without one, an OpenRouter key falls back to
-`pi --provider openrouter --model openai/gpt-4o`. `openrouter/*` models selected
+`pi --provider openrouter --model openai/gpt-5.6-terra`. `openrouter/*` models selected
 via `/model` always route through OpenRouter.
 
 If the vault is locked, run `bw unlock` in your terminal first (or
@@ -111,7 +111,7 @@ make pi-eval
 ## Model Routing
 
 Pi 0.80.10 ships built-in `openai` and `openrouter` providers. The harness
-defaults to **OpenAI** (`openai` / `gpt-4o`), so requests go to OpenAI GPT-4o
+defaults to **OpenAI** (`openai` / `gpt-5.6-terra`), so requests go to OpenAI gpt-5.6-terra
 through api.openai.com directly. When no OpenAI key is available, Pi falls
 back to the `openrouter` provider (`https://openrouter.ai/api/v1`,
 OpenAI-compatible). Because OpenRouter is a router, you can switch to any
@@ -129,7 +129,7 @@ model or provider it hosts:
 
 To refresh the OpenRouter catalog (new models / pricing), run
 `pi update --models` once with network access. The default model
-(`openai/gpt-4o`) is pinned in `.pi/settings.json`; change it there or with
+(`openai/gpt-5.6-terra`) is pinned in `.pi/settings.json`; change it there or with
 `/model` and the session persists the choice.
 
 ## Skills

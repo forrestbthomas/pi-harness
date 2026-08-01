@@ -80,10 +80,10 @@ fi
 
 # --- 5. default model resolvable (informational, offline) --------------------
 if command -v pi >/dev/null 2>&1; then
-  if pi --offline --list-models 2>/dev/null | grep -q "openai/gpt-4o"; then
-    ok "default model openai/gpt-4o present in model list"
+  if pi --offline --list-models 2>/dev/null | grep -q "openai/gpt-5.6-terra"; then
+    ok "default model openai/gpt-5.6-terra present in model list"
   else
-    note "  [info] openai/gpt-4o not in the offline model list; run 'pi update --models' once with network to refresh catalogs"
+    note "  [info] openai/gpt-5.6-terra not in the offline model list; run 'pi update --models' once with network to refresh catalogs"
   fi
 fi
 

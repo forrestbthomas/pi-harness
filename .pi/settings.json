@@ -1,6 +1,6 @@
 {
   "defaultProvider": "openai",
-  "defaultModel": "gpt-4o",
+  "defaultModel": "openai/gpt-5.6-terra",
   "defaultThinkingLevel": "medium",
   "theme": "dark",
   "quietStartup": false,

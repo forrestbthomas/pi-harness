@@ -21,7 +21,7 @@ ZSH_RC = Path.home() / ".zshrc"
 BASH_RC = Path.home() / ".bashrc"
 
 EXPECTED_DEFAULT_PROVIDER = "openai"
-EXPECTED_DEFAULT_MODEL = "gpt-4o"
+EXPECTED_DEFAULT_MODEL = "openai/gpt-5.6-terra"
 EXPECTED_PREFIX_PATTERNS = [
     "openai/*",
     "anthropic/*",
@@ -120,7 +120,7 @@ def test_dotfiles_have_harness_functions():
         assert "pi-harness" in text, f"{rc.name} missing pi-harness"
         assert "pi-harness-print" in text, f"{rc.name} missing pi-harness-print"
         assert "--provider" in text, f"{rc.name} missing --provider flag"
-        assert "openai/gpt-4o" in text, f"{rc.name} missing default model"
+        assert "openai/gpt-5.6-terra" in text, f"{rc.name} missing default model"
 
 
 MIGRATED_SECRET_VARS = (

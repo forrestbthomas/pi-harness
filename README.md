@@ -46,9 +46,13 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
 Shell aliases were added to `~/.bashrc` and `~/.zshrc`:
 
 ```bash
-pi-harness        # cd to harness root and launch Pi interactively
-pi-harness-print  # cd to harness root and launch Pi in print mode
+pi-harness        # launch Pi interactively in the current directory
+pi-harness-print  # launch Pi in print mode in the current directory
 ```
+
+> `pi-harness` runs Pi in whatever directory you're in. It always uses the
+> global config (`~/.pi/agent`); the harness's project config (`.pi/`, 
+> `AGENTS.md`, `SYSTEM.md`) applies when you run it from this repository root.
 
 Reload your shell config (`source ~/.zshrc` or `source ~/.bashrc`) then:
 

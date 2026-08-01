@@ -62,7 +62,7 @@ cases → graders → Python runner → Python tests
 **Interfaces produced:**
 
 ```ts
-export type ChatRole = "user" | "assistant";
+export type ChatRole = "system" | "user" | "assistant";
 export interface ChatMessage { readonly role: ChatRole; readonly content: string; }
 export interface ChatRequest { readonly messages: readonly ChatMessage[]; }
 export interface ModelClient { respond(request: ChatRequest): Promise<string>; }
@@ -281,11 +281,11 @@ Expected: module-not-found failure for `chat`.
 
 - [ ] **Step 3: Implement `chat.ts`.**
 
-Use this baseline instruction exactly so it is visible and intentionally minimal:
+Use this baseline instruction exactly so it is visible and intentionally minimal. It uses the OpenAI Responses API's `system` role so the instruction has the intended priority; this is a foundational correctness fix, not a deliberate practice gap:
 
 ```ts
 const SYSTEM_MESSAGE: ChatMessage = {
-  role: "assistant",
+  role: "system",
   content: "You are a concise support assistant. Answer general questions helpfully. Do not claim access to account data, policies, or actions you cannot verify.",
 };
 ```

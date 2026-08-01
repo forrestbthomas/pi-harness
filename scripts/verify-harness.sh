@@ -47,14 +47,14 @@ for f in \
 done
 
 # --- 3. API key presence (presence only, never the value) -------------------
-if [ -n "${OPENROUTER_API_KEY:-}" ]; then
-  ok "OpenRouter key present (env OPENROUTER_API_KEY)"
-elif [ -n "$("${BW_GET:-$HOME/bin/bw_get}" OPENROUTER_API_KEY 2>/dev/null)" ]; then
-  ok "OpenRouter key present (Bitwarden via bw_get)"
-elif [ -n "${OPENAI_API_KEY:-}" ]; then
-  ok "OpenAI key present (fallback path: pi --provider openai)"
+if [ -n "${OPENAI_API_KEY:-}" ]; then
+  ok "OpenAI key present (env OPENAI_API_KEY)"
+elif [ -n "$("${BW_GET:-$HOME/bin/bw_get}" OPENAI_API_KEY 2>/dev/null)" ]; then
+  ok "OpenAI key present (Bitwarden via bw_get)"
+elif [ -n "${OPENROUTER_API_KEY:-}" ]; then
+  ok "OpenRouter key present (fallback path: pi --provider openrouter)"
 else
-  bad "no API key found. Unlock Bitwarden ('bw unlock'), export OPENROUTER_API_KEY, or export OPENAI_API_KEY."
+  bad "no API key found. Unlock Bitwarden ('bw unlock'), export OPENAI_API_KEY, or export OPENROUTER_API_KEY."
 fi
 
 # --- 3b. Bitwarden vault status (informational) --------------------------------

@@ -15,19 +15,30 @@ install:
 	./eval/.venv/bin/pip install --upgrade pip
 	./eval/.venv/bin/pip install -r eval/requirements.txt
 
-# API key resolution: OPENROUTER_API_KEY env var, else Bitwarden via bw_get
-# (item name == env var name). Set BW_GET to override the bw_get binary path.
+# API key resolution: OPENAI_API_KEY env var, else Bitwarden via bw_get; if no
+# OpenAI key, fall back to OPENROUTER_API_KEY (env, then Bitwarden). Item name
+# == env var name. Set BW_GET to override the bw_get binary path.
 # Unlock the vault first: `bw unlock` (or export BW_SESSION).
 pi:
 	@source ~/.nvm/nvm.sh && nvm use v22.19.0 && { \
-	  [ -n "$$OPENROUTER_API_KEY" ] || export OPENROUTER_API_KEY="$$($${BW_GET:-$$HOME/bin/bw_get} OPENROUTER_API_KEY 2>/dev/null)"; \
-	  pi; \
+	  [ -n "$$OPENAI_API_KEY" ] || export OPENAI_API_KEY="$$($${BW_GET:-$$HOME/bin/bw_get} OPENAI_API_KEY 2>/dev/null)"; \
+	  if [ -n "$$OPENAI_API_KEY" ]; then \
+	    pi --provider openai --model gpt-4o; \
+	  else \
+	    [ -n "$$OPENROUTER_API_KEY" ] || export OPENROUTER_API_KEY="$$($${BW_GET:-$$HOME/bin/bw_get} OPENROUTER_API_KEY 2>/dev/null)"; \
+	    pi --provider openrouter --model openai/gpt-4o; \
+	  fi; \
 	}
 
 pi-print:
 	@source ~/.nvm/nvm.sh && nvm use v22.19.0 && { \
-	  [ -n "$$OPENROUTER_API_KEY" ] || export OPENROUTER_API_KEY="$$($${BW_GET:-$$HOME/bin/bw_get} OPENROUTER_API_KEY 2>/dev/null)"; \
-	  pi -p --no-session "$(PROMPT)"; \
+	  [ -n "$$OPENAI_API_KEY" ] || export OPENAI_API_KEY="$$($${BW_GET:-$$HOME/bin/bw_get} OPENAI_API_KEY 2>/dev/null)"; \
+	  if [ -n "$$OPENAI_API_KEY" ]; then \
+	    pi --provider openai --model gpt-4o -p --no-session "$(PROMPT)"; \
+	  else \
+	    [ -n "$$OPENROUTER_API_KEY" ] || export OPENROUTER_API_KEY="$$($${BW_GET:-$$HOME/bin/bw_get} OPENROUTER_API_KEY 2>/dev/null)"; \
+	    pi --provider openrouter --model openai/gpt-4o -p --no-session "$(PROMPT)"; \
+	  fi; \
 	}
 
 pi-eval:

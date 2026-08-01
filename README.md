@@ -26,16 +26,17 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
 
 - Node.js 22.19+ (managed via `nvm`; the Makefile selects `v22.19.0`).
 - Python 3.11+.
-- An API key. The harness is wired **OpenRouter-first with OpenAI GPT models
-  preferred by default**. Keys are stored in **Bitwarden** (CLI `bw`, folder
-  "Dev API Keys") and resolved on demand via `~/bin/bw_get` (item name == env
-  var name) — no static keys live in shell rc files. See
+- An API key. The harness is wired **OpenAI-first with OpenAI GPT models
+  preferred by default** — OpenAI models route through the OpenAI API directly,
+  with OpenRouter as the fallback. Keys are stored in **Bitwarden** (CLI `bw`,
+  folder "Dev API Keys") and resolved on demand via `~/bin/bw_get` (item name
+  == env var name) — no static keys live in shell rc files. See
   [API Key Resolution (Bitwarden)](#api-key-resolution-bitwarden). Relevant keys:
-  - `OPENROUTER_API_KEY` (preferred) — routes through OpenRouter
-    (https://openrouter.ai) to any provider/model, defaulting to `openai/gpt-4o`.
+  - `OPENAI_API_KEY` (preferred) — Pi talks to the OpenAI provider directly with
+    `gpt-4o` via api.openai.com.
+  - `OPENROUTER_API_KEY` — fallback router (https://openrouter.ai) when no
+    OpenAI key is set; also used for `openrouter/*` models selected via `/model`.
     Create a key at https://openrouter.ai/keys (starts with `sk-or-v1-`).
-  - `OPENAI_API_KEY` — fallback: Pi talks to the OpenAI provider directly with
-    `gpt-4o`.
   - Legacy providers keep working: `KIMI_API_KEY` is exported from
     `~/.kimi-code/config.toml` into Bitwarden, and other Pi providers
     (`ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, Groq, DeepSeek, ...) work via `/login`.
@@ -57,14 +58,14 @@ make install
 
 # 2. Make an API key available. Keys live in Bitwarden (folder "Dev API Keys"):
 bw unlock          # unlock the vault (or export BW_SESSION); make pi fetches keys via bw_get
-# or: export OPENROUTER_API_KEY=sk-or-v1-...   # env var overrides Bitwarden
-# or: export OPENAI_API_KEY=sk-...             # fallback to the OpenAI provider
+# or: export OPENAI_API_KEY=sk-...             # env var overrides Bitwarden (preferred)
+# or: export OPENROUTER_API_KEY=sk-or-v1-...   # fallback router
 
 # 3. Sanity-check the setup (no API key needed)
 make pi-config-check
 bash scripts/verify-harness.sh
 
-# 4. Launch Pi interactively (OpenRouter -> openai/gpt-4o by default)
+# 4. Launch Pi interactively (OpenAI -> gpt-4o by default)
 pi-harness
 
 # 5. Or run a quick print-mode query
@@ -81,12 +82,14 @@ shell functions `pi-harness` / `pi-harness-print` (in `~/.zshrc` and
 `~/.bashrc`), the `Makefile` targets (`make pi`, `make pi-print`), and
 `eval/conftest.py` (`get_secret()`) all resolve keys in this order:
 
-1. `OPENROUTER_API_KEY` env var (explicit override)
+1. `OPENAI_API_KEY` env var (explicit override)
 2. Bitwarden via `bw_get` (requires an unlocked vault: `bw unlock`)
-3. `OPENAI_API_KEY` env var (fallback provider)
+3. `OPENROUTER_API_KEY` env var / Bitwarden (fallback router)
 
-With an OpenRouter key they launch `pi --provider openrouter --model openai/gpt-4o`;
-with only an OpenAI key they fall back to `pi --provider openai --model gpt-4o`.
+With an OpenAI key they launch `pi --provider openai --model gpt-4o` (direct
+OpenAI API); without one, an OpenRouter key falls back to
+`pi --provider openrouter --model openai/gpt-4o`. `openrouter/*` models selected
+via `/model` always route through OpenRouter.
 
 If the vault is locked, run `bw unlock` in your terminal first (or
 `export BW_SESSION=...`). `BW_AUTO_UNLOCK=1` makes the interactive shell
@@ -101,17 +104,18 @@ make pi-eval-quick
 # Harness config checks (OpenRouter defaults, skills, dotfiles) - no API key
 make pi-config-check
 
-# Full DeepEval suite (requires a provider key: OPENROUTER_API_KEY via Bitwarden, or OPENAI_API_KEY)
+# Full DeepEval suite (requires a provider key: OPENAI_API_KEY via Bitwarden, or OPENROUTER_API_KEY)
 make pi-eval
 ```
 
-## Model Routing (OpenRouter)
+## Model Routing
 
-Pi 0.80.10 ships a built-in `openrouter` provider
-(`https://openrouter.ai/api/v1`, OpenAI-compatible). The harness defaults to
-`openrouter` / `openai/gpt-4o`, so requests go to OpenAI GPT-4o through
-OpenRouter. Because OpenRouter is a router, you can switch to any model or
-provider it hosts:
+Pi 0.80.10 ships built-in `openai` and `openrouter` providers. The harness
+defaults to **OpenAI** (`openai` / `gpt-4o`), so requests go to OpenAI GPT-4o
+through api.openai.com directly. When no OpenAI key is available, Pi falls
+back to the `openrouter` provider (`https://openrouter.ai/api/v1`,
+OpenAI-compatible). Because OpenRouter is a router, you can switch to any
+model or provider it hosts:
 
 - `/model` — pick a model interactively (OpenAI GPT models are listed first via
   the `enabledModels` order in `.pi/settings.json`).

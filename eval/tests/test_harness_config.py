@@ -20,8 +20,8 @@ OSMANI_SKILLS = Path.home() / "Projects" / "tmp" / "agent-skills" / "skills"
 ZSH_RC = Path.home() / ".zshrc"
 BASH_RC = Path.home() / ".bashrc"
 
-EXPECTED_DEFAULT_PROVIDER = "openrouter"
-EXPECTED_DEFAULT_MODEL = "openai/gpt-4o"
+EXPECTED_DEFAULT_PROVIDER = "openai"
+EXPECTED_DEFAULT_MODEL = "gpt-4o"
 EXPECTED_PREFIX_PATTERNS = [
     "openai/*",
     "anthropic/*",
@@ -81,9 +81,13 @@ def test_project_settings_have_no_literal_keys():
 # --- global settings --------------------------------------------------------
 
 def test_global_default_provider_and_model():
+    # Global defaults mirror the project's OpenAI-first routing. The default
+    # model is the user's personal choice; only require it to be an OpenAI
+    # model so requests route through the OpenAI API directly.
     settings = _load_json(GLOBAL_SETTINGS)
     assert settings["defaultProvider"] == EXPECTED_DEFAULT_PROVIDER
-    assert settings["defaultModel"] == EXPECTED_DEFAULT_MODEL
+    model = settings["defaultModel"]
+    assert model.startswith("openai/") or model.startswith("gpt-"), model
 
 
 def test_no_broken_moonshot_ai_provider_string():

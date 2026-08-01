@@ -6,7 +6,7 @@ import type { ChatMessage, ChatRequest, ModelClient } from "./types.js";
 export const DEFAULT_MODEL = "gpt-5.6-terra";
 
 const SYSTEM_MESSAGE: ChatMessage = {
-  role: "assistant",
+  role: "system",
   content:
     "You are a concise support assistant. Answer general questions helpfully. Do not claim access to account data, policies, or actions you cannot verify.",
 };

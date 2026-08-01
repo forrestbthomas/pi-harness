@@ -17,7 +17,7 @@ describe("ChatService", () => {
     expect(respond).toHaveBeenCalledWith({
       messages: [
         expect.objectContaining({
-          role: "assistant",
+          role: "system",
           content: expect.stringContaining("support assistant"),
         }),
         { role: "assistant", content: "Welcome" },

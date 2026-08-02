@@ -1,3 +1,9 @@
+> **pi-harness** — a provider-agnostic coding-agent harness + evaluation suite that keeps you out of AI-vendor lock-in.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go Version](https://img.shields.io/badge/Go-1.21-blue.svg)](https://golang.org/dl/)
+[![CI](https://github.com/forrestthomas1/pi-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/forrestthomas1/pi-harness/actions/workflows/ci.yml)
+
 # Pi Coding Agent Harness + DeepEval Evaluation Suite
 
 A ready-to-use coding agent harness built around the [Pi coding agent](https://pi.dev/) and the open-source [DeepEval](https://github.com/confident-ai/deepeval) LLM evaluation framework. The harness runtime is driven by a single Go CLI, **`pi-run`** — the one source of truth for provider routing, API key resolution, Pi launching, evaluation, setup, and health checks.
@@ -275,3 +281,14 @@ to see them, or `pi config -a` to enable/disable individual resources.
   3× then **warns instead of failing** — the stored catalogs already resolve
   every default model (`pi-run doctor` reports model resolvability as
   informational).
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, testing, and how to add a
+provider. Report security issues privately per [SECURITY.md](SECURITY.md); all
+participants agree to the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Avoiding Vendor Lock-In
+
+See [docs/anti-lockin.md](docs/anti-lockin.md) — BYO-key, BYO-model, and local
+model support keep your agent workflow portable across providers.

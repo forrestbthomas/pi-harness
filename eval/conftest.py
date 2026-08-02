@@ -59,7 +59,7 @@ def run_pi_print(prompt: str, cwd: Path | None = None, extra_args: list[str] | N
     are loaded.
     """
     cwd = cwd or Path(__file__).parent.parent
-    cmd = ["pi", "-p", "--no-session"]
+    cmd = ["pi-run", "print"]
     if extra_args:
         cmd.extend(extra_args)
     cmd.append(prompt)

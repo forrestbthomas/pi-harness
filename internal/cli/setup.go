@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 )
 
 // repoRoot returns the harness repo root: HARNESS_ROOT env, else the parent of
@@ -65,10 +66,32 @@ func runSetup() int {
 	if nodeVersion == "" {
 		nodeVersion = "v22.19.0"
 	}
-	code, err := execPi(nodeVersion, []string{"update", "--models"}, nil)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return 1
+	// The pi.dev catalog endpoint is intermittently unreachable from some
+	// networks (TLS connects, HTTP never responds), so the refresh can time
+	// out even though the stored catalogs already resolve every default model.
+	// Retry a few times; warn instead of failing setup on the final failure.
+	const attempts = 3
+	var refreshErr error
+	for attempt := 1; attempt <= attempts; attempt++ {
+		code, err := execPi(nodeVersion, []string{"update", "--models"}, nil)
+		if err == nil && code == 0 {
+			refreshErr = nil
+			break
+		}
+		if err != nil {
+			refreshErr = err
+		} else {
+			refreshErr = fmt.Errorf("pi update --models exited with code %d", code)
+		}
+		if attempt < attempts {
+			fmt.Printf("  model catalog refresh failed (attempt %d/%d); retrying ...\n", attempt, attempts)
+			time.Sleep(3 * time.Second)
+		}
 	}
-	return code
+	if refreshErr != nil {
+		fmt.Fprintf(os.Stderr,
+			"warning: model catalog refresh failed after %d attempts (%v); stored catalogs still resolve the default models — run `pi-run doctor` to check\n",
+			attempts, refreshErr)
+	}
+	return 0
 }

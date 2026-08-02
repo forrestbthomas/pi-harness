@@ -84,7 +84,7 @@ func piListModels(home, nodeVersion string) ([]byte, error) {
 		return nil, err
 	}
 	cmd := exec.Command(filepath.Join(binDir, "pi"), "--offline", "--list-models")
-	cmd.Env = append(os.Environ(), "PATH="+binDir+string(os.PathListSeparator)+os.Getenv("PATH"))
+	cmd.Env = childEnv(binDir, nil)
 	return cmd.Output()
 }
 

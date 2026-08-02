@@ -1,7 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"os"
+
+	"github.com/forrestthomas/harness/internal/cli"
+)
 
 func main() {
-	fmt.Println("pi-run stub")
+	os.Exit(cli.Run(os.Args[1:]))
 }

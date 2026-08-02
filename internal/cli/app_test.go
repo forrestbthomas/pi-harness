@@ -1,6 +1,9 @@
 package cli
 
 import (
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -69,5 +72,24 @@ func TestRunEvalWithoutVenv(t *testing.T) {
 func TestUsageMentionsProviders(t *testing.T) {
 	if !strings.Contains(usage, "deepseek") || !strings.Contains(usage, "openrouter") {
 		t.Fatal("usage must document all providers")
+	}
+}
+
+func TestModulePath(t *testing.T) {
+	// The public module path must be github.com/forrestthomas1/pi-harness.
+	// Tests run with CWD = the package dir and os.Executable() = the temp test
+	// binary, so derive the repo root from this source file's own path.
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller failed")
+	}
+	// file = <root>/internal/cli/app_test.go
+	root := filepath.Dir(filepath.Dir(filepath.Dir(file)))
+	b, err := os.ReadFile(filepath.Join(root, "go.mod"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(b), "module github.com/forrestthomas1/pi-harness") {
+		t.Fatalf("go.mod must declare module github.com/forrestthomas1/pi-harness, got:\n%s", b)
 	}
 }

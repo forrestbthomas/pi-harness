@@ -12,7 +12,7 @@ This repository is a **coding agent evaluation harness** built around the [Pi co
 
 - All Pi configuration lives in `.pi/`.
 - All evaluation code, datasets, and Python dependencies live in `eval/`.
-- The harness runtime is a single Go CLI: `pi-run` (module `github.com/forrestthomas/harness`, source under `cmd/pi-run` and `internal/cli/`).
+- The harness runtime is a single Go CLI: `pi-run` (module `github.com/forrestthomas1/pi-harness`, source under `cmd/pi-run` and `internal/cli/`).
 - Prefer deterministic, reproducible steps over ad-hoc commands.
 - Never commit API keys, tokens, or kubeconfig contents.
 - Keep changes minimal and focused; do not refactor unrelated code.

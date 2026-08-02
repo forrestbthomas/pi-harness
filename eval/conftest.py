@@ -119,6 +119,14 @@ def has_api_key() -> bool:
     return any(get_secret(key) for key in SUPPORTED_PROVIDER_KEYS)
 
 
+def judge_provider() -> str:
+    """Return the configured DeepEval judge provider (defaults to openai)."""
+    model = os.environ.get("DEEPEVAL_MODEL", "").strip()
+    if model:
+        return model.split("/", 1)[0]
+    return "openai"
+
+
 @pytest.fixture
 def pi_available() -> bool:
     """Skip tests that require Pi if it is not runnable."""
@@ -127,3 +135,9 @@ def pi_available() -> bool:
     except (subprocess.CalledProcessError, FileNotFoundError):
         pytest.skip("Pi CLI is not available")
     return True
+
+
+# Informational: when a provider key is present, report which provider DeepEval
+# will use as the judge (set DEEPEVAL_MODEL to override the OpenAI default).
+if has_api_key():
+    print(f"  [eval] judge provider: {judge_provider()} (set DEEPEVAL_MODEL to override)")

@@ -115,6 +115,18 @@ pi-run config-check
 pi-run eval
 ```
 
+The DeepEval **judge** (the LLM-as-a-judge used by metrics like
+AnswerRelevancy/Faithfulness/Hallucination) defaults to OpenAI. To evaluate
+without depending on OpenAI, set a non-OpenAI provider key and `DEEPEVAL_MODEL`:
+
+```bash
+export OPENROUTER_API_KEY=sk-or-v1-...          # or another provider key
+export DEEPEVAL_MODEL=openrouter/anthropic/claude-sonnet-4
+pi-run eval
+```
+
+`pi-run eval --quick` and the config tests run without any key.
+
 ## Model Routing
 
 `pi-run` selects the provider (`--provider` / `PI_PROVIDER`; default `openai`),

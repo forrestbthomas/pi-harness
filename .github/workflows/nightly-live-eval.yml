@@ -1,0 +1,28 @@
+name: nightly-live-eval
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  live-eval:
+    runs-on: ubuntu-latest
+    # Requires a provider key in the repo secrets; skips gracefully if absent.
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: |
+          python -m venv eval/.venv
+          eval/.venv/bin/pip install -r eval/requirements.txt
+      - name: Run full eval
+        run: eval/.venv/bin/python -m pytest tests/ -v
+        working-directory: eval

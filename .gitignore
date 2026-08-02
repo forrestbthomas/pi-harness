@@ -9,3 +9,6 @@ eval/outputs/
 .DS_Store
 # Git worktrees for parallel agent work
 .worktrees/
+
+# subagent-driven-development progress ledger
+.superpowers/

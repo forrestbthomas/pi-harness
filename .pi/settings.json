@@ -66,9 +66,7 @@
     "git:github.com/dannote/dot-pi"
   ],
   "extensions": [],
-  "skills": [
-    "/Users/forrestthomas/Projects/tmp/agent-skills/skills"
-  ],
+  "skills": [],
   "prompts": [],
   "themes": []
 }

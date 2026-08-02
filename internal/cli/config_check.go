@@ -88,8 +88,15 @@ func runConfigCheck() int {
 			}
 		}
 	}
-	check("superpowers skills installed (>= 14)", count >= 14)
-	check("agent-skills clone present", pathExists(filepath.Join(home, "Projects", "tmp", "agent-skills", "skills")))
+	// Personal-machine skill checks: informational unless PI_RUN_PERSONAL=1 so
+	// config-check passes on a fresh clone that has not installed the curated
+	// skill collections.
+	if os.Getenv("PI_RUN_PERSONAL") == "1" {
+		check("superpowers skills installed (>= 14)", count >= 14)
+		check("agent-skills clone present", pathExists(filepath.Join(home, "Projects", "tmp", "agent-skills", "skills")))
+	} else {
+		fmt.Println("  [info] superpowers/agent-skills checks skipped (set PI_RUN_PERSONAL=1 to enable)")
+	}
 
 	if fail {
 		fmt.Println("== config-check: FAILURES FOUND ==")

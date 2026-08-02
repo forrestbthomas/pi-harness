@@ -53,7 +53,7 @@ def test_dotfiles_no_longer_define_pi_harness_functions():
 
 def test_go_module_path():
     go_mod = (HARNESS / "go.mod").read_text(encoding="utf-8")
-    assert "module github.com/forrestthomas/harness" in go_mod
+    assert "module github.com/forrestthomas1/pi-harness" in go_mod
 
 
 def test_project_defaults_unchanged():

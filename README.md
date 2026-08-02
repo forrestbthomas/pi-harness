@@ -100,7 +100,11 @@ pi-run eval
 
 `pi-run` selects the provider (`--provider` / `PI_PROVIDER`; default `openai`),
 resolves the key, and launches `pi` with the right `--provider` / `--model`
-flags. Everything else on the command line is passed through to `pi` unchanged.
+flags. `chat`/`print` launch pi with `--offline` by default so startup network
+ops (version check, changelog, catalog refresh) never hang on the flaky pi.dev
+endpoint — the stored model catalogs are used instead; `pi-run setup` is the
+explicit online path. Everything else on the command line is passed through to
+`pi` unchanged.
 
 - `/model` — pick a model interactively in-session (OpenAI GPT models are listed
   first via the `enabledModels` order in `.pi/settings.json`).
@@ -231,6 +235,12 @@ to see them, or `pi config -a` to enable/disable individual resources.
 - **DeepEval tests skipped?** Unlock Bitwarden (`bw unlock`) so `pi-run` can
   fetch a provider key via `bw_get`, or export `OPENAI_API_KEY` / another
   supported provider key. `pi-run doctor` shows which keys are available.
-- **`pi update --models` times out?** Network to the model registry is
-  unavailable; the stored catalog still resolves the default models
-  (`pi-run doctor` reports this as informational).
+- **`pi update --models` times out?** The pi.dev model-catalog endpoint is
+  intermittently unreachable from some networks (TLS connects but HTTP never
+  responds — on both IPv6 and IPv4). `pi-run` mitigates this three ways: every
+  pi process runs with `NODE_OPTIONS=--dns-result-order=ipv4first` (the IPv6
+  route is deterministically dead), `chat`/`print` launch pi with `--offline`
+  so startup never touches the endpoint, and `pi-run setup` retries the refresh
+  3× then **warns instead of failing** — the stored catalogs already resolve
+  every default model (`pi-run doctor` reports model resolvability as
+  informational).

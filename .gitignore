@@ -12,3 +12,6 @@ eval/outputs/
 
 # subagent-driven-development progress ledger
 .superpowers/
+
+# Go build output
+bin/

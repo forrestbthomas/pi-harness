@@ -54,25 +54,34 @@ func runConfigCheck() int {
 		check("~/.pi/agent/settings.json valid JSON", false)
 	}
 
-	// 3. Binary link.
-	link := filepath.Join(home, "bin", "pi-run")
-	target, err := os.Readlink(link)
-	check("~/bin/pi-run symlinks to <root>/bin/pi-run",
-		err == nil && target == filepath.Join(root, "bin", "pi-run"))
+	// 3. Binary link (personal-machine check unless PI_RUN_PERSONAL=1).
+	if personalMode() {
+		link := filepath.Join(home, "bin", "pi-run")
+		target, err := os.Readlink(link)
+		check("~/bin/pi-run symlinks to <root>/bin/pi-run",
+			err == nil && target == filepath.Join(root, "bin", "pi-run"))
+	} else {
+		fmt.Println("  [info] symlink check skipped (set PI_RUN_PERSONAL=1 to enable)")
+	}
 
-	// 4. Dotfiles: no pi-harness functions, no static secret exports.
-	secretVars := []string{"OPENROUTER_API_KEY", "OPENAI_API_KEY", "DEEPSEEK_API_KEY", "KIMI_API_KEY"}
-	for _, rc := range []string{filepath.Join(home, ".zshrc"), filepath.Join(home, ".bashrc")} {
-		text := readFile(rc)
-		name := filepath.Base(rc)
-		check(name+" has no pi-harness functions", !strings.Contains(string(text), "pi-harness()"))
-		for _, v := range secretVars {
-			for _, line := range strings.Split(string(text), "\n") {
-				if strings.HasPrefix(strings.TrimSpace(line), "export "+v+"=") && !strings.Contains(line, "bw_get") {
-					check(name+" has no static "+v+" export", false)
+	// 4. Dotfiles: no pi-harness functions, no static secret exports
+	//    (personal-machine checks unless PI_RUN_PERSONAL=1).
+	if personalMode() {
+		secretVars := []string{"OPENROUTER_API_KEY", "OPENAI_API_KEY", "DEEPSEEK_API_KEY", "KIMI_API_KEY"}
+		for _, rc := range []string{filepath.Join(home, ".zshrc"), filepath.Join(home, ".bashrc")} {
+			text := readFile(rc)
+			name := filepath.Base(rc)
+			check(name+" has no pi-harness functions", !strings.Contains(string(text), "pi-harness()"))
+			for _, v := range secretVars {
+				for _, line := range strings.Split(string(text), "\n") {
+					if strings.HasPrefix(strings.TrimSpace(line), "export "+v+"=") && !strings.Contains(line, "bw_get") {
+						check(name+" has no static "+v+" export", false)
+					}
 				}
 			}
 		}
+	} else {
+		fmt.Println("  [info] dotfile checks skipped (set PI_RUN_PERSONAL=1 to enable)")
 	}
 
 	// 5. Makefile gone.
@@ -91,7 +100,7 @@ func runConfigCheck() int {
 	// Personal-machine skill checks: informational unless PI_RUN_PERSONAL=1 so
 	// config-check passes on a fresh clone that has not installed the curated
 	// skill collections.
-	if os.Getenv("PI_RUN_PERSONAL") == "1" {
+	if personalMode() {
 		check("superpowers skills installed (>= 14)", count >= 14)
 		check("agent-skills clone present", pathExists(filepath.Join(home, "Projects", "tmp", "agent-skills", "skills")))
 	} else {

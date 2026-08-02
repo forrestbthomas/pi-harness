@@ -1,18 +1,22 @@
 """Deterministic harness-configuration checks (no API keys, no network).
 
-The CLI (`pi-run config-check`) is the single source of truth for these checks;
-this file shells out to it and adds a few direct assertions that are cheapest
-to check here (symlink, dotfiles, Makefile absence, module path).
+The CLI (`pi-run config-check`) is the single source of truth for these checks.
+Personal-machine checks (symlink into ~/bin, dotfile contents, installed skill
+counts) are gated behind PI_RUN_PERSONAL=1 so the suite passes on a fresh clone.
 """
 
 import json
+import os
 import re
 import subprocess
 from pathlib import Path
 
+import pytest
+
 HARNESS = Path(__file__).resolve().parents[2]
 PROJECT_SETTINGS = HARNESS / ".pi" / "settings.json"
 HOME = Path.home()
+PERSONAL = os.environ.get("PI_RUN_PERSONAL") == "1"
 MIN_SUPERPOWERS_SKILLS = 14
 
 
@@ -31,24 +35,8 @@ def test_pi_run_config_check_passes():
     assert result.returncode == 0, f"pi-run config-check failed:\n{result.stdout}\n{result.stderr}"
 
 
-def test_pi_run_binary_symlinked_into_home_bin():
-    link = HOME / "bin" / "pi-run"
-    assert link.is_symlink(), f"missing symlink: {link}"
-    target = link.resolve()
-    assert target == (HARNESS / "bin" / "pi-run").resolve(), (
-        f"symlink {link} -> {target}, want {HARNESS / 'bin' / 'pi-run'}"
-    )
-
-
 def test_makefile_removed():
     assert not (HARNESS / "Makefile").exists(), "Makefile must be removed (CLI owns all targets)"
-
-
-def test_dotfiles_no_longer_define_pi_harness_functions():
-    for rc in (HOME / ".zshrc", HOME / ".bashrc"):
-        text = rc.read_text(encoding="utf-8")
-        assert "pi-harness()" not in text, f"{rc.name} still defines pi-harness()"
-        assert "bw_get" in text, f"{rc.name} should still resolve keys via bw_get"
 
 
 def test_go_module_path():
@@ -63,12 +51,40 @@ def test_project_defaults_unchanged():
 
 
 def test_no_literal_keys_anywhere():
-    for path in (PROJECT_SETTINGS, HOME / ".pi" / "agent" / "settings.json"):
+    for path in (PROJECT_SETTINGS,):
         text = path.read_text(encoding="utf-8")
         assert re.search(r"sk-[A-Za-z0-9_-]{8,}", text) is None, path
 
 
-def test_superpowers_skills_installed():
+def test_no_hardcoded_user_paths_in_shipped_code():
+    for path in (
+        HARNESS / "scripts" / "install-skills.sh",
+        HARNESS / ".pi" / "settings.json",
+    ):
+        text = path.read_text(encoding="utf-8")
+        assert "/Users/forrestthomas/" not in text, path
+
+
+@pytest.mark.skipif(not PERSONAL, reason="personal-machine check (set PI_RUN_PERSONAL=1)")
+def test_personal_pi_run_binary_symlinked_into_home_bin():
+    link = HOME / "bin" / "pi-run"
+    assert link.is_symlink(), f"missing symlink: {link}"
+    target = link.resolve()
+    assert target == (HARNESS / "bin" / "pi-run").resolve(), (
+        f"symlink {link} -> {target}, want {HARNESS / 'bin' / 'pi-run'}"
+    )
+
+
+@pytest.mark.skipif(not PERSONAL, reason="personal-machine check (set PI_RUN_PERSONAL=1)")
+def test_personal_dotfiles_no_longer_define_pi_harness_functions():
+    for rc in (HOME / ".zshrc", HOME / ".bashrc"):
+        text = rc.read_text(encoding="utf-8")
+        assert "pi-harness()" not in text, f"{rc.name} still defines pi-harness()"
+        assert "bw_get" in text, f"{rc.name} should still resolve keys via bw_get"
+
+
+@pytest.mark.skipif(not PERSONAL, reason="personal-machine check (set PI_RUN_PERSONAL=1)")
+def test_personal_superpowers_skills_installed():
     skills = HOME / ".agents" / "skills"
     assert skills.is_dir()
     count = sum(1 for p in skills.iterdir() if p.is_dir())

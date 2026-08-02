@@ -65,8 +65,14 @@ func runDoctor() int {
 	venv := filepath.Join(root, "eval", ".venv", "bin", "python")
 	check("eval/.venv present", pathExists(venv))
 
-	link := filepath.Join(home, "bin", "pi-run")
-	check("~/bin/pi-run symlink present", pathExists(link))
+	// Symlink into ~/bin is a personal-machine convention; informational
+	// unless PI_RUN_PERSONAL=1 so doctor passes on a fresh clone.
+	if personalMode() {
+		link := filepath.Join(home, "bin", "pi-run")
+		check("~/bin/pi-run symlink present", pathExists(link))
+	} else {
+		fmt.Println("  [info] ~/bin/pi-run symlink check skipped (set PI_RUN_PERSONAL=1 to enable)")
+	}
 
 	if fail {
 		fmt.Println("== doctor: FAILURES FOUND ==")

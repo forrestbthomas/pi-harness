@@ -21,13 +21,20 @@ func TestNoHardcodedUserPaths(t *testing.T) {
 
 	// Directories/files to scan (relative to root). Historical docs under
 	// docs/superpowers/ legitimately reference the old path in plans/specs and
-	// are not shipped runtime artifacts, so they are excluded here.
+	// are not shipped runtime artifacts, so they are excluded here. The Python
+	// harness-config test asserts the old path's absence itself, so it is
+	// excluded to avoid a false positive (it references the literal only to
+	// check it is gone).
 	scanDirs := []string{
 		filepath.Join(root, "cmd"),
 		filepath.Join(root, "internal"),
 		filepath.Join(root, "scripts"),
 		filepath.Join(root, "eval"),
 		filepath.Join(root, ".pi"),
+	}
+	// Files to skip inside scanned dirs (paths relative to root).
+	skipFiles := map[string]bool{
+		"eval/tests/test_harness_config.py": true,
 	}
 	scanFiles := []string{
 		filepath.Join(root, "README.md"),
@@ -60,6 +67,12 @@ func TestNoHardcodedUserPaths(t *testing.T) {
 				return nil
 			}
 			rel, _ := filepath.Rel(root, path)
+			if skipFiles[rel] {
+				if ent.IsDir() {
+					return filepath.SkipDir
+				}
+				return nil
+			}
 			if ent.IsDir() {
 				if skipDirs[ent.Name()] {
 					return filepath.SkipDir

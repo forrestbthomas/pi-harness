@@ -1,4 +1,0 @@
-## Append samples of your project ##
-resources:
-- repo_v1_githubrepository.yaml
-#+kubebuilder:scaffold:manifestskustomizesamples

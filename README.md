@@ -37,29 +37,33 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
 ## Quick Start
 
 ```bash
-# 1. Install Python dependencies (creates eval/.venv)
-pi-run setup
+# 1. Clone the repo
+git clone https://github.com/forrestthomas1/pi-harness.git
+cd pi-harness
 
-# 2. Make an API key available. Keys live in Bitwarden (folder "Dev API Keys"):
-bw unlock          # unlock the vault (or export BW_SESSION); pi-run fetches keys via bw_get
-# or: export OPENAI_API_KEY=sk-...             # env var overrides Bitwarden (preferred)
-# or: export OPENROUTER_API_KEY=sk-or-v1-...
-# or: export DEEPSEEK_API_KEY=sk-...
+# 2. One-command bootstrap (Node + pi + bin/pi-run + eval/.venv)
+bash scripts/bootstrap.sh
 
-# 3. Sanity-check the setup (no API key needed)
+# 3. Provide an API key (plain env var is the primary path)
+export OPENAI_API_KEY=sk-...        # or OPENROUTER_API_KEY / DEEPSEEK_API_KEY
+
+# 4. Sanity-check the setup (no API key needed)
 pi-run config-check
 pi-run doctor
 
-# 4. Launch Pi interactively (OpenAI -> gpt-5.6-terra by default)
+# 5. Launch Pi interactively (OpenAI -> gpt-5.6-terra by default)
 pi-run chat
 
-# 5. Or run a quick print-mode query
+# 6. Or run a quick print-mode query
 pi-run print "List all Python files in this repo"
 
-# 6. Route to another provider
+# 7. Route to another provider
 pi-run chat --provider deepseek
-pi-run print --provider openrouter --model deepseek/deepseek-chat "Summarize this repo"
 ```
+
+> `pi-run` is built by the bootstrap script into `bin/pi-run`. To use it from
+> anywhere, add `bin/` to your PATH or run `pi-run install` to symlink it into
+> `~/bin/`.
 
 ### API Key Resolution (Bitwarden)
 

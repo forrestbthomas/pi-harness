@@ -15,3 +15,6 @@ eval/outputs/
 
 # Go build output
 bin/
+
+# Leftover from an extracted subproject (not part of the harness)
+github-repo-controller/bin/

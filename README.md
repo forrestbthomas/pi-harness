@@ -1,10 +1,11 @@
 # Pi Coding Agent Harness + DeepEval Evaluation Suite
 
-A ready-to-use coding agent harness built around the [Pi coding agent](https://pi.dev/) and the open-source [DeepEval](https://github.com/confident-ai/deepeval) LLM evaluation framework.
+A ready-to-use coding agent harness built around the [Pi coding agent](https://pi.dev/) and the open-source [DeepEval](https://github.com/confident-ai/deepeval) LLM evaluation framework. The harness runtime is driven by a single Go CLI, **`pi-run`** — the one source of truth for provider routing, API key resolution, Pi launching, evaluation, setup, and health checks.
 
 ## What You Get
 
-- **Pi CLI** installed globally and configured for this project.
+- **`pi-run` CLI** — a compiled Go binary (repo `bin/pi-run`, symlinked into `~/bin/pi-run`) that owns the harness runtime: `chat`, `print`, `eval`, `config-check`, `doctor`, `setup`, `install`, `clean`, `version`.
+- **Pi CLI** installed globally (via nvm) and configured for this project.
 - **Curated Pi packages** installed project-locally:
   - `pi-mcp-adapter` — token-efficient MCP adapter.
   - `pi-web-access` — web fetch/search for agents.
@@ -16,64 +17,48 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
 > `@zigai/pi-ui-tweaks` was removed because its bundled settings schema is currently incompatible with this Pi version.
 - **Project context files**: `AGENTS.md`, `.pi/SYSTEM.md`, `.pi/APPEND_SYSTEM.md`.
 - **DeepEval environment** in `eval/.venv` with sample tests and datasets.
-- **Golden dataset** for labeling K8s controller tasks: `eval/datasets/golden_k8s_controllers.jsonl`.
-- **Example Go project**: `github-repo-controller/` — a Kubebuilder-generated Kubernetes controller for managing GitHub repositories.
-- **Automation** via `Makefile`.
+- **Automation** via the `pi-run` CLI (no Makefile, no shell functions).
 
 > **Note on "DeepEva"**: the request mentioned "DeepEva"; no project by that name was found, so this harness installs **DeepEval** (`confident-ai/deepeval`), the dominant open-source LLM evaluation framework. If you meant a different tool, let me know.
 
 ## Prerequisites
 
-- Node.js 22.19+ (managed via `nvm`; the Makefile selects `v22.19.0`).
-- Python 3.11+.
-- An API key. The harness is wired **OpenAI-first with OpenAI GPT models
-  preferred by default** — OpenAI models route through the OpenAI API directly,
-  with OpenRouter as the fallback. Keys are stored in **Bitwarden** (CLI `bw`,
-  folder "Dev API Keys") and resolved on demand via `~/bin/bw_get` (item name
-  == env var name) — no static keys live in shell rc files. See
-  [API Key Resolution (Bitwarden)](#api-key-resolution-bitwarden). Relevant keys:
-  - `OPENAI_API_KEY` (preferred) — Pi talks to the OpenAI provider directly with
-    `gpt-5.6-terra` via api.openai.com.
-  - `OPENROUTER_API_KEY` — fallback router (https://openrouter.ai) when no
-    OpenAI key is set; also used for `openrouter/*` models selected via `/model`.
-    Create a key at https://openrouter.ai/keys (starts with `sk-or-v1-`).
-  - Legacy providers keep working: `KIMI_API_KEY` is exported from
-    `~/.kimi-code/config.toml` into Bitwarden, and other Pi providers
-    (`ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, Groq, DeepSeek, ...) work via `/login`.
+- Node.js 22.19+ (managed via `nvm`; `pi-run` resolves `v22.19.0` by default, override with `PI_NODE_VERSION`).
+- Python 3.11+ (for the DeepEval suite).
+- Go 1.21+ (only to build/update `pi-run`).
+- An API key. The harness is wired **OpenAI-first** — `openai/gpt-5.6-terra` via the OpenAI API directly — with **OpenRouter** and **DeepSeek** as explicit alternatives. Keys are stored in **Bitwarden** (CLI `bw`, folder "Dev API Keys") and resolved on demand via `~/bin/bw_get` (item name == env var name) — no static keys live in shell rc files. See [API Key Resolution (Bitwarden)](#api-key-resolution-bitwarden).
+
+| provider | key (Bitwarden item / env var) | `pi-run --provider` | default model |
+|---|---|---|---|
+| OpenAI (default) | `OPENAI_API_KEY` | `openai` | `openai/gpt-5.6-terra` |
+| OpenRouter | `OPENROUTER_API_KEY` | `openrouter` | `openai/gpt-5.6-terra` |
+| DeepSeek (direct) | `DEEPSEEK_API_KEY` | `deepseek` | `deepseek/deepseek-v4-flash` |
 
 ## Quick Start
 
-Shell aliases were added to `~/.bashrc` and `~/.zshrc`:
-
-```bash
-pi-harness        # launch Pi interactively in the current directory
-pi-harness-print  # launch Pi in print mode in the current directory
-```
-
-> `pi-harness` runs Pi in whatever directory you're in. It always uses the
-> global config (`~/.pi/agent`); the harness's project config (`.pi/`, 
-> `AGENTS.md`, `SYSTEM.md`) applies when you run it from this repository root.
-
-Reload your shell config (`source ~/.zshrc` or `source ~/.bashrc`) then:
-
 ```bash
 # 1. Install Python dependencies (creates eval/.venv)
-make install
+pi-run setup
 
 # 2. Make an API key available. Keys live in Bitwarden (folder "Dev API Keys"):
-bw unlock          # unlock the vault (or export BW_SESSION); make pi fetches keys via bw_get
+bw unlock          # unlock the vault (or export BW_SESSION); pi-run fetches keys via bw_get
 # or: export OPENAI_API_KEY=sk-...             # env var overrides Bitwarden (preferred)
-# or: export OPENROUTER_API_KEY=sk-or-v1-...   # fallback router
+# or: export OPENROUTER_API_KEY=sk-or-v1-...
+# or: export DEEPSEEK_API_KEY=sk-...
 
 # 3. Sanity-check the setup (no API key needed)
-make pi-config-check
-bash scripts/verify-harness.sh
+pi-run config-check
+pi-run doctor
 
 # 4. Launch Pi interactively (OpenAI -> gpt-5.6-terra by default)
-pi-harness
+pi-run chat
 
 # 5. Or run a quick print-mode query
-pi-harness-print "List all Python files in this repo"
+pi-run print "List all Python files in this repo"
+
+# 6. Route to another provider
+pi-run chat --provider deepseek
+pi-run print --provider openrouter --model deepseek/deepseek-chat "Summarize this repo"
 ```
 
 ### API Key Resolution (Bitwarden)
@@ -81,60 +66,71 @@ pi-harness-print "List all Python files in this repo"
 All API keys are stored in Bitwarden (CLI `bw`, folder **"Dev API Keys"**,
 item name == env var name) instead of static values in `~/.zshrc` /
 `~/.bashrc`. `~/bin/bw_get <ITEM_NAME>` fetches a secret on demand
-(`~/bin/bw_get --status` reports `unlocked | locked | unauthenticated`). The
-shell functions `pi-harness` / `pi-harness-print` (in `~/.zshrc` and
-`~/.bashrc`), the `Makefile` targets (`make pi`, `make pi-print`), and
-`eval/conftest.py` (`get_secret()`) all resolve keys in this order:
+(`~/bin/bw_get --status` reports `unlocked | locked | unauthenticated`). Every
+`pi-run` path resolves keys in the same order (`internal/cli/keys.go`):
 
-1. `OPENAI_API_KEY` env var (explicit override)
+1. env var (explicit override, e.g. `OPENAI_API_KEY`)
 2. Bitwarden via `bw_get` (requires an unlocked vault: `bw unlock`)
-3. `OPENROUTER_API_KEY` env var / Bitwarden (fallback router)
 
-With an OpenAI key they launch `pi --provider openai --model openai/gpt-5.6-terra` (direct
-OpenAI API); without one, an OpenRouter key falls back to
-`pi --provider openrouter --model openai/gpt-5.6-terra`. `openrouter/*` models selected
-via `/model` always route through OpenRouter.
+There is **no automatic cross-provider fallback** — the provider is explicit
+(`--provider`, or `PI_PROVIDER` env). A missing key is an error that tells you
+what to do:
+
+```
+no DEEPSEEK_API_KEY available: export it, or run `bw unlock` then `pi-run doctor`
+```
 
 If the vault is locked, run `bw unlock` in your terminal first (or
-`export BW_SESSION=...`). `BW_AUTO_UNLOCK=1` makes the interactive shell
-functions prompt for the master password.
+`export BW_SESSION=...`).
 
 ## Running Evaluations
 
 ```bash
 # Smoke tests that do not require an API key
-make pi-eval-quick
+pi-run eval --quick
 
-# Harness config checks (OpenRouter defaults, skills, dotfiles) - no API key
-make pi-config-check
+# Harness config checks (provider defaults, skills, dotfiles) - no API key
+pi-run config-check
 
-# Full DeepEval suite (requires a provider key: OPENAI_API_KEY via Bitwarden, or OPENROUTER_API_KEY)
-make pi-eval
+# Full DeepEval suite (requires a provider key)
+pi-run eval
 ```
 
 ## Model Routing
 
-Pi 0.80.10 ships built-in `openai` and `openrouter` providers. The harness
-defaults to **OpenAI** (`openai` / `gpt-5.6-terra`), so requests go to OpenAI gpt-5.6-terra
-through api.openai.com directly. When no OpenAI key is available, Pi falls
-back to the `openrouter` provider (`https://openrouter.ai/api/v1`,
-OpenAI-compatible). Because OpenRouter is a router, you can switch to any
-model or provider it hosts:
+`pi-run` selects the provider (`--provider` / `PI_PROVIDER`; default `openai`),
+resolves the key, and launches `pi` with the right `--provider` / `--model`
+flags. Everything else on the command line is passed through to `pi` unchanged.
 
-- `/model` — pick a model interactively (OpenAI GPT models are listed first via
-  the `enabledModels` order in `.pi/settings.json`).
+- `/model` — pick a model interactively in-session (OpenAI GPT models are listed
+  first via the `enabledModels` order in `.pi/settings.json`).
 - `Ctrl+P` — cycle through the enabled model palette.
-- `--model` / `--provider` flags — e.g.
-  `pi --provider openrouter --model openai/gpt-4.1 "refactor this"`,
-  `pi --provider openrouter --model anthropic/claude-sonnet-4 "review this"`,
-  `pi --provider openrouter --model google/gemini-2.5-pro "..."`.
+- `--model` — override the provider default, e.g.
+  `pi-run print --provider deepseek --model deepseek/deepseek-v4-pro "..."`,
+  `pi-run print --provider openrouter --model anthropic/claude-sonnet-4 "..."`.
 - `openrouter/auto` — let OpenRouter pick the best model for the task
-  (`pi --provider openrouter --model openrouter/auto`).
+  (`pi-run chat --provider openrouter --model openrouter/auto`).
 
-To refresh the OpenRouter catalog (new models / pricing), run
-`pi update --models` once with network access. The default model
-(`openai/gpt-5.6-terra`) is pinned in `.pi/settings.json`; change it there or with
-`/model` and the session persists the choice.
+The default model (`openai/gpt-5.6-terra`) is pinned in `.pi/settings.json`;
+change it there or with `/model` and the session persists the choice. To
+refresh model catalogs (new models / pricing, including the deepseek catalog),
+run `pi-run setup` once with network access.
+
+## `pi-run` Command Reference
+
+| Command | Behavior |
+|---|---|
+| `pi-run chat [flags] [prompt...]` | Launch Pi interactively (default provider: openai) |
+| `pi-run print [flags] "<prompt>"` | One-shot `pi -p --no-session` |
+| `pi-run eval [--quick]` | Run the DeepEval pytest suite (`--quick` = smoke subset) |
+| `pi-run config-check` | Deterministic harness checks (no keys, no network) |
+| `pi-run doctor` | Health report: node, pi, vault, per-provider keys, models, venv |
+| `pi-run setup` | Create `eval/.venv`, install deps, refresh model catalogs |
+| `pi-run install` | Build `bin/pi-run` and symlink `~/bin/pi-run` |
+| `pi-run clean` | Remove `eval/.venv` and pytest caches |
+| `pi-run version` / `help` | Version / usage |
+
+Exit codes: `0` ok · `1` generic · `2` usage · `3` missing API key · `4` node/pi not found · `5` eval venv missing.
 
 ## Skills
 
@@ -168,10 +164,12 @@ agent loads the matching skill automatically. `enableSkillCommands` is on in
 .
 ├── AGENTS.md                  # Project instructions loaded by Pi
 ├── .gitignore
-├── Makefile
+├── go.mod                     # Go module github.com/forrestthomas/harness (pi-run CLI)
+├── cmd/pi-run/                # CLI entry point
+├── internal/cli/              # CLI implementation + unit tests
+├── bin/                       # Git-ignored build output (bin/pi-run)
 ├── README.md
 ├── scripts/
-│   ├── verify-harness.sh      # One-shot setup verifier (no API key needed)
 │   └── install-skills.sh      # Durable skill install into ~/.pi/agent/skills/
 ├── .pi/
 │   ├── settings.json          # Pi project settings + package list
@@ -184,47 +182,23 @@ agent loads the matching skill automatically. `enableSkillCommands` is on in
     ├── .env.example
     ├── requirements.txt
     ├── pytest.ini
-    ├── conftest.py            # Shared fixtures and Pi runner helper
+    ├── conftest.py            # Shared fixtures and Pi runner helper (uses pi-run)
     ├── datasets/
     │   └── coding_samples.jsonl
     └── tests/
         ├── test_coding_correctness.py
         ├── test_code_quality.py
         ├── test_agent_task_completion.py
+        ├── test_secret_resolution.py
         └── test_harness_config.py   # Deterministic config checks (no API key)
-├── github-repo-controller/      # Example K8s controller (Kubebuilder)
-│   ├── api/v1/                  # CRD Go types
-│   ├── cmd/main.go              # Manager entrypoint
-│   ├── internal/controller/     # Reconcile logic + tests
-│   ├── internal/github/         # GitHub client interface + fake
-│   ├── config/crd/bases/        # Generated CRD YAML
-│   └── README.md
 ```
-
-## GitHub Repository Controller
-
-A Kubebuilder-generated example lives in `github-repo-controller/`. It compiles and passes unit tests with a fake client:
-
-```bash
-cd github-repo-controller
-make generate
-make manifests
-go build ./...
-go test ./...
-```
-
-The controller is intentionally stubbed at the GitHub API layer. The next step is to implement `internal/github/client.go` with a real GitHub REST client and wire it into `cmd/main.go`.
-
-## Golden Dataset for Labeling
-
-`eval/datasets/golden_k8s_controllers.jsonl` contains prompts and reference answers covering CRD design, reconcile loops, RBAC, testing, and finalizers. Each record has a `label` field initially set to `"pending"` for human review. Use it to benchmark or fine-tune the agent.
 
 ## Adding New Evaluations
 
-1. Add sample data to `eval/datasets/coding_samples.jsonl` or `eval/datasets/golden_k8s_controllers.jsonl`.
+1. Add sample data to `eval/datasets/coding_samples.jsonl`.
 2. Create a new test file in `eval/tests/`.
-3. Use `run_pi_print()` from `conftest.py` to capture agent outputs.
-4. Run `make pi-eval` to see the results.
+3. Use `run_pi_print()` from `conftest.py` to capture agent outputs (it runs `pi-run print`).
+4. Run `pi-run eval` to see the results.
 
 ## Pi Project Settings
 
@@ -254,6 +228,9 @@ to see them, or `pi config -a` to enable/disable individual resources.
 
 - **Pi packages not visible?** Run `pi list -a` (project approval required).
 - **Engine warnings during install?** Upgrade Node to 22.19.0 or newer.
-- **DeepEval tests skipped?** Unlock Bitwarden (`bw unlock`) so `get_secret()`
-  can fetch a provider key via `bw_get`, or set `OPENAI_API_KEY` / another
-  supported provider key.
+- **DeepEval tests skipped?** Unlock Bitwarden (`bw unlock`) so `pi-run` can
+  fetch a provider key via `bw_get`, or export `OPENAI_API_KEY` / another
+  supported provider key. `pi-run doctor` shows which keys are available.
+- **`pi update --models` times out?** Network to the model registry is
+  unavailable; the stored catalog still resolves the default models
+  (`pi-run doctor` reports this as informational).

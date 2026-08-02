@@ -26,13 +26,28 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
 - Node.js 22.19+ (managed via `nvm`; `pi-run` resolves `v22.19.0` by default, override with `PI_NODE_VERSION`).
 - Python 3.11+ (for the DeepEval suite).
 - Go 1.21+ (only to build/update `pi-run`).
-- An API key. The harness is wired **OpenAI-first** — `openai/gpt-5.6-terra` via the OpenAI API directly — with **OpenRouter** and **DeepSeek** as explicit alternatives. Keys are stored in **Bitwarden** (CLI `bw`, folder "Dev API Keys") and resolved on demand via `~/bin/bw_get` (item name == env var name) — no static keys live in shell rc files. See [API Key Resolution (Bitwarden)](#api-key-resolution-bitwarden).
+- An API key. The harness is **provider-agnostic**: it ships with a data-driven
+  provider table (`providers.json`) covering OpenAI (default), OpenRouter,
+  DeepSeek, Anthropic, Gemini, Groq, and a local OpenAI-compatible endpoint
+  (Ollama/vLLM). Keys are resolved **env-first**, then from an optional secret
+  store (`BW_GET` override; Bitwarden is a documented example). See
+  [API Key Resolution](#api-key-resolution) and `pi-run providers`.
 
-| provider | key (Bitwarden item / env var) | `pi-run --provider` | default model |
+| provider | key (env var / Bitwarden item) | `pi-run --provider` | default model |
 |---|---|---|---|
 | OpenAI (default) | `OPENAI_API_KEY` | `openai` | `openai/gpt-5.6-terra` |
 | OpenRouter | `OPENROUTER_API_KEY` | `openrouter` | `openai/gpt-5.6-terra` |
 | DeepSeek (direct) | `DEEPSEEK_API_KEY` | `deepseek` | `deepseek/deepseek-v4-flash` |
+| Anthropic | `ANTHROPIC_API_KEY` | `anthropic` | `anthropic/claude-sonnet-4` |
+| Gemini | `GEMINI_API_KEY` | `gemini` | `gemini/gemini-2.5-pro` |
+| Groq | `GROQ_API_KEY` | `groq` | `groq/llama-3.3-70b-versatile` |
+| Local (Ollama/vLLM) | `LOCAL_API_KEY` | `local` | `local/model` (baseURL `http://localhost:11434/v1`) |
+
+> **Add a provider without recompiling:** edit `providers.json` (add a row:
+> name, key env var, pi provider, default model, optional `baseURL`), then run
+> `pi-run providers` to verify it lists. There is **no automatic
+> cross-provider fallback** — the provider is explicit (`--provider` /
+> `PI_PROVIDER`).
 
 ## Quick Start
 

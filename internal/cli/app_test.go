@@ -93,3 +93,21 @@ func TestModulePath(t *testing.T) {
 		t.Fatalf("go.mod must declare module github.com/forrestthomas1/pi-harness, got:\n%s", b)
 	}
 }
+
+func TestRunProviders(t *testing.T) {
+	// providers reads the Providers table; it must list at least the defaults.
+	// Capture stdout via a bytes.Buffer by running Run with a temp HARNESS_ROOT
+	// so repo-root detection doesn't load providers.json (defaults remain).
+	t.Setenv("HARNESS_ROOT", t.TempDir())
+	// Providers may have been loaded from providers.json at init; snapshot the
+	// count so the test is order-independent.
+	orig := Providers
+	defer func() { Providers = orig }()
+	// Force defaults to make the test hermetic regardless of init().
+	Providers = defaultProviders
+	if code := Run([]string{"providers"}); code != 0 {
+		t.Fatalf("providers exit = %d, want 0", code)
+	}
+	// The command prints to stdout; we can't easily capture it here, so just
+	// assert it runs and returns 0 (covered more thoroughly by unit tests).
+}

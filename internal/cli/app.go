@@ -23,6 +23,7 @@ Commands:
   setup         Create eval/.venv, install deps, refresh model catalogs
   install       Build the binary into bin/ and symlink ~/bin/pi-run
   clean         Remove eval/.venv and pytest caches
+  providers     List configured providers and default models
   version       Print version
   help          Show this help
 
@@ -62,6 +63,8 @@ func Run(args []string) int {
 		return runInstall()
 	case "clean":
 		return runClean()
+	case "providers":
+		return runProviders()
 	default:
 		fmt.Fprintf(os.Stderr, "pi-run: unknown command %q\n\n%s", args[0], usage)
 		return 2
@@ -183,6 +186,18 @@ func runClean() int {
 			fmt.Fprintln(os.Stderr, err)
 			return 1
 		}
+	}
+	return 0
+}
+
+// runProviders lists configured providers and their default models.
+func runProviders() int {
+	for _, p := range Providers {
+		line := fmt.Sprintf("%s\t%s\t%s", p.Name, p.DefaultModel, p.KeyEnv)
+		if p.BaseURL != "" {
+			line += "\t" + p.BaseURL
+		}
+		fmt.Println(line)
 	}
 	return 0
 }

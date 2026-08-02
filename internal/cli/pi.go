@@ -39,7 +39,9 @@ func execPi(nodeVersion string, args []string, extraEnv []string) (int, error) {
 		return 4, err
 	}
 	path := binDir + string(os.PathListSeparator) + os.Getenv("PATH")
-	cmd := exec.Command("pi", args...)
+	// Use the absolute pi path: exec.Command resolves the binary against the
+	// parent's PATH, not cmd.Env, so PATH alone is not enough.
+	cmd := exec.Command(filepath.Join(binDir, "pi"), args...)
 	cmd.Env = append(os.Environ(), append(extraEnv, "PATH="+path)...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout

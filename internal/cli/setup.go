@@ -8,7 +8,9 @@ import (
 )
 
 // repoRoot returns the harness repo root: HARNESS_ROOT env, else the parent of
-// the resolved executable (binary lives at <root>/bin/pi-run).
+// the resolved executable (binary lives at <root>/bin/pi-run). The executable
+// path is resolved through symlinks so `~/bin/pi-run -> <root>/bin/pi-run`
+// still resolves to <root>.
 func repoRoot() string {
 	if r := os.Getenv("HARNESS_ROOT"); r != "" {
 		return r
@@ -16,6 +18,9 @@ func repoRoot() string {
 	exe, err := os.Executable()
 	if err != nil {
 		return "."
+	}
+	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
+		exe = resolved
 	}
 	return filepath.Dir(filepath.Dir(exe))
 }

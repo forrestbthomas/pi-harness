@@ -56,7 +56,7 @@ func runDoctor() int {
 			if p.Name == "openrouter" {
 				continue // openrouter default model lives in the openai catalog
 			}
-			fmt.Printf("  [info] model %s resolvable: %v\n", p.DefaultModel, containsLine(string(out), p.DefaultModel))
+			fmt.Printf("  [info] model %s resolvable: %v\n", p.DefaultModel, modelListed(string(out), p.DefaultModel))
 		}
 	} else {
 		fmt.Printf("  [info] pi --offline --list-models unavailable: %v\n", err)
@@ -83,7 +83,7 @@ func piListModels(home, nodeVersion string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	cmd := exec.Command("pi", "--offline", "--list-models")
+	cmd := exec.Command(filepath.Join(binDir, "pi"), "--offline", "--list-models")
 	cmd.Env = append(os.Environ(), "PATH="+binDir+string(os.PathListSeparator)+os.Getenv("PATH"))
 	return cmd.Output()
 }
@@ -93,11 +93,13 @@ func pathExists(p string) bool {
 	return err == nil
 }
 
-func containsLine(s, sub string) bool {
-	for _, line := range strings.Split(s, "\n") {
-		if line == sub {
-			return true
-		}
+// modelListed reports whether the model id (suffix after the last "/") appears
+// in the `pi --offline --list-models` output, whose columnar format puts the
+// provider and model id in separate columns (e.g. "deepseek  deepseek-v4-flash").
+func modelListed(out, model string) bool {
+	suffix := model
+	if i := strings.LastIndex(suffix, "/"); i >= 0 {
+		suffix = suffix[i+1:]
 	}
-	return false
+	return suffix != "" && strings.Contains(out, suffix)
 }

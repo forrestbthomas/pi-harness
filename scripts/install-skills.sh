@@ -3,8 +3,8 @@
 #
 # Clones the two curated skill collections into ~/.pi/agent/skills/ (a Pi
 # global skill location that is auto-discovered in every session), then
-# removes the temporary ~/Projects/tmp/agent-skills reference from the
-# settings "skills" arrays now that a durable clone exists.
+# removes the temporary clone path from the settings "skills" arrays now
+# that a durable clone exists.
 #
 # Idempotent: re-running updates both clones (git pull --ff-only).
 # Requires git and network access. Run from anywhere:

@@ -11,7 +11,8 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(dirname "$HERE")"
-NODE_VERSION="${PI_NODE_VERSION:-v22.19.0}"
+# Use the latest nvm-installed node by default; PI_NODE_VERSION overrides.
+NODE_VERSION="${PI_NODE_VERSION:-latest}"
 
 echo "== pi-harness bootstrap =="
 

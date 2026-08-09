@@ -10,7 +10,7 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
 
 ## What You Get
 
-- **`pi-run` CLI** — a compiled Go binary (repo `bin/pi-run`, symlinked into `~/bin/pi-run`) that owns the harness runtime: `chat`, `print`, `eval`, `config-check`, `doctor`, `setup`, `install`, `clean`, `version`.
+- **`pi-run` CLI** — a compiled Go binary (repo `bin/pi-run`) that owns the harness runtime: `chat`, `print`, `eval`, `config-check`, `doctor`, `setup`, `install`, `clean`, `version`.
 - **Pi CLI** installed globally (via nvm) and configured for this project.
 - **Curated Pi packages** installed project-locally:
   - `pi-mcp-adapter` — token-efficient MCP adapter.
@@ -27,7 +27,7 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
 
 ## Prerequisites
 
-- Node.js 22.19+ (managed via `nvm`; `pi-run` resolves `v22.19.0` by default, override with `PI_NODE_VERSION`).
+- Node.js 22+ (managed via `nvm`; `pi-run` resolves a default Node 22 version, override with `PI_NODE_VERSION`).
 - Python 3.11+ (for the DeepEval suite).
 - Go 1.21+ (only to build/update `pi-run`).
 - An API key. The harness is **provider-agnostic**: it ships with a data-driven
@@ -91,7 +91,7 @@ pi-run chat --provider deepseek
 
 > `pi-run` is built by the bootstrap script into `bin/pi-run`. To use it from
 > anywhere, add `bin/` to your PATH or run `pi-run install` to symlink it into
-> `~/bin/`.
+> a directory on your PATH.
 
 ## Releases
 
@@ -126,27 +126,29 @@ brew install pi-run
 > `xattr -d com.apple.quarantine <binary>` after downloading to clear the
 > quarantine flag.
 
-### API Key Resolution (Bitwarden)
+### API Key Resolution (Secret Manager)
 
-All API keys are stored in Bitwarden (CLI `bw`, folder **"Dev API Keys"**,
-item name == env var name) instead of static values in `~/.zshrc` /
-`~/.bashrc`. `~/bin/bw_get <ITEM_NAME>` fetches a secret on demand
-(`~/bin/bw_get --status` reports `unlocked | locked | unauthenticated`). Every
-`pi-run` path resolves keys in the same order (`internal/cli/keys.go`):
+API keys are resolved **env-first** (e.g. `export OPENAI_API_KEY=...`), then
+from a configured secret manager. The backend is selected by `PI_SECRET_BACKEND`
+(default `bitwarden`):
 
-1. env var (explicit override, e.g. `OPENAI_API_KEY`)
-2. Bitwarden via `bw_get` (requires an unlocked vault: `bw unlock`)
+- `bitwarden` — via the `bw_get` helper (override its path with `BW_GET`).
+  Requires an unlocked vault (`bw unlock`).
+- `1password` — via the `op` CLI (`op read "op://<Vault>/<ITEM_NAME>/credential"`).
+  Requires `op` CLI installed and signed in. Vault defaults to `Personal`,
+  override with `OP_VAULT`.
+- `env-only` — no fallback; env var only.
 
-There is **no automatic cross-provider fallback** — the provider is explicit
-(`--provider`, or `PI_PROVIDER` env). A missing key is an error that tells you
-what to do:
+Every `pi-run` path resolves keys in the same order: env var first, then the
+backend. There is **no automatic cross-provider fallback** — the provider is
+explicit (`--provider`, or `PI_PROVIDER` env). A missing key is an error that
+tells you what to do:
 
 ```
-no DEEPSEEK_API_KEY available: export it, or run `bw unlock` then `pi-run doctor`
+no DEEPSEEK_API_KEY available: export it, or check your secret manager
 ```
 
-If the vault is locked, run `bw unlock` in your terminal first (or
-`export BW_SESSION=...`).
+`pi-run doctor` reports the configured backend's status (never values).
 
 ## Running Evaluations
 
@@ -207,7 +209,7 @@ run `pi-run setup` once with network access.
 | `pi-run config-check` | Deterministic harness checks (no keys, no network) |
 | `pi-run doctor` | Health report: node, pi, vault, per-provider keys, models, venv |
 | `pi-run setup` | Create `eval/.venv`, install deps, refresh model catalogs |
-| `pi-run install` | Build `bin/pi-run` and symlink `~/bin/pi-run` |
+| `pi-run install` | Build `bin/pi-run` and symlink it onto your PATH |
 | `pi-run clean` | Remove `eval/.venv` and pytest caches |
 | `pi-run version` / `help` | Version / usage |
 
@@ -218,22 +220,19 @@ Exit codes: `0` ok · `1` generic · `2` usage · `3` missing API key · `4` nod
 Pi auto-discovers skills from `~/.agents/skills/`, `.pi/skills/`, packages, and
 the `skills` array in settings. Two curated collections are pre-installed:
 
-- **Superpowers** (`obra/superpowers`): already installed at
-  `~/.agents/skills/` (brainstorming, writing-plans, executing-plans,
-  systematic-debugging, test-driven-development, ...). To update, refresh the
-  copy from https://github.com/obra/superpowers.
-- **Addy Osmani's agent-skills**: cloned at
-  `~/Projects/tmp/agent-skills/` and wired via the `skills` array in both
-  `.pi/settings.json` and `~/.pi/agent/settings.json`
-  (`.../agent-skills/skills`). Includes spec-driven-development,
-  code-review-and-quality, test-driven-development, and more. Update with
-  `git -C ~/Projects/tmp/agent-skills pull`.
+- **Superpowers** (`obra/superpowers`): a skills collection (brainstorming,
+  writing-plans, executing-plans, systematic-debugging,
+  test-driven-development, ...). Refresh from
+  https://github.com/obra/superpowers.
+- **Addy Osmani's agent-skills**: cloned into a local skills directory and
+  wired via the `skills` array in `.pi/settings.json`. Includes
+  spec-driven-development, code-review-and-quality, test-driven-development,
+  and more.
 
-For a durable copy that survives outside `~/Projects/tmp`, run
-`bash scripts/install-skills.sh` once (with network). It clones both
-collections into `~/.pi/agent/skills/` (a Pi auto-discovered location), points
-the settings `skills` arrays at the durable clone, and is idempotent — re-run
-it any time to `git pull` both collections.
+For a durable copy, run `bash scripts/install-skills.sh` once (with network).
+It clones both collections into a Pi auto-discovered location, points the
+settings `skills` arrays at the durable clone, and is idempotent — re-run it
+any time to `git pull` both collections.
 
 Invoke a skill in-session with `/skill:<name>` or just describe the task — the
 agent loads the matching skill automatically. `enableSkillCommands` is on in
@@ -330,8 +329,8 @@ second opinion", "Run worker to implement this plan". See
 
 - **Pi packages not visible?** Run `pi list -a` (project approval required).
 - **Engine warnings during install?** Upgrade Node to 22.19.0 or newer.
-- **DeepEval tests skipped?** Unlock Bitwarden (`bw unlock`) so `pi-run` can
-  fetch a provider key via `bw_get`, or export `OPENAI_API_KEY` / another
+- **DeepEval tests skipped?** Unlock your secret manager (e.g. `bw unlock` for Bitwarden) so `pi-run` can
+  fetch a provider key, or export `OPENAI_API_KEY` / another
   supported provider key. `pi-run doctor` shows which keys are available.
 - **`pi update --models` times out?** The pi.dev model-catalog endpoint is
   intermittently unreachable from some networks (TLS connects but HTTP never

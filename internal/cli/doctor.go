@@ -39,7 +39,7 @@ func runDoctor() int {
 	if err != nil {
 		check("secret backend", false)
 	} else if status, err := be.Status(); err == nil {
-		fmt.Printf("  [info] %s backend: %s", be.Name(), status)
+		fmt.Printf("  [info] %s backend: %s\n", be.Name(), status)
 	} else {
 		check(be.Name()+" backend reachable", false)
 	}

@@ -25,8 +25,6 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
 - **DeepEval environment** in `eval/.venv` with sample tests and datasets.
 - **Automation** via the `pi-run` CLI (no Makefile, no shell functions).
 
-> **Note on "DeepEva"**: the request mentioned "DeepEva"; no project by that name was found, so this harness installs **DeepEval** (`confident-ai/deepeval`), the dominant open-source LLM evaluation framework. If you meant a different tool, let me know.
-
 ## Prerequisites
 
 - Node.js 22.19+ (managed via `nvm`; `pi-run` resolves `v22.19.0` by default, override with `PI_NODE_VERSION`).

@@ -5,7 +5,7 @@ Thanks for helping make pi-harness better!
 ## Development Setup
 
 ```bash
-git clone https://github.com/forrestthomas1/pi-harness.git
+git clone https://github.com/forrestbthomas/pi-harness.git
 cd pi-harness
 bash scripts/bootstrap.sh   # Node + pi + bin/pi-run + eval/.venv
 ```

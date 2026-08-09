@@ -94,15 +94,38 @@ def any_provider_key_env() -> bool:
 
 
 def get_secret(name: str) -> str | None:
-    """Return the secret for ``name``: env var first, then Bitwarden via bw_get.
+    """Return the secret for ``name``: env var first, then the configured backend.
 
-    Never logs the value. Returns None when unavailable (env unset and the
-    vault is locked, the bw binary is missing, or the item does not exist) so
-    callers can fall back or skip.
+    Backend is selected by PI_SECRET_BACKEND (default bitwarden). Bitwarden
+    uses ``bw_get`` (BW_GET override, default ~/bin/bw_get); 1password uses
+    ``op read "op://<vault>/<name>/credential"``; env-only never falls back.
+    Never logs the value. Returns None when unavailable.
     """
     value = os.environ.get(name)
     if value:
         return value
+
+    backend = os.environ.get("PI_SECRET_BACKEND", "bitwarden")
+
+    if backend in ("env-only", "env"):
+        return None
+
+    if backend in ("1password", "op"):
+        vault = os.environ.get("OP_VAULT", "Personal")
+        try:
+            result = subprocess.run(
+                ["op", "read", f"op://{vault}/{name}/credential"],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+        except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+            return None
+        if result.returncode != 0:
+            return None
+        return result.stdout.strip() or None
+
+    # bitwarden (default)
     bw_get = os.environ.get("BW_GET", str(Path.home() / "bin" / "bw_get"))
     try:
         result = subprocess.run(
@@ -115,8 +138,7 @@ def get_secret(name: str) -> str | None:
         return None
     if result.returncode != 0:
         return None
-    value = result.stdout.strip()
-    return value or None
+    return result.stdout.strip() or None
 
 
 def has_api_key() -> bool:

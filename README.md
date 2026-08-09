@@ -55,6 +55,15 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
 
 ## Quick Start
 
+**macOS with Homebrew (fastest path):**
+
+```bash
+brew install forrestbthomas/tap/pi-run
+pi-run config-check        # no API key needed for this
+```
+
+**From source (all platforms):**
+
 ```bash
 # 1. Clone the repo
 git clone https://github.com/forrestbthomas/pi-harness.git

@@ -9,14 +9,14 @@ import (
 
 func TestNodeBinDirOK(t *testing.T) {
 	home := t.TempDir()
-	nodeDir := filepath.Join(home, ".nvm", "versions", "node", "v22.19.0", "bin")
+	nodeDir := filepath.Join(home, ".nvm", "versions", "node", "v"+defaultNodeVersion, "bin")
 	if err := os.MkdirAll(nodeDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(nodeDir, "node"), []byte("#!/bin/sh\n"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	got, err := nodeBinDir(home, "v22.19.0")
+	got, err := nodeBinDir(home, "v"+defaultNodeVersion)
 	if err != nil {
 		t.Fatal(err)
 	}

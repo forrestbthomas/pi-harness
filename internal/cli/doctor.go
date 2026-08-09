@@ -26,7 +26,7 @@ func runDoctor() int {
 	home, _ := os.UserHomeDir()
 	nodeVersion := os.Getenv("PI_NODE_VERSION")
 	if nodeVersion == "" {
-		nodeVersion = "v22.19.0"
+		nodeVersion = "v" + defaultNodeVersion
 	}
 	_, err := nodeBinDir(home, nodeVersion)
 	check("node "+nodeVersion, err == nil)
@@ -68,13 +68,13 @@ func runDoctor() int {
 	venv := filepath.Join(root, "eval", ".venv", "bin", "python")
 	check("eval/.venv present", pathExists(venv))
 
-	// Symlink into ~/bin is a personal-machine convention; informational
+	// Symlink onto PATH is an install convention; informational
 	// unless PI_RUN_PERSONAL=1 so doctor passes on a fresh clone.
 	if personalMode() {
 		link := filepath.Join(home, "bin", "pi-run")
-		check("~/bin/pi-run symlink present", pathExists(link))
+		check("pi-run symlink present", pathExists(link))
 	} else {
-		fmt.Println("  [info] ~/bin/pi-run symlink check skipped (set PI_RUN_PERSONAL=1 to enable)")
+		fmt.Println("  [info] pi-run symlink check skipped (set PI_RUN_PERSONAL=1 to enable)")
 	}
 
 	if fail {

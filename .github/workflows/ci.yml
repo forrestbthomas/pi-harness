@@ -32,13 +32,15 @@ jobs:
           python -m venv eval/.venv
           eval/.venv/bin/pip install -r eval/requirements.txt
       - name: Run quick eval
-        run: eval/.venv/bin/python -m pytest tests/test_code_quality.py tests/test_agent_task_completion.py::test_dataset_expected_outputs_are_non_empty -v
+        run: .venv/bin/python -m pytest tests/test_code_quality.py tests/test_agent_task_completion.py::test_dataset_expected_outputs_are_non_empty -v
         working-directory: eval
 
   secret-scan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history so gitleaks can resolve its base-commit diff on a fresh clone
       - name: Run gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:

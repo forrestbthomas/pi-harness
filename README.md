@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Version](https://img.shields.io/badge/Go-1.21-blue.svg)](https://golang.org/dl/)
-[![CI](https://github.com/forrestthomas1/pi-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/forrestthomas1/pi-harness/actions/workflows/ci.yml)
+[![CI](https://github.com/forrestbthomas/pi-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/forrestbthomas/pi-harness/actions/workflows/ci.yml)
 
 # Pi Coding Agent Harness + DeepEval Evaluation Suite
 
@@ -59,7 +59,7 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/forrestthomas1/pi-harness.git
+git clone https://github.com/forrestbthomas/pi-harness.git
 cd pi-harness
 
 # 2. One-command bootstrap (Node + pi + bin/pi-run + eval/.venv)

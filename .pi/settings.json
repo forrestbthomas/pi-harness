@@ -63,7 +63,8 @@
     "npm:@demigodmode/pi-web-agent",
     "npm:@loreai/pi",
     "npm:pi-spark",
-    "git:github.com/dannote/dot-pi"
+    "git:github.com/dannote/dot-pi",
+    "npm:pi-subagents"
   ],
   "extensions": [],
   "skills": [],

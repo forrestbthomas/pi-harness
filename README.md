@@ -86,6 +86,13 @@ pi-run chat --provider deepseek
 > anywhere, add `bin/` to your PATH or run `pi-run install` to symlink it into
 > `~/bin/`.
 
+## Releases
+
+Tag a release (`git tag v0.3.0 && git push --tags`) to trigger the GitHub
+Actions release workflow, which cross-compiles `pi-run` for linux/darwin/windows
+× amd64/arm64 and attaches the binaries to the release. To build locally:
+`bash scripts/build-release.sh <tag>`.
+
 ### API Key Resolution (Bitwarden)
 
 All API keys are stored in Bitwarden (CLI `bw`, folder **"Dev API Keys"**,

@@ -21,3 +21,6 @@ github-repo-controller/bin/
 
 # pi-subagents runtime artifacts (may contain sensitive session transcripts)
 .pi-subagents/
+
+# DeepEval cache
+eval/.deepeval/

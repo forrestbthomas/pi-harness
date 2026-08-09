@@ -40,7 +40,21 @@ SHA_FILE="/tmp/pi-run-shas-${TAG}.txt"
 for asset in "${ASSETS[@]}"; do
   url="https://github.com/${REPO}/releases/download/${TAG}/${asset}"
   tmp="/tmp/${asset}"
-  curl -sL "$url" -o "$tmp"
+  # Retry the download: GitHub's CDN can lag the release API for a few
+  # seconds; without retry a 404/HTML page would be hashed and pushed.
+  ok=0
+  for attempt in 1 2 3 4 5; do
+    if curl -sL --fail "$url" -o "$tmp" && [ -s "$tmp" ]; then
+      ok=1
+      break
+    fi
+    echo "  retry ${attempt}: download of ${asset} failed, retrying..." >&2
+    sleep 3
+  done
+  if [ "$ok" -ne 1 ]; then
+    echo "ERROR: failed to download ${asset} from ${url}" >&2
+    exit 1
+  fi
   sha=$(shasum -a 256 "$tmp" | cut -d' ' -f1)
   echo "${asset} ${sha}" >> "$SHA_FILE"
   echo "  ${asset}: ${sha}"

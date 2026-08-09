@@ -30,6 +30,9 @@ Commands:
   providers     List configured providers and default models
   version       Print version
   help          Show this help
+  --exit-codes  Print the exit-code table
+
+Exit codes: 0 ok · 1 generic · 2 usage · 3 missing key · 4 node/pi missing · 5 eval venv missing
 
 chat/print flags:
   --provider <openai|openrouter|deepseek>  Provider (env PI_PROVIDER; default openai)
@@ -39,11 +42,24 @@ Everything else is passed through to pi unchanged (use -- to escape a message
 that starts with a dash, e.g. pi-run print -- "-weird prompt").
 `
 
+const exitCodesText = `Exit codes:
+  0  ok
+  1  generic error
+  2  usage error
+  3  missing API key
+  4  node/pi not found
+  5  eval venv missing
+`
+
 // Run is the CLI entry point. It returns the process exit code.
 func Run(args []string) int {
 	if len(args) == 0 {
 		fmt.Fprint(os.Stderr, usage)
 		return 2
+	}
+	if len(args) == 1 && args[0] == "--exit-codes" {
+		fmt.Print(exitCodesText)
+		return 0
 	}
 	switch args[0] {
 	case "help", "--help", "-h":
@@ -81,19 +97,19 @@ func runLaunch(mode string, args []string) int {
 
 	// Validate the prompt BEFORE touching keys (usage error wins over key error).
 	if mode == "print" && len(rest) == 0 {
-		fmt.Fprint(os.Stderr, "pi-run: print requires a prompt\n\n"+usage)
+		fmt.Fprintf(os.Stderr, "pi-run: print: requires a prompt\n\n%s", usage)
 		return 2
 	}
 
 	p, err := ResolveProvider(providerFlag)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintf(os.Stderr, "pi-run: %s: %v\n", mode, err)
 		return 2
 	}
 
 	key, err := resolveSecret(p.KeyEnv)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "no %s available: export it, or run `bw unlock` then `pi-run doctor`\n", p.KeyEnv)
+		fmt.Fprintf(os.Stderr, "pi-run: %s: no %s available: export it, or run `bw unlock` then `pi-run doctor`\n", mode, p.KeyEnv)
 		return 3
 	}
 

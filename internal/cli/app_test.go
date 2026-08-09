@@ -209,3 +209,45 @@ func TestVersionCommand(t *testing.T) {
 		t.Fatalf("version output %q must contain injected value", sb.String())
 	}
 }
+
+func TestRunPrintEmptyPromptErrorMessage(t *testing.T) {
+	t.Setenv("HARNESS_ROOT", t.TempDir())
+	var sb strings.Builder
+	old := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+	code := Run([]string{"print"})
+	w.Close()
+	os.Stderr = old
+	io.Copy(&sb, r)
+	if code != 2 {
+		t.Fatalf("print no prompt exit = %d, want 2", code)
+	}
+	if !strings.Contains(sb.String(), "pi-run: print:") {
+		t.Fatalf("stderr must use pi-run: <cmd>: format, got %q", sb.String())
+	}
+}
+
+func TestRunEvalMissingVenvErrorMessage(t *testing.T) {
+	t.Setenv("HARNESS_ROOT", t.TempDir())
+	var sb strings.Builder
+	old := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+	code := Run([]string{"eval"})
+	w.Close()
+	os.Stderr = old
+	io.Copy(&sb, r)
+	if code != 5 {
+		t.Fatalf("eval no venv exit = %d, want 5", code)
+	}
+	if !strings.Contains(sb.String(), "pi-run: eval:") {
+		t.Fatalf("stderr must use pi-run: eval: format, got %q", sb.String())
+	}
+}
+
+func TestUsageMentionsExitCodes(t *testing.T) {
+	if !strings.Contains(usage, "--exit-codes") || !strings.Contains(usage, "Exit codes") {
+		t.Fatal("usage must document exit codes and the --exit-codes flag")
+	}
+}

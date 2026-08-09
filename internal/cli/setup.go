@@ -59,6 +59,9 @@ func runSetup() int {
 	}
 	fmt.Println("installing eval/requirements.txt ...")
 	if code, err := runCmd(venvPython, []string{"-m", "pip", "install", "-r", "eval/requirements.txt"}, root); err != nil || code != 0 {
+		if code != 0 {
+			fmt.Fprintf(os.Stderr, "pi-run: setup: pip install failed (exit %d) — see output above\n", code)
+		}
 		return code
 	}
 	fmt.Println("refreshing model catalogs (pi update --models) ...")

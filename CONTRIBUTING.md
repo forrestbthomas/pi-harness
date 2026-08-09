@@ -38,3 +38,11 @@ Then `go test ./internal/cli/` and `pi-run providers` to verify.
 ## Security
 
 See `SECURITY.md` for reporting vulnerabilities. Never commit API keys.
+
+## Issue and PR conventions
+
+- Use the issue templates (`.github/ISSUE_TEMPLATE/`) for bug reports and
+  feature requests.
+- Use the pull request template (`.github/PULL_REQUEST_TEMPLATE.md`) — fill in
+  the summary, test plan, and checklist.
+- Update `CHANGELOG.md` under `[Unreleased]` for any user-visible change.

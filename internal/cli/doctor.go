@@ -34,11 +34,14 @@ func runDoctor() int {
 	piPath := filepath.Join(home, ".nvm", "versions", "node", nodeVersion, "bin", "pi")
 	check("pi CLI present", pathExists(piPath))
 
-	// Vault status (informational; never a value).
-	if out, err := exec.Command("bw_get", "--status").Output(); err == nil {
-		fmt.Printf("  [info] Bitwarden vault: %s", out)
+	// Secret backend status (informational; never a value).
+	be, err := newSecretBackend()
+	if err != nil {
+		check("secret backend", false)
+	} else if status, err := be.Status(); err == nil {
+		fmt.Printf("  [info] %s backend: %s", be.Name(), status)
 	} else {
-		check("Bitwarden vault reachable", false)
+		check(be.Name()+" backend reachable", false)
 	}
 
 	// Key presence per provider (never the value).

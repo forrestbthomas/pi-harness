@@ -37,7 +37,7 @@ func nodeBinDir(home, version string) (string, error) {
 }
 
 // piArgs builds the argv for `pi` (minus the program name).
-// mode: "chat" or "print". rest = pass-through flags and message positionals.
+// mode: "chat", "print", or "resume". rest = pass-through flags and message positionals.
 // pi runs with --offline so startup network ops (version check, changelog,
 // catalog refresh) never hang on the flaky pi.dev endpoint; the stored model
 // catalogs are used instead. `pi-run setup` is the explicit online path.

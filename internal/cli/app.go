@@ -91,7 +91,7 @@ func Run(args []string) int {
 	}
 }
 
-// runLaunch handles `chat` and `print`.
+// runLaunch handles `chat`, `print`, and `resume`.
 func runLaunch(mode string, args []string) int {
 	providerFlag, modelFlag, rest := splitLaunchArgs(args)
 

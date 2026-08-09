@@ -48,3 +48,9 @@ func TestResolveProviderFlagWins(t *testing.T) {
 		t.Fatalf("flag should override env, got %q", p.Name)
 	}
 }
+
+func TestResolveProviderUnknown(t *testing.T) {
+	if _, err := ResolveProvider("nope"); err == nil {
+		t.Fatal("expected error for unknown provider")
+	}
+}

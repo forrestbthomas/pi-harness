@@ -251,3 +251,38 @@ func TestUsageMentionsExitCodes(t *testing.T) {
 		t.Fatal("usage must document exit codes and the --exit-codes flag")
 	}
 }
+
+func TestSplitLaunchArgsProviderEqualsForm(t *testing.T) {
+	p, _, _ := splitLaunchArgs([]string{"--provider=anthropic", "hi"})
+	if p != "anthropic" {
+		t.Fatalf("got provider=%q", p)
+	}
+}
+
+func TestSplitLaunchArgsModelSeparate(t *testing.T) {
+	_, m, _ := splitLaunchArgs([]string{"--model", "deepseek/deepseek-v4-pro", "hi"})
+	if m != "deepseek/deepseek-v4-pro" {
+		t.Fatalf("got model=%q", m)
+	}
+}
+
+func TestRunPrintMissingKeyExits3(t *testing.T) {
+	t.Setenv("HARNESS_ROOT", t.TempDir())
+	t.Setenv("PI_PROVIDER", "openai")
+	t.Setenv("OPENAI_API_KEY", "")
+	t.Setenv("BW_GET", filepath.Join(t.TempDir(), "nonexistent-bw-get")) // hermetic: no vault
+	// print with a prompt but no key → exit 3.
+	if code := Run([]string{"print", "hello"}); code != 3 {
+		t.Fatalf("print no key exit = %d, want 3", code)
+	}
+}
+
+func TestRunProvidersEmptyTable(t *testing.T) {
+	orig := Providers
+	defer func() { Providers = orig }()
+	Providers = nil
+	// runProviders should handle empty table gracefully (prints nothing, exit 0).
+	if code := Run([]string{"providers"}); code != 0 {
+		t.Fatalf("providers empty exit = %d, want 0", code)
+	}
+}

@@ -88,6 +88,11 @@ SUPPORTED_PROVIDER_KEYS = (
 )
 
 
+def any_provider_key_env() -> bool:
+    """True if any supported provider key is set in the environment (presence only)."""
+    return any(os.environ.get(k) for k in SUPPORTED_PROVIDER_KEYS)
+
+
 def get_secret(name: str) -> str | None:
     """Return the secret for ``name``: env var first, then Bitwarden via bw_get.
 

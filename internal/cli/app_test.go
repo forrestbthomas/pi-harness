@@ -133,3 +133,56 @@ func TestRunProviders(t *testing.T) {
 	// The command prints to stdout; we can't easily capture it here, so just
 	// assert it runs and returns 0 (covered more thoroughly by unit tests).
 }
+
+func TestRunEvalNoKeySkipsLive(t *testing.T) {
+	// Provide a fake repo root with eval/.venv/bin/python present so eval
+	// proceeds past the venv check, but no provider key in env → skip notice.
+	root := t.TempDir()
+	t.Setenv("HARNESS_ROOT", root)
+	t.Setenv("OPENAI_API_KEY", "")
+	t.Setenv("OPENROUTER_API_KEY", "")
+	t.Setenv("ANTHROPIC_API_KEY", "")
+	t.Setenv("GEMINI_API_KEY", "")
+	t.Setenv("GROQ_API_KEY", "")
+	t.Setenv("DEEPSEEK_API_KEY", "")
+	// Fake venv python that records its argv to a file and exits 0, so we can
+	// assert what pytest was asked to run. With no provider key, the skip
+	// guard must run the deterministic subset, NOT the full suite ("tests/"
+	// as a bare positional arg). This is the honest behavioral check: the
+	// brief's exit-0 stub with no argv inspection would pass on the old
+	// behavior too, so it could not prove the skip guard changes anything.
+	venv := filepath.Join(root, "eval", ".venv", "bin")
+	if err := os.MkdirAll(venv, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	argsFile := filepath.Join(root, "args.txt")
+	script := "#!/bin/sh\nprintf '%s' \"$@\" > " + argsFile + "\nexit 0\n"
+	if err := os.WriteFile(filepath.Join(venv, "python"), []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// Full eval (quick=false) with no key must not run the live suite.
+	// It should print a skip notice and exit 0.
+	if code := Run([]string{"eval"}); code != 0 {
+		t.Fatalf("eval no-key exit = %d, want 0 (skip live)", code)
+	}
+	args, err := os.ReadFile(argsFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(args)
+	// The deterministic subset must be present.
+	for _, want := range []string{
+		"tests/test_harness_config.py",
+		"tests/test_code_quality.py",
+		"tests/test_agent_task_completion.py::test_dataset_expected_outputs_are_non_empty",
+	} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("missing %q in pytest args %q", want, s)
+		}
+	}
+	// The full suite is a bare "tests/" positional arg; it must not be present
+	// as a standalone token. (tests/test_... file paths are fine.)
+	if strings.Contains(s, "tests/\"") || strings.Contains(s, "tests/ -") || strings.HasSuffix(strings.TrimSpace(s), "tests/") {
+		t.Fatalf("full suite tests/ should be skipped, got args %q", s)
+	}
+}

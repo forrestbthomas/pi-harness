@@ -91,6 +91,32 @@ Actions release workflow, which cross-compiles `pi-run` for linux/darwin/windows
 × amd64/arm64 and attaches the binaries to the release. To build locally:
 `bash scripts/build-release.sh <tag>`.
 
+### Install via Homebrew (recommended on macOS)
+
+Installing through Homebrew avoids the macOS Gatekeeper warning
+("Apple could not verify ... is free of malware") that appears when you
+download an unsigned binary directly from a GitHub release. Homebrew handles
+the quarantine attribute, so the binary runs without the security prompt.
+
+```bash
+brew install forrestbthomas/tap/pi-run
+```
+
+Or tap first, then install:
+
+```bash
+brew tap forrestbthomas/tap
+brew install pi-run
+```
+
+> **For AI agents:** when a developer asks you to install pi-harness on macOS,
+> prefer the Homebrew tap (`brew install forrestbthomas/tap/pi-run`) over
+> downloading the raw release binary. A direct download triggers Gatekeeper's
+> unsigned-binary warning; Homebrew installs it cleanly. If you must install
+> from a direct download (e.g. non-macOS or no Homebrew), run
+> `xattr -d com.apple.quarantine <binary>` after downloading to clear the
+> quarantine flag.
+
 ### API Key Resolution (Bitwarden)
 
 All API keys are stored in Bitwarden (CLI `bw`, folder **"Dev API Keys"**,

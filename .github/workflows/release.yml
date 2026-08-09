@@ -22,3 +22,8 @@ jobs:
         with:
           files: bin/pi-run-*
           generate_release_notes: true
+      - name: Update Homebrew tap formula
+        env:
+          GH_TOKEN: ${{ secrets.TAP_PUSH_TOKEN }}
+        run: |
+          bash scripts/update-homebrew-formula.sh "${GITHUB_REF_NAME}"

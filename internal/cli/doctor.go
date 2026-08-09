@@ -24,15 +24,19 @@ func runDoctor() int {
 	fmt.Println("== pi-run doctor ==")
 
 	home, _ := os.UserHomeDir()
-	nodeVersion := os.Getenv("PI_NODE_VERSION")
-	if nodeVersion == "" {
-		nodeVersion = "v" + defaultNodeVersion
+	nodeVersion, err := resolveNodeVersion(home)
+	if err != nil {
+		check("node (latest nvm)", false)
+		fmt.Println("  [info] " + err.Error())
+		nodeVersion = ""
 	}
-	_, err := nodeBinDir(home, nodeVersion)
-	check("node "+nodeVersion, err == nil)
+	if nodeVersion != "" {
+		_, err := nodeBinDir(home, nodeVersion)
+		check("node "+nodeVersion, err == nil)
 
-	piPath := filepath.Join(home, ".nvm", "versions", "node", nodeVersion, "bin", "pi")
-	check("pi CLI present", pathExists(piPath))
+		piPath := filepath.Join(home, ".nvm", "versions", "node", nodeVersion, "bin", "pi")
+		check("pi CLI present", pathExists(piPath))
+	}
 
 	// Secret backend status (informational; never a value).
 	be, err := newSecretBackend()
@@ -54,15 +58,17 @@ func runDoctor() int {
 	}
 
 	// Default models resolvable (informational; offline; PATH via execPi).
-	if out, err := piListModels(home, nodeVersion); err == nil {
-		for _, p := range Providers {
-			if p.Name == "openrouter" {
-				continue // openrouter default model lives in the openai catalog
+	if nodeVersion != "" {
+		if out, err := piListModels(home, nodeVersion); err == nil {
+			for _, p := range Providers {
+				if p.Name == "openrouter" {
+					continue // openrouter default model lives in the openai catalog
+				}
+				fmt.Printf("  [info] model %s resolvable: %v\n", p.DefaultModel, modelListed(string(out), p.DefaultModel))
 			}
-			fmt.Printf("  [info] model %s resolvable: %v\n", p.DefaultModel, modelListed(string(out), p.DefaultModel))
+		} else {
+			fmt.Printf("  [info] pi --offline --list-models unavailable: %v\n", err)
 		}
-	} else {
-		fmt.Printf("  [info] pi --offline --list-models unavailable: %v\n", err)
 	}
 
 	venv := filepath.Join(root, "eval", ".venv", "bin", "python")

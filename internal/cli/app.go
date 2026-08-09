@@ -12,10 +12,6 @@ import (
 // Defaults to "dev" for local builds.
 var Version = "dev"
 
-// defaultNodeVersion is the Node version pi-run resolves when PI_NODE_VERSION
-// is unset. It is a documented default, not machine-specific.
-const defaultNodeVersion = "22"
-
 const usage = `pi-run — Pi harness runtime CLI
 
 Usage:
@@ -122,9 +118,10 @@ func runLaunch(mode string, args []string) int {
 		model = p.DefaultModel
 	}
 
-	nodeVersion := os.Getenv("PI_NODE_VERSION")
-	if nodeVersion == "" {
-		nodeVersion = "v" + defaultNodeVersion
+	nodeVersion, err := resolveNodeVersion(os.Getenv("HOME"))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "pi-run: %s: %v\n", mode, err)
+		return 4
 	}
 	code, err := execPi(nodeVersion, piArgs(p, model, mode, rest), []string{p.KeyEnv + "=" + key})
 	if err != nil {

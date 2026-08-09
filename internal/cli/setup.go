@@ -65,9 +65,11 @@ func runSetup() int {
 		return code
 	}
 	fmt.Println("refreshing model catalogs (pi update --models) ...")
-	nodeVersion := os.Getenv("PI_NODE_VERSION")
-	if nodeVersion == "" {
-		nodeVersion = "v" + defaultNodeVersion
+	home, _ := os.UserHomeDir()
+	nodeVersion, err := resolveNodeVersion(home)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "pi-run: setup: %v\n", err)
+		return 4
 	}
 	// The pi.dev catalog endpoint is intermittently unreachable from some
 	// networks (TLS connects, HTTP never responds), so the refresh can time

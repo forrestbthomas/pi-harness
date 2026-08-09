@@ -7,7 +7,10 @@ import (
 	"strings"
 )
 
-const Version = "0.1.0"
+// Version is the build-time version, injected via -ldflags
+// "-X github.com/forrestthomas1/pi-harness/internal/cli.Version=<tag>".
+// Defaults to "dev" for local builds.
+var Version = "dev"
 
 const usage = `pi-run — Pi harness runtime CLI
 
@@ -151,7 +154,8 @@ func runInstall() int {
 		return 1
 	}
 	target := filepath.Join(binDir, "pi-run")
-	code, err := runCmd("go", []string{"build", "-o", target, "./cmd/pi-run"}, root)
+	ldflags := "-X github.com/forrestthomas1/pi-harness/internal/cli.Version=" + buildVersion()
+	code, err := runCmd("go", []string{"build", "-ldflags", ldflags, "-o", target, "./cmd/pi-run"}, root)
 	if err != nil || code != 0 {
 		return code
 	}
@@ -172,6 +176,13 @@ func runInstall() int {
 	}
 	fmt.Printf("installed %s -> %s\n", link, target)
 	return 0
+}
+
+// buildVersion returns the version to stamp into the binary: "dev" for local
+// builds. Release workflows pass the tag via -ldflags directly (see
+// scripts/build-release.sh); this default keeps `pi-run install` simple.
+func buildVersion() string {
+	return "dev"
 }
 
 // runClean removes eval/.venv and pytest caches.

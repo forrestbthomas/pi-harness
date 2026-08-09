@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -184,5 +185,27 @@ func TestRunEvalNoKeySkipsLive(t *testing.T) {
 	// as a standalone token. (tests/test_... file paths are fine.)
 	if strings.Contains(s, "tests/\"") || strings.Contains(s, "tests/ -") || strings.HasSuffix(strings.TrimSpace(s), "tests/") {
 		t.Fatalf("full suite tests/ should be skipped, got args %q", s)
+	}
+}
+
+func TestVersionCommand(t *testing.T) {
+	// Version is a package var; snapshot and restore to keep hermetic.
+	orig := Version
+	defer func() { Version = orig }()
+	Version = "test-version"
+	// Run version; capture stdout via a pipe.
+	var sb strings.Builder
+	old := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+	code := Run([]string{"version"})
+	w.Close()
+	os.Stdout = old
+	io.Copy(&sb, r)
+	if code != 0 {
+		t.Fatalf("version exit = %d, want 0", code)
+	}
+	if !strings.Contains(sb.String(), "test-version") {
+		t.Fatalf("version output %q must contain injected value", sb.String())
 	}
 }

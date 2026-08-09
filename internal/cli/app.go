@@ -17,6 +17,7 @@ Usage:
 Commands:
   chat          Launch Pi interactively (default provider: openai)
   print         Run Pi in print mode: pi -p --no-session "<prompt>"
+  resume        Continue the most recent session (pi --continue)
   eval          Run the DeepEval pytest suite (--quick for smoke subset)
   config-check  Run deterministic harness checks (no keys, no network)
   doctor        Report harness health (node, pi, keys, models)
@@ -48,7 +49,7 @@ func Run(args []string) int {
 	case "version":
 		fmt.Printf("pi-run %s\n", Version)
 		return 0
-	case "chat", "print":
+	case "chat", "print", "resume":
 		return runLaunch(args[0], args[1:])
 	case "eval":
 		quick := len(args) > 1 && args[1] == "--quick"

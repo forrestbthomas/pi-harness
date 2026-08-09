@@ -42,6 +42,28 @@ func TestSplitLaunchArgsDoubleDashEscapesTail(t *testing.T) {
 	}
 }
 
+func TestRunResumeDispatches(t *testing.T) {
+	t.Setenv("HARNESS_ROOT", t.TempDir())
+	t.Setenv("PI_PROVIDER", "")
+	// Force resolveSecret to fail deterministically: empty provider key env AND
+	// a BW_GET path that cannot exist, so the test never depends on ambient
+	// credentials (a real key in the environment or an unlocked vault would
+	// otherwise let it launch pi and return 0 instead of 3).
+	t.Setenv("OPENAI_API_KEY", "")
+	t.Setenv("BW_GET", filepath.Join(t.TempDir(), "nonexistent-bw-get"))
+	// No key: resume should fail with exit 3 (missing key), proving dispatch
+	// reached runLaunch (not "unknown command").
+	if code := Run([]string{"resume"}); code != 3 {
+		t.Fatalf("resume exit = %d, want 3 (missing key → dispatch worked)", code)
+	}
+}
+
+func TestUsageMentionsResume(t *testing.T) {
+	if !strings.Contains(usage, "resume") {
+		t.Fatal("usage must document the resume command")
+	}
+}
+
 func TestRunVersion(t *testing.T) {
 	if code := Run([]string{"version"}); code != 0 {
 		t.Fatalf("version exit = %d", code)

@@ -43,8 +43,11 @@ func nodeBinDir(home, version string) (string, error) {
 // catalogs are used instead. `pi-run setup` is the explicit online path.
 func piArgs(p Provider, model, mode string, rest []string) []string {
 	args := []string{"--provider", p.PiProvider, "--model", model, "--offline"}
-	if mode == "print" {
+	switch mode {
+	case "print":
 		args = append(args, "-p", "--no-session")
+	case "resume":
+		args = append(args, "--continue")
 	}
 	return append(args, rest...)
 }

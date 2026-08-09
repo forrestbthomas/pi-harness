@@ -1,5 +1,5 @@
 deepeval>=4.0.0
 pytest>=8.0.0
-python-dotenv>=1.0.0
+python-dotenv>=1.2.2
 pypdf>=6.0.0
 pytest-timeout>=2.2.0

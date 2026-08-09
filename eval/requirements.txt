@@ -1,4 +1,4 @@
-deepeval>=4.0.0
+deepeval>=4.1.5
 pytest>=8.0.0
 python-dotenv>=1.0.0
 pypdf>=6.0.0

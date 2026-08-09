@@ -45,6 +45,13 @@ This repository is a **coding agent evaluation harness** built around the [Pi co
 - `pi-run config-check` — run deterministic harness-config checks (no API key needed).
 - `pi-run doctor` — one-shot environment/setup verification.
 
+## Subagent Support
+
+This harness is subagent-capable via the `pi-subagents` package (in
+`.pi/settings.json`). Use natural language to delegate: "Use reviewer to
+review this diff", "Run worker to implement this plan". See
+`examples/subagents.md` for a worked scout → worker → reviewer loop.
+
 <!-- This section is maintained by the coding agent via lore (https://github.com/BYK/loreai) -->
 ## Long-term Knowledge
 

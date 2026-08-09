@@ -220,7 +220,7 @@ agent loads the matching skill automatically. `enableSkillCommands` is on in
 ├── scripts/
 │   └── install-skills.sh      # Durable skill install into ~/.pi/agent/skills/
 ├── .pi/
-│   ├── settings.json          # Pi project settings + package list
+│   ├── settings.json          # Pi project settings + package list (incl. pi-subagents)
 │   ├── SYSTEM.md              # Replaces Pi's default system prompt
 │   ├── APPEND_SYSTEM.md       # Appends harness-specific guardrails
 │   ├── npm/                   # Project-local npm packages
@@ -265,6 +265,27 @@ pi list -a
 ```
 
 to see them, or `pi config -a` to enable/disable individual resources.
+
+## Subagent-Driven Development
+
+This harness is subagent-capable via the [pi-subagents](https://github.com/nicobailon/pi-subagents)
+extension (installed in `.pi/settings.json` packages). Pi can delegate focused
+work to child sessions with their own tools.
+
+Builtin agents:
+
+| Agent | Use it when you want... |
+|-------|--------------------------|
+| `scout` | Fast local codebase recon |
+| `researcher` | Web/docs research with sources |
+| `worker` | Implementation work (edits files, validates) |
+| `reviewer` | Code review against a task/plan |
+| `oracle` | A second opinion before acting |
+| `delegate` | A lightweight general delegate |
+
+Invoke in plain language: "Use reviewer to review this diff", "Ask oracle for a
+second opinion", "Run worker to implement this plan". See
+`examples/subagents.md` for a worked example.
 
 ## Safety Notes
 

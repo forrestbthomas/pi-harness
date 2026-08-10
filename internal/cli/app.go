@@ -257,19 +257,35 @@ func buildVersion() string {
 	return "dev"
 }
 
-// runClean removes eval/.venv and pytest caches.
+// runClean removes eval/.venv and pytest caches, reporting what it removed.
 func runClean() int {
 	root := repoRoot()
+	removed := false
 	for _, p := range []string{
 		filepath.Join(root, "eval", ".venv"),
 		filepath.Join(root, "eval", "__pycache__"),
 		filepath.Join(root, "eval", "tests", "__pycache__"),
 		filepath.Join(root, "eval", ".pytest_cache"),
 	} {
+		if _, err := os.Lstat(p); err != nil {
+			if os.IsNotExist(err) {
+				fmt.Printf("nothing to clean: %s\n", p)
+				continue
+			}
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
 		if err := os.RemoveAll(p); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return 1
 		}
+		removed = true
+		fmt.Printf("removed %s\n", p)
+	}
+	if removed {
+		fmt.Println("clean complete")
+	} else {
+		fmt.Println("nothing to clean")
 	}
 	return 0
 }

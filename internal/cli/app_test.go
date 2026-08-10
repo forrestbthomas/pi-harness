@@ -547,3 +547,34 @@ func TestUsageMentionsAllCommands(t *testing.T) {
 		}
 	}
 }
+
+func TestRunCleanPrintsRemovedAndMissingPaths(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("HARNESS_ROOT", root)
+
+	existing := filepath.Join(root, "eval", ".venv")
+	if err := os.MkdirAll(existing, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(existing, "marker"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	code, output := captureRunStdout(t, []string{"clean"})
+	if code != 0 {
+		t.Fatalf("Run(clean) code = %d, want 0; output:\n%s", code, output)
+	}
+	if !strings.Contains(output, "removed "+existing) {
+		t.Fatalf("clean output missing removed path %q:\n%s", existing, output)
+	}
+	missing := filepath.Join(root, "eval", ".pytest_cache")
+	if !strings.Contains(output, "nothing to clean: "+missing) {
+		t.Fatalf("clean output missing missing-path status %q:\n%s", missing, output)
+	}
+	if !strings.Contains(output, "clean complete") {
+		t.Fatalf("clean output missing completion summary:\n%s", output)
+	}
+	if _, err := os.Stat(existing); !os.IsNotExist(err) {
+		t.Fatalf("existing clean path still exists or stat failed: %v", err)
+	}
+}

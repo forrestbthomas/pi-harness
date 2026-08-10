@@ -121,6 +121,11 @@ func captureProvidersStderr(t *testing.T, fn func() []Provider) ([]Provider, str
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() {
+		os.Stderr = old
+		_ = w.Close()
+		_ = r.Close()
+	})
 	os.Stderr = w
 	providers := fn()
 	if err := w.Close(); err != nil {
@@ -146,8 +151,10 @@ func TestLoadActiveProvidersExplicitMissingWarns(t *testing.T) {
 	if len(providers) != len(defaultProviders) {
 		t.Fatalf("got %d providers, want %d defaults", len(providers), len(defaultProviders))
 	}
-	if !strings.Contains(output, "warning") || !strings.Contains(output, override) {
-		t.Fatalf("warning %q must contain warning and explicit path %q", output, override)
+	for _, want := range []string{"warning", override, "read explicit providers file"} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("warning %q must contain %q", output, want)
+		}
 	}
 }
 
@@ -163,8 +170,30 @@ func TestLoadActiveProvidersMalformedExplicitWarns(t *testing.T) {
 	if len(providers) != len(defaultProviders) {
 		t.Fatalf("got %d providers, want %d defaults", len(providers), len(defaultProviders))
 	}
-	if !strings.Contains(output, "warning") || !strings.Contains(output, override) {
-		t.Fatalf("warning %q must contain warning and explicit path %q", output, override)
+	for _, want := range []string{"warning", override, "parse providers"} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("warning %q must contain %q", output, want)
+		}
+	}
+}
+
+func TestLoadActiveProvidersMalformedDefaultWarns(t *testing.T) {
+	t.Setenv("PI_RUN_PROVIDERS_FILE", "")
+	root := t.TempDir()
+	path := filepath.Join(root, "providers.json")
+	if err := os.WriteFile(path, []byte(`{"providers": [`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	providers, output := captureProvidersStderr(t, func() []Provider {
+		return loadActiveProviders(root)
+	})
+	if len(providers) != len(defaultProviders) {
+		t.Fatalf("got %d providers, want %d defaults", len(providers), len(defaultProviders))
+	}
+	for _, want := range []string{"warning", path, "parse providers"} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("warning %q must contain %q", output, want)
+		}
 	}
 }
 

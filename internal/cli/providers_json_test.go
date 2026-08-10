@@ -86,16 +86,24 @@ func TestLoadProvidersMissingFileFallsBackToDefaults(t *testing.T) {
 	}
 }
 
+func TestLoadProvidersMissingExplicitOverride(t *testing.T) {
+	override := filepath.Join(t.TempDir(), "missing-providers.json")
+	if _, err := loadProviders(override, true); err == nil {
+		t.Fatal("loadProviders must return an error for a missing explicit override")
+	}
+}
+
 func TestProviderConfigPathUsesEnvOverride(t *testing.T) {
 	override := filepath.Join(t.TempDir(), "custom-providers.json")
 	if err := os.WriteFile(override, []byte(sampleProvidersJSON), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	t.Setenv("PI_RUN_PROVIDERS_FILE", override)
-	if got := providerConfigPath("/unused-root"); got != override {
-		t.Fatalf("providerConfigPath = %q, want override %q", got, override)
+	path, explicit := providerConfigPath("/unused-root")
+	if path != override || !explicit {
+		t.Fatalf("providerConfigPath = (%q, %t), want (%q, true)", path, explicit, override)
 	}
-	ps, err := LoadProviders(providerConfigPath("/unused-root"))
+	ps, err := loadProviders(path, explicit)
 	if err != nil {
 		t.Fatal(err)
 	}

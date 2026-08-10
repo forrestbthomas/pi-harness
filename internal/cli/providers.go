@@ -39,18 +39,19 @@ var defaultProviders = []Provider{
 var Providers = defaultProviders
 
 func init() {
-	if ps, err := LoadProviders(providerConfigPath(repoRoot())); err == nil && len(ps) > 0 {
+	path, explicit := providerConfigPath(repoRoot())
+	if ps, err := loadProviders(path, explicit); err == nil && len(ps) > 0 {
 		Providers = ps
 	}
 }
 
-// providerConfigPath returns the explicit provider table override when set,
-// otherwise the providers.json file under root.
-func providerConfigPath(root string) string {
+// providerConfigPath returns the provider table path and whether it was
+// explicitly selected through PI_RUN_PROVIDERS_FILE.
+func providerConfigPath(root string) (path string, explicit bool) {
 	if path := os.Getenv("PI_RUN_PROVIDERS_FILE"); path != "" {
-		return path
+		return path, true
 	}
-	return filepath.Join(root, "providers.json")
+	return filepath.Join(root, "providers.json"), false
 }
 
 // ProvidersFromJSON parses provider table JSON.
@@ -65,14 +66,28 @@ func ProvidersFromJSON(data []byte) ([]Provider, error) {
 	return f.Providers, nil
 }
 
-// LoadProviders reads a provider table from path. A missing or unreadable
-// table falls back to the complete provider set embedded in the binary.
+// LoadProviders reads a repository provider table. A missing or unreadable
+// repository table falls back to the complete provider set embedded in the binary.
 func LoadProviders(path string) ([]Provider, error) {
+	return loadProviders(path, false)
+}
+
+// loadProviders reads a provider table. Explicit overrides and malformed
+// repository tables return errors so configuration mistakes are not silent;
+// only a missing or unreadable default repository table falls back to defaults.
+func loadProviders(path string, explicit bool) ([]Provider, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
+		if explicit {
+			return nil, fmt.Errorf("read explicit providers file %q: %w", path, err)
+		}
 		return defaultProviders, nil
 	}
-	return ProvidersFromJSON(b)
+	ps, err := ProvidersFromJSON(b)
+	if err != nil {
+		return nil, fmt.Errorf("load providers file %q: %w", path, err)
+	}
+	return ps, nil
 }
 
 // LookupProvider returns the provider named name, or an error.

@@ -8,4 +8,4 @@ deepeval~=4.1
 pytest~=9.1
 python-dotenv~=1.2
 pypdf~=6.14
-pytest-timeout~=2.3
+pytest-timeout~=2.4

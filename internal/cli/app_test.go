@@ -391,3 +391,24 @@ func TestRunInstallReplacesOwnLink(t *testing.T) {
 		t.Fatalf("link target = %q, want %q", got, target)
 	}
 }
+
+func TestRunInstallReplacesRelativeOwnLink(t *testing.T) {
+	target, link := installTestPaths(t)
+	relativeTarget, err := filepath.Rel(filepath.Dir(link), target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(relativeTarget, link); err != nil {
+		t.Fatal(err)
+	}
+	if err := installLink(target, link, false); err != nil {
+		t.Fatalf("installLink relative own link: %v", err)
+	}
+	got, err := os.Readlink(link)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != target {
+		t.Fatalf("link target = %q, want %q", got, target)
+	}
+}

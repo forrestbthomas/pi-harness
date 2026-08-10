@@ -229,7 +229,11 @@ func installLink(target, link string, force bool) error {
 			if err != nil {
 				return fmt.Errorf("inspect existing symlink %s: %w", link, err)
 			}
-			if existing != target {
+			existingTarget := existing
+			if !filepath.IsAbs(existingTarget) {
+				existingTarget = filepath.Join(filepath.Dir(link), existingTarget)
+			}
+			if filepath.Clean(existingTarget) != filepath.Clean(target) {
 				return fmt.Errorf("refusing to overwrite existing symlink %s -> %s; move or remove it, or re-run with --force", link, existing)
 			}
 		} else {

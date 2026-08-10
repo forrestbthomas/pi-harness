@@ -13,7 +13,7 @@
 
 Use GitHub's **private vulnerability reporting** (recommended):
 
-1. Go to the repo: https://github.com/forrestthomas/pi-harness
+1. Go to the repo: https://github.com/forrestbthomas/pi-harness
 2. **Security** tab → **Report a vulnerability** → **Create a report**.
 
 This sends the report privately to the maintainers.

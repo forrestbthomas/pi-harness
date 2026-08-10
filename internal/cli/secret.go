@@ -31,7 +31,7 @@ type SecretBackend interface {
 // compatible with the pre-pluggable behavior).
 func newSecretBackend() (SecretBackend, error) {
 	switch os.Getenv("PI_SECRET_BACKEND") {
-	case "", "bitwarden":
+	case "", "bitwarden", "bw":
 		return &bitwardenBackend{}, nil
 	case "1password", "op":
 		return &onePasswordBackend{}, nil

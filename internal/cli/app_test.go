@@ -441,6 +441,76 @@ func TestRunInstallReplacesRelativeOwnLink(t *testing.T) {
 	}
 }
 
+// TestRunInstallForceFlagParsing exercises the command-level install flag
+// parser (Run with a temp repo root and a stub go binary) to prove --force is
+// parsed and reaches installLink, and that unknown flags are rejected before
+// any build happens. The installLink behavior itself is covered by the unit
+// tests above; this test covers the Run-level parse path that those miss.
+func TestRunInstallForceFlagParsing(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("HARNESS_ROOT", root)
+	// Stub `go` on PATH so runInstall's build step succeeds without a toolchain.
+	// The build invocation is `go build -ldflags <ldflags> -o <target> ./cmd/pi-run`,
+	// so $1=build, $2=-ldflags, $3=<ldflags>, $4=-o, $5=<target>.
+	stubDir := t.TempDir()
+	goStub := filepath.Join(stubDir, "go")
+	script := "#!/bin/sh\nprintf 'stub' > \"$5\"\nexit 0\n"
+	if err := os.WriteFile(goStub, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", stubDir+string(os.PathListSeparator)+os.Getenv("PATH"))
+
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	link := filepath.Join(home, "bin", "pi-run")
+	if err := os.MkdirAll(filepath.Dir(link), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	// install --bogus: unknown flag must be rejected (exit 2) before building.
+	code, out := captureRunStderr(t, []string{"install", "--bogus"})
+	if code != 2 {
+		t.Fatalf("install --bogus exit = %d, want 2; stderr: %s", code, out)
+	}
+	if !strings.Contains(out, "unknown flag") {
+		t.Fatalf("install --bogus stderr missing unknown-flag error: %q", out)
+	}
+	if _, err := os.Stat(filepath.Join(root, "bin", "pi-run")); !os.IsNotExist(err) {
+		t.Fatalf("install --bogus must not build; bin/pi-run exists: %v", err)
+	}
+
+	// install --force: parse succeeds, builds, and creates the symlink.
+	code, out = captureRunStdout(t, []string{"install", "--force"})
+	if code != 0 {
+		t.Fatalf("install --force exit = %d, want 0; stderr: %s", code, out)
+	}
+	got, err := os.Readlink(link)
+	if err != nil {
+		t.Fatalf("install --force did not create symlink: %v", err)
+	}
+	want := filepath.Join(root, "bin", "pi-run")
+	if got != want {
+		t.Fatalf("link target = %q, want %q", got, want)
+	}
+}
+
+// TestRunInstallHelpFlag verifies install --help prints usage and exits 0
+// without attempting a build.
+func TestRunInstallHelpFlag(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("HARNESS_ROOT", root)
+	code, out := captureRunStdout(t, []string{"install", "--help"})
+	if code != 0 {
+		t.Fatalf("install --help exit = %d, want 0", code)
+	}
+	if !strings.Contains(out, "Usage: pi-run install") {
+		t.Fatalf("install --help output missing usage: %q", out)
+	}
+	if _, err := os.Stat(filepath.Join(root, "bin", "pi-run")); !os.IsNotExist(err) {
+		t.Fatalf("install --help must not build; bin/pi-run exists: %v", err)
+	}
+}
+
 func evalTestRoot(t *testing.T) (string, string) {
 	t.Helper()
 	root := t.TempDir()

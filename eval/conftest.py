@@ -8,6 +8,7 @@ from typing import Any
 
 import pytest
 from deepeval.test_case import LLMTestCase
+from secret_backend import resolve_secret as _resolve_secret
 
 
 DATASET_PATH = Path(__file__).parent / "datasets" / "coding_samples.jsonl"
@@ -97,52 +98,11 @@ def any_provider_key_env() -> bool:
 def get_secret(name: str) -> str | None:
     """Return the secret for ``name``: env var first, then the configured backend.
 
-    Backend is selected by PI_SECRET_BACKEND (default bitwarden). Bitwarden
-    uses ``bw_get`` (BW_GET override, default ~/bin/bw_get); 1password uses
-    ``op read "op://<vault>/<name>/credential"``; env-only never falls back.
+    Delegates to secret_backend.resolve_secret so the Go CLI
+    (internal/cli/secret.go) and the eval suite share one identifier contract.
     Never logs the value. Returns None when unavailable.
     """
-    value = os.environ.get(name)
-    if value:
-        return value
-
-    backend = os.environ.get("PI_SECRET_BACKEND", "bitwarden") or "bitwarden"
-
-    if backend in ("env-only", "env"):
-        return None
-
-    if backend in ("1password", "op"):
-        vault = os.environ.get("OP_VAULT", "Personal")
-        try:
-            result = subprocess.run(
-                ["op", "read", f"op://{vault}/{name}/credential"],
-                capture_output=True,
-                text=True,
-                timeout=30,
-            )
-        except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
-            return None
-        if result.returncode != 0:
-            return None
-        return result.stdout.strip() or None
-
-    if backend not in ("bitwarden", "bw"):
-        return None
-
-    # bitwarden (default)
-    bw_get = os.environ.get("BW_GET", str(Path.home() / "bin" / "bw_get"))
-    try:
-        result = subprocess.run(
-            [bw_get, name],
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
-        return None
-    if result.returncode != 0:
-        return None
-    return result.stdout.strip() or None
+    return _resolve_secret(name)
 
 
 def has_api_key() -> bool:

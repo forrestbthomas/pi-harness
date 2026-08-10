@@ -42,11 +42,11 @@ func runDoctor() int {
 	// through the environment and do not need a configured secret manager.
 	be, err := newSecretBackend()
 	if err != nil {
-		fmt.Println("  [info] secret backend: unavailable")
+		fmt.Printf("  [info] secret backend: unavailable (%v)\n", err)
 	} else if status, err := be.Status(); err == nil {
 		fmt.Printf("  [info] %s backend: %s\n", be.Name(), status)
 	} else {
-		fmt.Printf("  [info] %s backend: unavailable\n", be.Name())
+		fmt.Printf("  [info] %s backend: unavailable (%v)\n", be.Name(), err)
 	}
 
 	// Key presence per provider is informational: only one is needed to launch

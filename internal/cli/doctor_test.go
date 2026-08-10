@@ -1,8 +1,10 @@
 package cli
 
 import (
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -64,9 +66,24 @@ func TestDoctorNoKeyExitsZero(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	oldStdout := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stdout = w
 	code := runDoctor()
+	w.Close()
+	os.Stdout = oldStdout
+	output, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if code != 0 {
 		t.Fatalf("runDoctor() = %d, want 0 with required prerequisites and no keys", code)
+	}
+	if strings.Contains(string(output), "FAILURES FOUND") {
+		t.Fatalf("runDoctor output contains unexpected failure summary: %s", output)
 	}
 }
 

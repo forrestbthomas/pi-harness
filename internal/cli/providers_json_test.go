@@ -3,6 +3,7 @@ package cli
 import (
 	"io"
 	"os"
+	"reflect"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -148,8 +149,8 @@ func TestLoadActiveProvidersExplicitMissingWarns(t *testing.T) {
 	providers, output := captureProvidersStderr(t, func() []Provider {
 		return loadActiveProviders(t.TempDir())
 	})
-	if len(providers) != len(defaultProviders) {
-		t.Fatalf("got %d providers, want %d defaults", len(providers), len(defaultProviders))
+	if !reflect.DeepEqual(providers, defaultProviders) {
+		t.Fatalf("fallback providers = %v, want defaultProviders", providers)
 	}
 	for _, want := range []string{"warning", override, "read explicit providers file"} {
 		if !strings.Contains(output, want) {
@@ -167,8 +168,8 @@ func TestLoadActiveProvidersMalformedExplicitWarns(t *testing.T) {
 	providers, output := captureProvidersStderr(t, func() []Provider {
 		return loadActiveProviders(t.TempDir())
 	})
-	if len(providers) != len(defaultProviders) {
-		t.Fatalf("got %d providers, want %d defaults", len(providers), len(defaultProviders))
+	if !reflect.DeepEqual(providers, defaultProviders) {
+		t.Fatalf("fallback providers = %v, want defaultProviders", providers)
 	}
 	for _, want := range []string{"warning", override, "parse providers"} {
 		if !strings.Contains(output, want) {
@@ -187,8 +188,8 @@ func TestLoadActiveProvidersMalformedDefaultWarns(t *testing.T) {
 	providers, output := captureProvidersStderr(t, func() []Provider {
 		return loadActiveProviders(root)
 	})
-	if len(providers) != len(defaultProviders) {
-		t.Fatalf("got %d providers, want %d defaults", len(providers), len(defaultProviders))
+	if !reflect.DeepEqual(providers, defaultProviders) {
+		t.Fatalf("fallback providers = %v, want defaultProviders", providers)
 	}
 	for _, want := range []string{"warning", path, "parse providers"} {
 		if !strings.Contains(output, want) {

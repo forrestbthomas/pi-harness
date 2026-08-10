@@ -37,7 +37,7 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
   store (`BW_GET` override; Bitwarden is a documented example). See
   [API Key Resolution](#api-key-resolution) and `pi-run providers`.
 
-| provider | key (env var / Bitwarden item) | `pi-run --provider` | default model |
+| provider | key (env var / secret-manager item) | `pi-run --provider` | default model |
 |---|---|---|---|
 | OpenAI (default) | `OPENAI_API_KEY` | `openai` | `openai/gpt-5.6-terra` |
 | OpenRouter | `OPENROUTER_API_KEY` | `openrouter` | `openai/gpt-5.6-terra` |

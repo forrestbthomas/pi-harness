@@ -30,6 +30,7 @@ func TestResolveSecretPrefersEnv(t *testing.T) {
 }
 
 func TestResolveSecretFallsBackToBwGet(t *testing.T) {
+	t.Setenv("OPENAI_API_KEY", "") // hermetic: no ambient key short-circuit
 	t.Setenv("BW_GET", fakeBwGet(t, "#!/bin/sh\nprintf '%s\\n' 'sk-vault-value'\n"))
 	got, err := resolveSecret("OPENAI_API_KEY")
 	if err != nil {
@@ -41,6 +42,7 @@ func TestResolveSecretFallsBackToBwGet(t *testing.T) {
 }
 
 func TestResolveSecretFailsWhenBwGetFails(t *testing.T) {
+	t.Setenv("OPENAI_API_KEY", "") // hermetic: no ambient key short-circuit
 	t.Setenv("BW_GET", fakeBwGet(t, "#!/bin/sh\nexit 1\n"))
 	if _, err := resolveSecret("OPENAI_API_KEY"); err == nil {
 		t.Fatal("expected error when bw_get exits non-zero")

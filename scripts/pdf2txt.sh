@@ -17,7 +17,9 @@
 
 set -euo pipefail
 
-HARNESS="${HARNESS:-$HOME/Projects/harness}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(dirname "$HERE")"
+HARNESS="${HARNESS:-$ROOT}"
 PY="$HARNESS/eval/.venv/bin/python"
 
 if [ "$#" -lt 1 ]; then

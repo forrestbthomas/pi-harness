@@ -392,6 +392,34 @@ func TestRunInstallReplacesOwnLink(t *testing.T) {
 	}
 }
 
+func TestRunInstallAtomicReplace(t *testing.T) {
+	target, link := installTestPaths(t)
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := installLink(target, link, false); err != nil {
+		t.Fatalf("installLink atomic replace: %v", err)
+	}
+	got, err := os.Readlink(link)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != target {
+		t.Fatalf("link target = %q, want %q", got, target)
+	}
+
+	entries, err := os.ReadDir(filepath.Dir(link))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range entries {
+		if strings.HasPrefix(entry.Name(), ".pi-run-link-") {
+			t.Fatalf("leftover temporary link %q", entry.Name())
+		}
+	}
+}
+
 func TestRunInstallReplacesRelativeOwnLink(t *testing.T) {
 	target, link := installTestPaths(t)
 	relativeTarget, err := filepath.Rel(filepath.Dir(link), target)

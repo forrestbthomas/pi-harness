@@ -244,10 +244,28 @@ func installLink(target, link string, force bool) error {
 		}
 	}
 
-	if err := os.Remove(link); err != nil {
-		return fmt.Errorf("remove existing %s: %w", link, err)
+	// Create the replacement in the same directory, then rename it over the
+	// existing link. os.Rename is atomic when both paths share a filesystem.
+	tmpFile, err := os.CreateTemp(filepath.Dir(link), ".pi-run-link-")
+	if err != nil {
+		return fmt.Errorf("create temporary link for %s: %w", link, err)
 	}
-	return os.Symlink(target, link)
+	tmp := tmpFile.Name()
+	if err := tmpFile.Close(); err != nil {
+		_ = os.Remove(tmp)
+		return fmt.Errorf("close temporary link for %s: %w", link, err)
+	}
+	if err := os.Remove(tmp); err != nil {
+		return fmt.Errorf("prepare temporary link for %s: %w", link, err)
+	}
+	if err := os.Symlink(target, tmp); err != nil {
+		return fmt.Errorf("create temporary symlink for %s: %w", link, err)
+	}
+	defer os.Remove(tmp) // best-effort cleanup if rename fails
+	if err := os.Rename(tmp, link); err != nil {
+		return fmt.Errorf("atomically replace %s: %w", link, err)
+	}
+	return nil
 }
 
 // buildVersion returns the version to stamp into the binary: "dev" for local

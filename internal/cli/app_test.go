@@ -93,8 +93,8 @@ func TestRunEvalWithoutVenv(t *testing.T) {
 }
 
 func TestUsageMentionsProviders(t *testing.T) {
-	if !strings.Contains(usage, "deepseek") || !strings.Contains(usage, "openrouter") {
-		t.Fatal("usage must document all providers")
+	if !strings.Contains(usage, "--provider <name>") || !strings.Contains(usage, "pi-run providers") {
+		t.Fatal("usage must direct users to pi-run providers for valid provider names")
 	}
 }
 
@@ -410,5 +410,140 @@ func TestRunInstallReplacesRelativeOwnLink(t *testing.T) {
 	}
 	if got != target {
 		t.Fatalf("link target = %q, want %q", got, target)
+	}
+}
+
+func evalTestRoot(t *testing.T) (string, string) {
+	t.Helper()
+	root := t.TempDir()
+	t.Setenv("HARNESS_ROOT", root)
+	for _, key := range supportedProviderKeyEnvs {
+		t.Setenv(key, "")
+	}
+	venv := filepath.Join(root, "eval", ".venv", "bin")
+	if err := os.MkdirAll(venv, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	argsFile := filepath.Join(root, "pytest-args.txt")
+	script := "#!/bin/sh\nprintf '%s\\n' \"$@\" > \"" + argsFile + "\"\nexit 0\n"
+	if err := os.WriteFile(filepath.Join(venv, "python"), []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	return root, argsFile
+}
+
+func captureRunStdout(t *testing.T, args []string) (int, string) {
+	t.Helper()
+	old := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stdout = w
+	code := Run(args)
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	os.Stdout = old
+	var out strings.Builder
+	if _, err := io.Copy(&out, r); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return code, out.String()
+}
+
+func captureRunStderr(t *testing.T, args []string) (int, string) {
+	t.Helper()
+	old := os.Stderr
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stderr = w
+	code := Run(args)
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	os.Stderr = old
+	var out strings.Builder
+	if _, err := io.Copy(&out, r); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return code, out.String()
+}
+
+func TestRunEvalHelpDoesNotRunSuite(t *testing.T) {
+	_, argsFile := evalTestRoot(t)
+	code, out := captureRunStdout(t, []string{"eval", "--help"})
+	if code != 0 {
+		t.Fatalf("eval --help exit = %d, want 0", code)
+	}
+	if !strings.Contains(out, "Usage: pi-run eval") {
+		t.Fatalf("eval --help output missing usage: %q", out)
+	}
+	if _, err := os.Stat(argsFile); !os.IsNotExist(err) {
+		t.Fatalf("eval --help must not invoke pytest, args file err = %v", err)
+	}
+}
+
+func TestRunEvalUnknownFlagExit2(t *testing.T) {
+	_, argsFile := evalTestRoot(t)
+	code, out := captureRunStderr(t, []string{"eval", "--bogus"})
+	if code != 2 {
+		t.Fatalf("eval --bogus exit = %d, want 2", code)
+	}
+	if !strings.Contains(out, "unknown flag") {
+		t.Fatalf("eval --bogus stderr missing unknown flag: %q", out)
+	}
+	if _, err := os.Stat(argsFile); !os.IsNotExist(err) {
+		t.Fatalf("eval --bogus must not invoke pytest, args file err = %v", err)
+	}
+}
+
+func TestRunEvalPytestPassThrough(t *testing.T) {
+	_, argsFile := evalTestRoot(t)
+	selector := "tests/test_x.py::test_y"
+	if code := Run([]string{"eval", "--", selector}); code != 0 {
+		t.Fatalf("eval pass-through exit = %d, want 0", code)
+	}
+	args, err := os.ReadFile(argsFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(args), selector) {
+		t.Fatalf("pytest args %q missing pass-through selector %q", args, selector)
+	}
+}
+
+func TestRunEvalQuickStillWorks(t *testing.T) {
+	_, argsFile := evalTestRoot(t)
+	if code := Run([]string{"eval", "--quick"}); code != 0 {
+		t.Fatalf("eval --quick exit = %d, want 0", code)
+	}
+	args, err := os.ReadFile(argsFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"tests/test_code_quality.py",
+		"tests/test_agent_task_completion.py::test_dataset_expected_outputs_are_non_empty",
+	} {
+		if !strings.Contains(string(args), want) {
+			t.Fatalf("pytest args %q missing quick selector %q", args, want)
+		}
+	}
+}
+
+func TestUsageMentionsAllCommands(t *testing.T) {
+	for _, want := range []string{"resume", "providers", "--exit-codes", "eval"} {
+		if !strings.Contains(usage, want) {
+			t.Fatalf("usage missing command or flag %q", want)
+		}
 	}
 }

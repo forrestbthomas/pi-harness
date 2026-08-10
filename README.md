@@ -211,11 +211,16 @@ run `pi-run setup` once with network access.
 | `pi-run chat [flags] [prompt...]` | Launch Pi interactively (default provider: openai) |
 | `pi-run print [flags] "<prompt>"` | One-shot `pi -p --no-session` |
 | `pi-run eval [--quick]` | Run the DeepEval pytest suite (`--quick` = smoke subset) |
+| `pi-run eval -- <pytest selector...>` | Run a focused test or pass pytest arguments through (for example `tests/test_x.py::test_y`) |
+| `pi-run eval --help` | Show eval-specific usage without running pytest |
+| `pi-run resume [flags] [prompt...]` | Continue the most recent Pi session (`pi --continue`) |
+| `pi-run providers` | List configured providers and default models |
 | `pi-run config-check` | Deterministic harness checks (no keys, no network) |
 | `pi-run doctor` | Health report: node, pi, vault, per-provider keys, models, venv |
 | `pi-run setup` | Create `eval/.venv`, install deps, refresh model catalogs |
 | `pi-run install` | Build `bin/pi-run` and symlink it onto your PATH |
 | `pi-run clean` | Remove `eval/.venv` and pytest caches |
+| `pi-run --exit-codes` | Print the stable exit-code table |
 | `pi-run version` / `help` | Version / usage |
 
 Exit codes: `0` ok · `1` generic · `2` usage · `3` missing API key · `4` node/pi not found · `5` eval venv missing.

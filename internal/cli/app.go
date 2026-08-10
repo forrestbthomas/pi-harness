@@ -35,8 +35,12 @@ Commands:
 Exit codes: 0 ok · 1 generic · 2 usage · 3 missing key · 4 node/pi missing · 5 eval venv missing
 
 chat/print flags:
-  --provider <openai|openrouter|deepseek>  Provider (env PI_PROVIDER; default openai)
+  --provider <name>                        Provider (see 'pi-run providers'; env PI_PROVIDER; default openai)
   --model <id>                             Override the per-provider default model
+
+Eval flags:
+  --quick                                  Run the deterministic smoke subset
+  --                                       Pass remaining arguments directly to pytest
 
 Everything else is passed through to pi unchanged (use -- to escape a message
 that starts with a dash, e.g. pi-run print -- "-weird prompt").
@@ -71,8 +75,7 @@ func Run(args []string) int {
 	case "chat", "print", "resume":
 		return runLaunch(args[0], args[1:])
 	case "eval":
-		quick := len(args) > 1 && args[1] == "--quick"
-		return runEval(quick)
+		return runEval(args[1:])
 	case "config-check":
 		return runConfigCheck()
 	case "doctor":

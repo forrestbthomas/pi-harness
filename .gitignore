@@ -24,3 +24,6 @@ github-repo-controller/bin/
 
 # DeepEval cache
 eval/.deepeval/
+
+# Local multi-axis review sweep artifacts (gpt-5.6-terra)
+.review-sweep/

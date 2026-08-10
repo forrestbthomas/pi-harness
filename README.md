@@ -22,7 +22,7 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
 
 > `@zigai/pi-ui-tweaks` was removed because its bundled settings schema is currently incompatible with this Pi version.
 - **Project context files**: `AGENTS.md`, `.pi/SYSTEM.md`, `.pi/APPEND_SYSTEM.md`.
-- **DeepEval environment** in `eval/.venv` with sample tests and datasets.
+- **DeepEval environment** in `eval/.venv` with sample tests and datasets. Python deps live in `eval/requirements.txt` (DeepEval + pytest stack, `~=`-bounded). Add new dependencies deliberately; `pi-run setup` installs them.
 - **Automation** via the `pi-run` CLI (no Makefile, no shell functions).
 
 ## Prerequisites

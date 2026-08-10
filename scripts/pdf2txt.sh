@@ -13,11 +13,13 @@
 #   - with output.txt: writes extracted text to that file (stdout stays clean)
 #   - without: prints extracted text to stdout
 #
-# HARNESS env var overrides the repo root (default ~/Projects/harness).
+# HARNESS env var overrides the repo root (default: the parent of this script).
 
 set -euo pipefail
 
-HARNESS="${HARNESS:-$HOME/Projects/harness}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(dirname "$HERE")"
+HARNESS="${HARNESS:-$ROOT}"
 PY="$HARNESS/eval/.venv/bin/python"
 
 if [ "$#" -lt 1 ]; then

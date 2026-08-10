@@ -24,21 +24,28 @@ func runDoctor() int {
 	fmt.Println("== pi-run doctor ==")
 
 	home, _ := os.UserHomeDir()
-	nodeVersion := os.Getenv("PI_NODE_VERSION")
-	if nodeVersion == "" {
-		nodeVersion = "v22.19.0"
+	nodeVersion, err := resolveNodeVersion(home)
+	if err != nil {
+		check("node (latest nvm)", false)
+		fmt.Println("  [info] " + err.Error())
+		nodeVersion = ""
 	}
-	_, err := nodeBinDir(home, nodeVersion)
-	check("node "+nodeVersion, err == nil)
+	if nodeVersion != "" {
+		_, err := nodeBinDir(home, nodeVersion)
+		check("node "+nodeVersion, err == nil)
 
-	piPath := filepath.Join(home, ".nvm", "versions", "node", nodeVersion, "bin", "pi")
-	check("pi CLI present", pathExists(piPath))
+		piPath := filepath.Join(home, ".nvm", "versions", "node", nodeVersion, "bin", "pi")
+		check("pi CLI present", pathExists(piPath))
+	}
 
-	// Vault status (informational; never a value).
-	if out, err := exec.Command("bw_get", "--status").Output(); err == nil {
-		fmt.Printf("  [info] Bitwarden vault: %s", out)
+	// Secret backend status (informational; never a value).
+	be, err := newSecretBackend()
+	if err != nil {
+		check("secret backend", false)
+	} else if status, err := be.Status(); err == nil {
+		fmt.Printf("  [info] %s backend: %s\n", be.Name(), status)
 	} else {
-		check("Bitwarden vault reachable", false)
+		check(be.Name()+" backend reachable", false)
 	}
 
 	// Key presence per provider (never the value).
@@ -51,27 +58,29 @@ func runDoctor() int {
 	}
 
 	// Default models resolvable (informational; offline; PATH via execPi).
-	if out, err := piListModels(home, nodeVersion); err == nil {
-		for _, p := range Providers {
-			if p.Name == "openrouter" {
-				continue // openrouter default model lives in the openai catalog
+	if nodeVersion != "" {
+		if out, err := piListModels(home, nodeVersion); err == nil {
+			for _, p := range Providers {
+				if p.Name == "openrouter" {
+					continue // openrouter default model lives in the openai catalog
+				}
+				fmt.Printf("  [info] model %s resolvable: %v\n", p.DefaultModel, modelListed(string(out), p.DefaultModel))
 			}
-			fmt.Printf("  [info] model %s resolvable: %v\n", p.DefaultModel, modelListed(string(out), p.DefaultModel))
+		} else {
+			fmt.Printf("  [info] pi --offline --list-models unavailable: %v\n", err)
 		}
-	} else {
-		fmt.Printf("  [info] pi --offline --list-models unavailable: %v\n", err)
 	}
 
 	venv := filepath.Join(root, "eval", ".venv", "bin", "python")
 	check("eval/.venv present", pathExists(venv))
 
-	// Symlink into ~/bin is a personal-machine convention; informational
+	// Symlink onto PATH is an install convention; informational
 	// unless PI_RUN_PERSONAL=1 so doctor passes on a fresh clone.
 	if personalMode() {
 		link := filepath.Join(home, "bin", "pi-run")
-		check("~/bin/pi-run symlink present", pathExists(link))
+		check("pi-run symlink present", pathExists(link))
 	} else {
-		fmt.Println("  [info] ~/bin/pi-run symlink check skipped (set PI_RUN_PERSONAL=1 to enable)")
+		fmt.Println("  [info] pi-run symlink check skipped (set PI_RUN_PERSONAL=1 to enable)")
 	}
 
 	if fail {

@@ -11,7 +11,8 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(dirname "$HERE")"
-NODE_VERSION="${PI_NODE_VERSION:-v22.19.0}"
+# Use the latest nvm-installed node by default; PI_NODE_VERSION overrides.
+NODE_VERSION="${PI_NODE_VERSION:-latest}"
 
 echo "== pi-harness bootstrap =="
 
@@ -50,4 +51,4 @@ echo "  export OPENROUTER_API_KEY=sk-or-v1-... # or"
 echo "  export DEEPSEEK_API_KEY=sk-...        # then:"
 echo "  pi-run chat"
 echo ""
-echo "Bitwarden (optional): pi-run also resolves keys via ~/bin/bw_get (BW_GET override)."
+echo "Secret manager (optional): pi-run resolves keys env-first, then from a configured secret manager (PI_SECRET_BACKEND: bitwarden via bw_get, 1password via op, or env-only)."

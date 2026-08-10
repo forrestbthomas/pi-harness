@@ -5,6 +5,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -77,4 +79,57 @@ func execPi(nodeVersion string, args []string, extraEnv []string) (int, error) {
 		return 1, err
 	}
 	return 0, nil
+}
+
+// resolveNodeVersion returns the version of the latest Node installed via nvm
+// (highest semver in ~/.nvm/versions/node/), or an error with a guided install
+// hint when nvm is missing or no node is installed. PI_NODE_VERSION overrides.
+func resolveNodeVersion(home string) (string, error) {
+	if v := os.Getenv("PI_NODE_VERSION"); v != "" {
+		return v, nil
+	}
+	dir := filepath.Join(home, ".nvm", "versions", "node")
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return "", fmt.Errorf("nvm not found: install it with `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash`, or set PI_NODE_VERSION")
+	}
+	var versions []string
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		if semverRe.MatchString(e.Name()) {
+			versions = append(versions, e.Name())
+		}
+	}
+	if len(versions) == 0 {
+		return "", fmt.Errorf("no Node installed via nvm: run `nvm install node`, or set PI_NODE_VERSION")
+	}
+	return maxSemver(versions), nil
+}
+
+// semverRe matches v<major>.<minor>.<patch> (e.g. v22.19.0).
+var semverRe = regexp.MustCompile(`^v\d+\.\d+\.\d+$`)
+
+// maxSemver returns the highest semver string from a list of vX.Y.Z strings.
+func maxSemver(versions []string) string {
+	best := versions[0]
+	for _, v := range versions[1:] {
+		if semverGreater(v, best) {
+			best = v
+		}
+	}
+	return best
+}
+
+func semverGreater(a, b string) bool {
+	pa, pb := strings.Split(strings.TrimPrefix(a, "v"), "."), strings.Split(strings.TrimPrefix(b, "v"), ".")
+	for i := 0; i < 3; i++ {
+		na, _ := strconv.Atoi(pa[i])
+		nb, _ := strconv.Atoi(pb[i])
+		if na != nb {
+			return na > nb
+		}
+	}
+	return false
 }

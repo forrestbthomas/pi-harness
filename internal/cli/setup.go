@@ -10,7 +10,7 @@ import (
 
 // repoRoot returns the harness repo root: HARNESS_ROOT env, else the parent of
 // the resolved executable (binary lives at <root>/bin/pi-run). The executable
-// path is resolved through symlinks so `~/bin/pi-run -> <root>/bin/pi-run`
+// path is resolved through symlinks so the installed pi-run points at <root>/bin/pi-run
 // still resolves to <root>.
 func repoRoot() string {
 	if r := os.Getenv("HARNESS_ROOT"); r != "" {
@@ -65,9 +65,11 @@ func runSetup() int {
 		return code
 	}
 	fmt.Println("refreshing model catalogs (pi update --models) ...")
-	nodeVersion := os.Getenv("PI_NODE_VERSION")
-	if nodeVersion == "" {
-		nodeVersion = "v22.19.0"
+	home, _ := os.UserHomeDir()
+	nodeVersion, err := resolveNodeVersion(home)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "pi-run: setup: %v\n", err)
+		return 4
 	}
 	// The pi.dev catalog endpoint is intermittently unreachable from some
 	// networks (TLS connects, HTTP never responds), so the refresh can time

@@ -58,7 +58,7 @@ func runConfigCheck() int {
 	if personalMode() {
 		link := filepath.Join(home, "bin", "pi-run")
 		target, err := os.Readlink(link)
-		check("~/bin/pi-run symlinks to <root>/bin/pi-run",
+		check("pi-run symlinks to <root>/bin/pi-run",
 			err == nil && target == filepath.Join(root, "bin", "pi-run"))
 	} else {
 		fmt.Println("  [info] symlink check skipped (set PI_RUN_PERSONAL=1 to enable)")

@@ -25,7 +25,7 @@ Commands:
   config-check  Run deterministic harness checks (no keys, no network)
   doctor        Report harness health (node, pi, keys, models)
   setup         Create eval/.venv, install deps, refresh model catalogs
-  install       Build the binary into bin/ and symlink ~/bin/pi-run
+  install       Build the binary into bin/ and symlink pi-run onto your PATH
   clean         Remove eval/.venv and pytest caches
   providers     List configured providers and default models
   version       Print version
@@ -109,7 +109,7 @@ func runLaunch(mode string, args []string) int {
 
 	key, err := resolveSecret(p.KeyEnv)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "pi-run: %s: no %s available: export it, or run `bw unlock` then `pi-run doctor`\n", mode, p.KeyEnv)
+		fmt.Fprintf(os.Stderr, "pi-run: %s: no %s available: export it, or check your secret manager (`pi-run doctor`)\n", mode, p.KeyEnv)
 		return 3
 	}
 
@@ -118,9 +118,10 @@ func runLaunch(mode string, args []string) int {
 		model = p.DefaultModel
 	}
 
-	nodeVersion := os.Getenv("PI_NODE_VERSION")
-	if nodeVersion == "" {
-		nodeVersion = "v22.19.0"
+	nodeVersion, err := resolveNodeVersion(os.Getenv("HOME"))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "pi-run: %s: %v\n", mode, err)
+		return 4
 	}
 	code, err := execPi(nodeVersion, piArgs(p, model, mode, rest), []string{p.KeyEnv + "=" + key})
 	if err != nil {
@@ -161,7 +162,7 @@ func splitLaunchArgs(args []string) (provider, model string, rest []string) {
 	return
 }
 
-// runInstall builds the binary and symlinks it into ~/bin.
+// runInstall builds the binary and symlinks it onto the user's PATH.
 func runInstall() int {
 	root := repoRoot()
 	binDir := filepath.Join(root, "bin")

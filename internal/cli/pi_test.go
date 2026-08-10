@@ -118,3 +118,86 @@ func TestChildEnvForcesIPv4FirstDNS(t *testing.T) {
 		t.Fatal("extra env must be present")
 	}
 }
+
+// makeNvmNodeTree creates a fake nvm node dir at home with the given versions.
+func makeNvmNodeTree(t *testing.T, home string, versions ...string) {
+	t.Helper()
+	for _, v := range versions {
+		dir := filepath.Join(home, ".nvm", "versions", "node", v, "bin")
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "node"), []byte("#!/bin/sh\n"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func TestResolveNodeVersionPicksHighest(t *testing.T) {
+	t.Setenv("PI_NODE_VERSION", "")
+	home := t.TempDir()
+	makeNvmNodeTree(t, home, "v18.0.0", "v22.17.0", "v22.19.0")
+	got, err := resolveNodeVersion(home)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != "v22.19.0" {
+		t.Fatalf("got %q, want %q", got, "v22.19.0")
+	}
+}
+
+func TestResolveNodeVersionNoNodeInstalled(t *testing.T) {
+	t.Setenv("PI_NODE_VERSION", "")
+	home := t.TempDir()
+	// nvm dir exists but no node versions installed
+	if err := os.MkdirAll(filepath.Join(home, ".nvm", "versions", "node"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	_, err := resolveNodeVersion(home)
+	if err == nil {
+		t.Fatal("expected error when no node installed")
+	}
+	if !strings.Contains(err.Error(), "nvm install node") {
+		t.Fatalf("error should mention 'nvm install node', got: %v", err)
+	}
+}
+
+func TestResolveNodeVersionNoNvm(t *testing.T) {
+	t.Setenv("PI_NODE_VERSION", "")
+	home := t.TempDir() // no .nvm at all
+	_, err := resolveNodeVersion(home)
+	if err == nil {
+		t.Fatal("expected error when nvm missing")
+	}
+	if !strings.Contains(err.Error(), "install") {
+		t.Fatalf("error should mention install guidance, got: %v", err)
+	}
+}
+
+func TestResolveNodeVersionIgnoresNonSemver(t *testing.T) {
+	t.Setenv("PI_NODE_VERSION", "")
+	home := t.TempDir()
+	// only a stray non-semver dir (e.g. v22 with no dots) exists
+	if err := os.MkdirAll(filepath.Join(home, ".nvm", "versions", "node", "v22"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	_, err := resolveNodeVersion(home)
+	if err == nil {
+		t.Fatal("expected error when only non-semver dir present")
+	}
+	if !strings.Contains(err.Error(), "no Node installed") {
+		t.Fatalf("error should mention 'no Node installed', got: %v", err)
+	}
+}
+
+func TestResolveNodeVersionEnvOverride(t *testing.T) {
+	t.Setenv("PI_NODE_VERSION", "v20.0.0")
+	home := t.TempDir() // no nvm tree
+	got, err := resolveNodeVersion(home)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != "v20.0.0" {
+		t.Fatalf("got %q, want %q", got, "v20.0.0")
+	}
+}

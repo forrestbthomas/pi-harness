@@ -54,6 +54,19 @@ def test_has_api_key_false_when_nothing_available(tmp_path, monkeypatch):
     assert has_api_key() is False
 
 
+def test_has_api_key_is_env_only(tmp_path, monkeypatch):
+    """has_api_key must not invoke the secret backend during collection."""
+    for key in SUPPORTED_PROVIDER_KEYS:
+        monkeypatch.delenv(key, raising=False)
+    # This fake returns a value if invoked; env-only key detection must ignore it.
+    monkeypatch.setenv(
+        "BW_GET",
+        _fake_bw_get(tmp_path, "#!/bin/sh\nprintf '%s\\n' 'sk-should-not-be-called'\n"),
+    )
+    monkeypatch.setenv("PI_SECRET_BACKEND", "bitwarden")
+    assert has_api_key() is False
+
+
 def test_get_secret_env_first(monkeypatch):
     """Env var wins regardless of backend."""
     monkeypatch.setenv("OPENAI_API_KEY", "sk-env-value")

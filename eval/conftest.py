@@ -142,8 +142,8 @@ def get_secret(name: str) -> str | None:
 
 
 def has_api_key() -> bool:
-    """Return True if any supported provider API key is present (env or Bitwarden)."""
-    return any(get_secret(key) for key in SUPPORTED_PROVIDER_KEYS)
+    """True if any supported provider key is present in the environment (presence only)."""
+    return any_provider_key_env()
 
 
 def judge_provider() -> str:

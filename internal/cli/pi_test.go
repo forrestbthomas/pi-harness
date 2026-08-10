@@ -201,3 +201,17 @@ func TestResolveNodeVersionEnvOverride(t *testing.T) {
 		t.Fatalf("got %q, want %q", got, "v20.0.0")
 	}
 }
+
+func TestLaunchEnvAddsBaseURLOnlyWhenConfigured(t *testing.T) {
+	without := launchEnv(Provider{KeyEnv: "OPENAI_API_KEY"}, "test-key")
+	for _, item := range without {
+		if strings.HasPrefix(item, "OPENAI_BASE_URL=") {
+			t.Fatalf("unexpected base URL in environment: %q", item)
+		}
+	}
+
+	with := launchEnv(Provider{KeyEnv: "LOCAL_API_KEY", BaseURL: "http://localhost:11434/v1"}, "test-key")
+	if !strings.Contains(strings.Join(with, "\n"), "OPENAI_BASE_URL=http://localhost:11434/v1") {
+		t.Fatalf("launch environment missing configured base URL: %v", with)
+	}
+}

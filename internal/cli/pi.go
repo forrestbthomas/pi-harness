@@ -54,6 +54,17 @@ func piArgs(p Provider, model, mode string, rest []string) []string {
 	return append(args, rest...)
 }
 
+// launchEnv returns the provider key and any provider-specific environment
+// needed by the Pi child. BaseURL is currently meaningful for OpenAI-compatible
+// providers, including the built-in local provider.
+func launchEnv(p Provider, key string) []string {
+	env := []string{p.KeyEnv + "=" + key}
+	if p.BaseURL != "" {
+		env = append(env, "OPENAI_BASE_URL="+p.BaseURL)
+	}
+	return env
+}
+
 // execPi spawns `pi <args>` with the nvm node bin dir prepended to PATH and the
 // given extra env (KEY_ENV=value pairs). Returns pi's exit code.
 func execPi(nodeVersion string, args []string, extraEnv []string) (int, error) {

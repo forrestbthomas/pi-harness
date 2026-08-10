@@ -54,3 +54,13 @@ func TestResolveProviderUnknown(t *testing.T) {
 		t.Fatal("expected error for unknown provider")
 	}
 }
+
+func TestAnyProviderKeyEnvIncludesLocal(t *testing.T) {
+	for _, key := range supportedProviderKeyEnvs {
+		t.Setenv(key, "")
+	}
+	t.Setenv("LOCAL_API_KEY", "test-key")
+	if !anyProviderKeyEnv() {
+		t.Fatal("LOCAL_API_KEY must make provider key availability true")
+	}
+}

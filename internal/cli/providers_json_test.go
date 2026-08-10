@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -50,5 +51,55 @@ func TestLoadProvidersFromRepoFile(t *testing.T) {
 	}
 	if len(ps) < 3 {
 		t.Fatalf("providers.json should define at least 3 providers, got %d", len(ps))
+	}
+}
+
+func TestDefaultProvidersIncludeAllShippedProviders(t *testing.T) {
+	want := map[string]bool{
+		"openai": false, "openrouter": false, "deepseek": false,
+		"anthropic": false, "gemini": false, "groq": false, "local": false,
+	}
+	for _, p := range defaultProviders {
+		if _, ok := want[p.Name]; ok {
+			want[p.Name] = true
+		}
+	}
+	for name, found := range want {
+		if !found {
+			t.Fatalf("defaultProviders missing shipped provider %q", name)
+		}
+	}
+	for _, p := range defaultProviders {
+		if p.Name == "local" && p.BaseURL != "http://localhost:11434/v1" {
+			t.Fatalf("local fallback baseURL = %q", p.BaseURL)
+		}
+	}
+}
+
+func TestLoadProvidersMissingFileFallsBackToDefaults(t *testing.T) {
+	ps, err := LoadProviders(filepath.Join(t.TempDir(), "missing-providers.json"))
+	if err != nil {
+		t.Fatalf("LoadProviders missing file: %v", err)
+	}
+	if len(ps) != len(defaultProviders) {
+		t.Fatalf("got %d fallback providers, want %d", len(ps), len(defaultProviders))
+	}
+}
+
+func TestProviderConfigPathUsesEnvOverride(t *testing.T) {
+	override := filepath.Join(t.TempDir(), "custom-providers.json")
+	if err := os.WriteFile(override, []byte(sampleProvidersJSON), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PI_RUN_PROVIDERS_FILE", override)
+	if got := providerConfigPath("/unused-root"); got != override {
+		t.Fatalf("providerConfigPath = %q, want override %q", got, override)
+	}
+	ps, err := LoadProviders(providerConfigPath("/unused-root"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ps) != 2 || ps[1].Name != "local" {
+		t.Fatalf("override table was not loaded: %+v", ps)
 	}
 }

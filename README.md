@@ -49,9 +49,10 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
 
 > **Add a provider without recompiling:** edit `providers.json` (add a row:
 > name, key env var, pi provider, default model, optional `baseURL`), then run
-> `pi-run providers` to verify it lists. There is **no automatic
-> cross-provider fallback** — the provider is explicit (`--provider` /
-> `PI_PROVIDER`).
+> `pi-run providers` to verify it lists. Installed binaries use the embedded
+> seven-provider table; set `PI_RUN_PROVIDERS_FILE` to load a provider table
+> from another path. There is **no automatic cross-provider fallback** — the
+> provider is explicit (`--provider` / `PI_PROVIDER`).
 
 ## Quick Start
 

@@ -15,6 +15,7 @@ var supportedProviderKeyEnvs = []string{
 	"GEMINI_API_KEY",
 	"GROQ_API_KEY",
 	"DEEPSEEK_API_KEY",
+	"LOCAL_API_KEY",
 }
 
 const evalUsage = `Usage: pi-run eval [--quick] [-- <pytest args...>]

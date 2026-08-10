@@ -94,3 +94,12 @@ def test_get_secret_env_only_no_fallback(monkeypatch, tmp_path):
     monkeypatch.setenv("BW_GET", _fake_bw_get(tmp_path, "#!/bin/sh\nprintf '%s\\n' 'sk-vault-value'\n"))
     assert get_secret("OPENAI_API_KEY") is None
 
+
+
+def test_any_provider_key_env_includes_local(monkeypatch):
+    for key in SUPPORTED_PROVIDER_KEYS:
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("LOCAL_API_KEY", "test-key")
+    from conftest import any_provider_key_env
+
+    assert any_provider_key_env() is True

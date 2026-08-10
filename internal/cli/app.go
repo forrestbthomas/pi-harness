@@ -139,7 +139,7 @@ func runLaunch(mode string, args []string) int {
 		fmt.Fprintf(os.Stderr, "pi-run: %s: %v\n", mode, err)
 		return 4
 	}
-	code, err := execPi(nodeVersion, piArgs(p, model, mode, rest), []string{p.KeyEnv + "=" + key})
+	code, err := execPi(nodeVersion, piArgs(p, model, mode, rest), launchEnv(p, key))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1

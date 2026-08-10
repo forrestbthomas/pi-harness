@@ -84,7 +84,12 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "canonical":
         # Print the canonical backend name for a PI_SECRET_BACKEND value.
         print(canonical_backend(sys.argv[2] if len(sys.argv) > 2 else None))
-    else:
-        # Print the resolved secret (empty when unavailable) for a key name.
+    elif len(sys.argv) > 1 and sys.argv[1] == "resolve-available":
+        # Availability probe for a key name: exit 0 when a secret resolves,
+        # exit 1 when unavailable. Never prints the value — secrets must not
+        # be echoed (project safety rule; also keeps CodeQL's clear-text
+        # logging check quiet). Used by internal/cli/secret_contract_test.go.
         value = resolve_secret(sys.argv[2]) if len(sys.argv) > 2 else None
-        print(value if value is not None else "")
+        sys.exit(0 if value is not None else 1)
+    else:
+        print("usage: secret_backend.py canonical [value] | resolve-available <key>")

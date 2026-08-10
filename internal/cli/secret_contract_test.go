@@ -97,6 +97,8 @@ func TestSecretBackendContractMatchesPython(t *testing.T) {
 
 // TestSecretBackendPythonResolveParity verifies that env-var-first resolution
 // and unknown-backend behavior agree between Go and Python for a concrete key.
+// The Python probe reports availability via exit code (never prints the value),
+// so no secret material crosses a process boundary.
 func TestSecretBackendPythonResolveParity(t *testing.T) {
 	python, err := exec.LookPath("python3")
 	if err != nil {
@@ -112,15 +114,35 @@ func TestSecretBackendPythonResolveParity(t *testing.T) {
 		t.Skipf("eval/secret_backend.py not found: %v", err)
 	}
 
+	// pythonResolves runs the availability probe and reports whether the key
+	// resolved (exit 0) or was unavailable (exit 1).
+	pythonResolves := func() (bool, error) {
+		cmd := exec.Command(python, script, "resolve-available", "OPENAI_API_KEY")
+		if err := cmd.Run(); err != nil {
+			if ee, ok := err.(*exec.ExitError); ok && ee.ExitCode() == 1 {
+				return false, nil
+			}
+			return false, err
+		}
+		return true, nil
+	}
+
 	t.Run("env var wins in both", func(t *testing.T) {
 		t.Setenv("OPENAI_API_KEY", "sk-env-value")
-		cmd := exec.Command(python, script, "resolve", "OPENAI_API_KEY")
-		out, err := cmd.Output()
-		if err != nil {
-			t.Fatalf("python resolve: %v", err)
+
+		// Go resolves the env value.
+		got, err := resolveSecret("OPENAI_API_KEY")
+		if err != nil || got != "sk-env-value" {
+			t.Fatalf("Go resolveSecret = %q, err %v; want env value", got, err)
 		}
-		if got := strings.TrimSpace(string(out)); got != "sk-env-value" {
-			t.Fatalf("python resolve = %q, want env value", got)
+
+		// Python reports the key as available.
+		resolved, err := pythonResolves()
+		if err != nil {
+			t.Fatalf("python probe: %v", err)
+		}
+		if !resolved {
+			t.Fatal("python reported env value unavailable")
 		}
 	})
 
@@ -134,14 +156,13 @@ func TestSecretBackendPythonResolveParity(t *testing.T) {
 			t.Fatal("Go accepted unknown backend")
 		}
 
-		// Python: unknown backend must resolve to empty.
-		cmd := exec.Command(python, script, "resolve", "OPENAI_API_KEY")
-		out, err := cmd.Output()
+		// Python: unknown backend must report the key unavailable.
+		resolved, err := pythonResolves()
 		if err != nil {
-			t.Fatalf("python resolve: %v", err)
+			t.Fatalf("python probe: %v", err)
 		}
-		if got := strings.TrimSpace(string(out)); got != "" {
-			t.Fatalf("python resolve with unknown backend = %q, want empty", got)
+		if resolved {
+			t.Fatal("python resolved with unknown backend; want unavailable")
 		}
 	})
 }

@@ -358,9 +358,10 @@ second opinion", "Run worker to implement this plan". See
 
 - **Pi packages not visible?** Run `pi list -a` (project approval required).
 - **Engine warnings during install?** Ensure a current Node version is installed via nvm and available to `pi-run` (check `pi-run doctor`).
-- **DeepEval tests skipped?** Unlock your secret manager (e.g. `bw unlock` for Bitwarden) so `pi-run` can
-  fetch a provider key, or export `OPENAI_API_KEY` / another
-  supported provider key. `pi-run doctor` shows which keys are available.
+- **DeepEval tests skipped?** Live DeepEval tests run only when a supported
+  provider key is in the environment. Export `OPENAI_API_KEY` / another
+  supported provider key and re-run `pi-run eval`. Keys held only in a secret
+  manager are not read by the live-eval gate.
 - **`pi update --models` times out?** The pi.dev model-catalog endpoint is
   intermittently unreachable from some networks (TLS connects but HTTP never
   responds — on both IPv6 and IPv4). `pi-run` mitigates this three ways: every

@@ -28,10 +28,18 @@ ASSETS=(
 
 echo "== updating Homebrew formula for ${TAG} =="
 
-# Clone the tap repo.
+# Clone the tap repo. When GH_TOKEN is set (GitHub Actions), embed it so the
+# later push authenticates; never echo the token (set +x covers this script).
+CLONE_URL="https://github.com/${TAP_REPO}.git"
+if [ -n "${GH_TOKEN:-}" ]; then
+  CLONE_URL="https://x-access-token:${GH_TOKEN}@github.com/${TAP_REPO}.git"
+fi
 rm -rf "$TAP_DIR"
-git clone --depth 1 "https://github.com/${TAP_REPO}.git" "$TAP_DIR"
+git clone --depth 1 "$CLONE_URL" "$TAP_DIR"
 cd "$TAP_DIR"
+# Keep the tokenized origin so `git push origin main` below authenticates.
+# GH_TOKEN is a GitHub Actions secret, so Actions masks it in logs; the script
+# never prints the remote URL or token.
 
 # Download each asset and compute its sha256.
 # Use a simple key=value file (bash 3.2-safe; macOS ships bash 3.2).

@@ -286,3 +286,108 @@ func TestRunProvidersEmptyTable(t *testing.T) {
 		t.Fatalf("providers empty exit = %d, want 0", code)
 	}
 }
+
+func installTestPaths(t *testing.T) (target, link string) {
+	t.Helper()
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	target = filepath.Join(t.TempDir(), "pi-run")
+	if err := os.WriteFile(target, []byte("test binary"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	link = filepath.Join(home, "bin", "pi-run")
+	if err := os.MkdirAll(filepath.Dir(link), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	return target, link
+}
+
+func TestRunInstallCreatesLink(t *testing.T) {
+	target, link := installTestPaths(t)
+	if err := installLink(target, link, false); err != nil {
+		t.Fatalf("installLink: %v", err)
+	}
+	got, err := os.Readlink(link)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != target {
+		t.Fatalf("link target = %q, want %q", got, target)
+	}
+}
+
+func TestRunInstallRefusesForeignSymlink(t *testing.T) {
+	target, link := installTestPaths(t)
+	foreign := filepath.Join(t.TempDir(), "other-pi-run")
+	if err := os.WriteFile(foreign, []byte("foreign"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(foreign, link); err != nil {
+		t.Fatal(err)
+	}
+	if err := installLink(target, link, false); err == nil {
+		t.Fatal("installLink unexpectedly overwrote foreign symlink")
+	}
+	got, err := os.Readlink(link)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != foreign {
+		t.Fatalf("foreign link changed to %q, want %q", got, foreign)
+	}
+}
+
+func TestRunInstallRefusesRegularFile(t *testing.T) {
+	target, link := installTestPaths(t)
+	if err := os.WriteFile(link, []byte("do not replace"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := installLink(target, link, false); err == nil {
+		t.Fatal("installLink unexpectedly overwrote regular file")
+	}
+	got, err := os.ReadFile(link)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != "do not replace" {
+		t.Fatalf("regular file changed to %q", got)
+	}
+}
+
+func TestRunInstallForceOverwrites(t *testing.T) {
+	target, link := installTestPaths(t)
+	foreign := filepath.Join(t.TempDir(), "other-pi-run")
+	if err := os.WriteFile(foreign, []byte("foreign"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(foreign, link); err != nil {
+		t.Fatal(err)
+	}
+	if err := installLink(target, link, true); err != nil {
+		t.Fatalf("installLink --force: %v", err)
+	}
+	got, err := os.Readlink(link)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != target {
+		t.Fatalf("link target = %q, want %q", got, target)
+	}
+}
+
+func TestRunInstallReplacesOwnLink(t *testing.T) {
+	target, link := installTestPaths(t)
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatal(err)
+	}
+	if err := installLink(target, link, false); err != nil {
+		t.Fatalf("installLink own link: %v", err)
+	}
+	got, err := os.Readlink(link)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != target {
+		t.Fatalf("link target = %q, want %q", got, target)
+	}
+}

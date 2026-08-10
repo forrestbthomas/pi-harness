@@ -80,7 +80,20 @@ func Run(args []string) int {
 	case "setup":
 		return runSetup()
 	case "install":
-		return runInstall()
+		force := false
+		for _, arg := range args[1:] {
+			switch arg {
+			case "--force":
+				force = true
+			case "--help", "-h":
+				fmt.Println("Usage: pi-run install [--force]\n\nBuild pi-run and symlink it onto your PATH.\n--force overwrites an existing ~/bin/pi-run entry.")
+				return 0
+			default:
+				fmt.Fprintf(os.Stderr, "pi-run: install: unknown flag %q\n", arg)
+				return 2
+			}
+		}
+		return runInstall(force)
 	case "clean":
 		return runClean()
 	case "providers":
@@ -163,7 +176,7 @@ func splitLaunchArgs(args []string) (provider, model string, rest []string) {
 }
 
 // runInstall builds the binary and symlinks it onto the user's PATH.
-func runInstall() int {
+func runInstall(force bool) int {
 	root := repoRoot()
 	binDir := filepath.Join(root, "bin")
 	if err := os.MkdirAll(binDir, 0o755); err != nil {
@@ -186,13 +199,48 @@ func runInstall() int {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	_ = os.Remove(link)
-	if err := os.Symlink(target, link); err != nil {
+	if force {
+		if _, err := os.Lstat(link); err == nil {
+			fmt.Fprintf(os.Stderr, "pi-run: install: warning: --force overwriting existing %s\n", link)
+		}
+	}
+	if err := installLink(target, link, force); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
 	fmt.Printf("installed %s -> %s\n", link, target)
 	return 0
+}
+
+// installLink creates link -> target without overwriting unrelated user files
+// unless force is true. An existing link to the same target is safe to replace.
+func installLink(target, link string, force bool) error {
+	info, err := os.Lstat(link)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("inspect existing %s: %w", link, err)
+		}
+		return os.Symlink(target, link)
+	}
+
+	if !force {
+		if info.Mode()&os.ModeSymlink != 0 {
+			existing, err := os.Readlink(link)
+			if err != nil {
+				return fmt.Errorf("inspect existing symlink %s: %w", link, err)
+			}
+			if existing != target {
+				return fmt.Errorf("refusing to overwrite existing symlink %s -> %s; move or remove it, or re-run with --force", link, existing)
+			}
+		} else {
+			return fmt.Errorf("refusing to overwrite existing non-symlink %s; move or remove it, or re-run with --force", link)
+		}
+	}
+
+	if err := os.Remove(link); err != nil {
+		return fmt.Errorf("remove existing %s: %w", link, err)
+	}
+	return os.Symlink(target, link)
 }
 
 // buildVersion returns the version to stamp into the binary: "dev" for local

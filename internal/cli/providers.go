@@ -39,10 +39,23 @@ var defaultProviders = []Provider{
 var Providers = defaultProviders
 
 func init() {
-	path, explicit := providerConfigPath(repoRoot())
-	if ps, err := loadProviders(path, explicit); err == nil && len(ps) > 0 {
-		Providers = ps
+	Providers = loadActiveProviders(repoRoot())
+}
+
+// loadActiveProviders loads the configured provider table. Explicit overrides
+// and malformed tables warn loudly before falling back to built-in defaults;
+// a missing default repository table remains silent for released binaries.
+func loadActiveProviders(root string) []Provider {
+	path, explicit := providerConfigPath(root)
+	ps, err := loadProviders(path, explicit)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "pi-run: providers: warning: %v — using built-in provider defaults\n", err)
+		return defaultProviders
 	}
+	if len(ps) == 0 {
+		return defaultProviders
+	}
+	return ps
 }
 
 // providerConfigPath returns the provider table path and whether it was

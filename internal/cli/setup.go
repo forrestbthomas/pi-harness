@@ -8,22 +8,57 @@ import (
 	"time"
 )
 
-// repoRoot returns the harness repo root: HARNESS_ROOT env, else the parent of
-// the resolved executable (binary lives at <root>/bin/pi-run). The executable
-// path is resolved through symlinks so the installed pi-run points at <root>/bin/pi-run
-// still resolves to <root>.
+// repoRoot returns the harness repo root: HARNESS_ROOT env, else the directory
+// that actually contains a harness checkout. Two layouts are recognized:
+//
+//  1. A source checkout: the binary lives at <root>/bin/pi-run (possibly via
+//     the ~/bin/pi-run install symlink), so the resolved executable's
+//     parent-of-parent is <root>. This is only trusted when <root> carries the
+//     checkout markers (.pi/settings.json + eval/requirements.txt).
+//  2. A Homebrew-installed binary: it lives under
+//     <prefix>/Cellar/pi-run/<v>/bin/pi-run, whose parent-of-parent is a
+//     Cellar package dir with no harness markers. In that case (and whenever
+//     the executable-derived root is not a checkout) fall back to the current
+//     working directory, i.e. the project the user invoked pi-run from.
 func repoRoot() string {
 	if r := os.Getenv("HARNESS_ROOT"); r != "" {
 		return r
 	}
-	exe, err := os.Executable()
-	if err != nil {
-		return "."
+	if exe, err := os.Executable(); err == nil {
+		if root, ok := harnessRootFromExe(exe); ok {
+			return root
+		}
 	}
+	if cwd, err := os.Getwd(); err == nil {
+		return cwd
+	}
+	return "."
+}
+
+// harnessRootFromExe resolves the executable path (through symlinks) and, if
+// the binary lives inside a harness checkout at <root>/bin/pi-run, returns
+// <root>. It returns ok=false when the executable is not inside a checkout
+// (e.g. a Homebrew-installed binary under <prefix>/Cellar/...) so the caller
+// can fall back to the current working directory.
+func harnessRootFromExe(exe string) (string, bool) {
 	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
 		exe = resolved
 	}
-	return filepath.Dir(filepath.Dir(exe))
+	root := filepath.Dir(filepath.Dir(exe))
+	if isHarnessRoot(root) {
+		return root, true
+	}
+	return "", false
+}
+
+// isHarnessRoot reports whether dir looks like a pi-harness checkout: it must
+// contain the project settings and the eval suite that every checkout ships.
+func isHarnessRoot(dir string) bool {
+	if _, err := os.Stat(filepath.Join(dir, ".pi", "settings.json")); err != nil {
+		return false
+	}
+	_, err := os.Stat(filepath.Join(dir, "eval", "requirements.txt"))
+	return err == nil
 }
 
 // runCmd runs cmd with args in dir, streaming stdio; returns its exit code.

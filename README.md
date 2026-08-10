@@ -75,23 +75,28 @@ bash scripts/bootstrap.sh
 # 3. Provide an API key (plain env var is the primary path)
 export OPENAI_API_KEY=sk-...        # or OPENROUTER_API_KEY / DEEPSEEK_API_KEY
 
-# 4. Sanity-check the setup (no API key needed)
-pi-run config-check
-pi-run doctor
+# 4. Use the binary built by bootstrap
+bin/pi-run config-check
+bin/pi-run doctor
 
 # 5. Launch Pi interactively (OpenAI -> gpt-5.6-terra by default)
-pi-run chat
+bin/pi-run chat
 
 # 6. Or run a quick print-mode query
-pi-run print "List all Python files in this repo"
+bin/pi-run print "List all Python files in this repo"
 
 # 7. Route to another provider
-pi-run chat --provider deepseek
+bin/pi-run chat --provider deepseek
 ```
 
-> `pi-run` is built by the bootstrap script into `bin/pi-run`. To use it from
-> anywhere, add `bin/` to your PATH or run `pi-run install` to symlink it into
-> a directory on your PATH.
+> `pi-run` is built by the bootstrap script into `bin/pi-run`. To use the
+> shorter `pi-run` command, add the repository's `bin/` directory to your PATH:
+>
+> ```bash
+> export PATH="$PWD/bin:$PATH"
+> ```
+>
+> Or run `bin/pi-run install` to symlink it into a directory on your PATH.
 
 ## Releases
 

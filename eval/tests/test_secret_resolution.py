@@ -54,6 +54,19 @@ def test_has_api_key_false_when_nothing_available(tmp_path, monkeypatch):
     assert has_api_key() is False
 
 
+def test_has_api_key_is_env_only(tmp_path, monkeypatch):
+    """has_api_key must not invoke the secret backend during collection."""
+    for key in SUPPORTED_PROVIDER_KEYS:
+        monkeypatch.delenv(key, raising=False)
+    # This fake returns a value if invoked; env-only key detection must ignore it.
+    monkeypatch.setenv(
+        "BW_GET",
+        _fake_bw_get(tmp_path, "#!/bin/sh\nprintf '%s\\n' 'sk-should-not-be-called'\n"),
+    )
+    monkeypatch.setenv("PI_SECRET_BACKEND", "bitwarden")
+    assert has_api_key() is False
+
+
 def test_get_secret_env_first(monkeypatch):
     """Env var wins regardless of backend."""
     monkeypatch.setenv("OPENAI_API_KEY", "sk-env-value")
@@ -81,3 +94,51 @@ def test_get_secret_env_only_no_fallback(monkeypatch, tmp_path):
     monkeypatch.setenv("BW_GET", _fake_bw_get(tmp_path, "#!/bin/sh\nprintf '%s\\n' 'sk-vault-value'\n"))
     assert get_secret("OPENAI_API_KEY") is None
 
+
+@pytest.mark.parametrize("backend", ("", "bitwarden", "bw"))
+def test_get_secret_bitwarden_aliases(monkeypatch, tmp_path, backend):
+    """The default and Bitwarden aliases resolve through BW_GET."""
+    monkeypatch.setenv("PI_SECRET_BACKEND", backend)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setenv("BW_GET", _fake_bw_get(tmp_path, "#!/bin/sh\nprintf '%s\\n' 'sk-vault-value'\n"))
+    assert get_secret("OPENAI_API_KEY") == "sk-vault-value"
+
+
+@pytest.mark.parametrize("backend", ("1password", "op"))
+def test_get_secret_onepassword_aliases(monkeypatch, tmp_path, backend):
+    """The 1Password aliases resolve through op rather than BW_GET."""
+    op_bin = tmp_path / "op"
+    op_bin.write_text("#!/bin/sh\nprintf '%s\\n' 'sk-op-value'\n")
+    op_bin.chmod(0o755)
+    monkeypatch.setenv("PATH", str(tmp_path) + os.pathsep + os.environ.get("PATH", ""))
+    monkeypatch.setenv("PI_SECRET_BACKEND", backend)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setenv("BW_GET", _fake_bw_get(tmp_path, "#!/bin/sh\nexit 3\n"))
+    assert get_secret("OPENAI_API_KEY") == "sk-op-value"
+
+
+@pytest.mark.parametrize("backend", ("env-only", "env"))
+def test_get_secret_env_only_aliases_do_not_fallback(monkeypatch, tmp_path, backend):
+    """The env-only aliases never resolve through BW_GET."""
+    monkeypatch.setenv("PI_SECRET_BACKEND", backend)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setenv("BW_GET", _fake_bw_get(tmp_path, "#!/bin/sh\nprintf '%s\\n' 'sk-vault-value'\n"))
+    assert get_secret("OPENAI_API_KEY") is None
+
+
+def test_get_secret_unknown_backend_does_not_fallback(monkeypatch, tmp_path):
+    """Unknown backend must not silently fall through to Bitwarden."""
+    monkeypatch.setenv("PI_SECRET_BACKEND", "bogus")
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    # This fake proves a fallthrough would return a value; it must not run.
+    monkeypatch.setenv("BW_GET", _fake_bw_get(tmp_path, "#!/bin/sh\nprintf '%s\\n' 'sk-vault-value'\n"))
+    assert get_secret("OPENAI_API_KEY") is None
+
+
+def test_any_provider_key_env_includes_local(monkeypatch):
+    for key in SUPPORTED_PROVIDER_KEYS:
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("LOCAL_API_KEY", "test-key")
+    from conftest import any_provider_key_env
+
+    assert any_provider_key_env() is True

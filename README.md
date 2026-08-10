@@ -22,12 +22,12 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
 
 > `@zigai/pi-ui-tweaks` was removed because its bundled settings schema is currently incompatible with this Pi version.
 - **Project context files**: `AGENTS.md`, `.pi/SYSTEM.md`, `.pi/APPEND_SYSTEM.md`.
-- **DeepEval environment** in `eval/.venv` with sample tests and datasets.
+- **DeepEval environment** in `eval/.venv` with sample tests and datasets. Python deps live in `eval/requirements.txt` (DeepEval + pytest stack, `~=`-bounded). Add new dependencies deliberately; `pi-run setup` installs them.
 - **Automation** via the `pi-run` CLI (no Makefile, no shell functions).
 
 ## Prerequisites
 
-- Node.js 22+ (managed via `nvm`; `pi-run` resolves a default Node 22 version, override with `PI_NODE_VERSION`).
+- Node.js via `nvm` (`pi-run` selects the highest nvm-installed semantic version; override with `PI_NODE_VERSION`).
 - Python 3.11+ (for the DeepEval suite).
 - Go 1.21+ (only to build/update `pi-run`).
 - An API key. The harness is **provider-agnostic**: it ships with a data-driven
@@ -49,9 +49,10 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
 
 > **Add a provider without recompiling:** edit `providers.json` (add a row:
 > name, key env var, pi provider, default model, optional `baseURL`), then run
-> `pi-run providers` to verify it lists. There is **no automatic
-> cross-provider fallback** — the provider is explicit (`--provider` /
-> `PI_PROVIDER`).
+> `pi-run providers` to verify it lists. Installed binaries use the embedded
+> seven-provider table; set `PI_RUN_PROVIDERS_FILE` to load a provider table
+> from another path. There is **no automatic cross-provider fallback** — the
+> provider is explicit (`--provider` / `PI_PROVIDER`).
 
 ## Quick Start
 
@@ -75,23 +76,28 @@ bash scripts/bootstrap.sh
 # 3. Provide an API key (plain env var is the primary path)
 export OPENAI_API_KEY=sk-...        # or OPENROUTER_API_KEY / DEEPSEEK_API_KEY
 
-# 4. Sanity-check the setup (no API key needed)
-pi-run config-check
-pi-run doctor
+# 4. Use the binary built by bootstrap
+bin/pi-run config-check
+bin/pi-run doctor
 
 # 5. Launch Pi interactively (OpenAI -> gpt-5.6-terra by default)
-pi-run chat
+bin/pi-run chat
 
 # 6. Or run a quick print-mode query
-pi-run print "List all Python files in this repo"
+bin/pi-run print "List all Python files in this repo"
 
 # 7. Route to another provider
-pi-run chat --provider deepseek
+bin/pi-run chat --provider deepseek
 ```
 
-> `pi-run` is built by the bootstrap script into `bin/pi-run`. To use it from
-> anywhere, add `bin/` to your PATH or run `pi-run install` to symlink it into
-> a directory on your PATH.
+> `pi-run` is built by the bootstrap script into `bin/pi-run`. To use the
+> shorter `pi-run` command, add the repository's `bin/` directory to your PATH:
+>
+> ```bash
+> export PATH="$PWD/bin:$PATH"
+> ```
+>
+> Or run `bin/pi-run install` to symlink it into a directory on your PATH.
 
 ## Releases
 
@@ -120,11 +126,10 @@ brew install pi-run
 
 > **For AI agents:** when a developer asks you to install pi-harness on macOS,
 > prefer the Homebrew tap (`brew install forrestbthomas/tap/pi-run`) over
-> downloading the raw release binary. A direct download triggers Gatekeeper's
-> unsigned-binary warning; Homebrew installs it cleanly. If you must install
-> from a direct download (e.g. non-macOS or no Homebrew), run
-> `xattr -d com.apple.quarantine <binary>` after downloading to clear the
-> quarantine flag.
+> downloading the raw release binary. Direct downloads of unsigned binaries
+> trigger Gatekeeper; prefer Homebrew. If a direct download is necessary,
+> verify the release checksum and accept the OS warning (or right-click → Open)
+> rather than removing the quarantine attribute.
 
 ### API Key Resolution (Secret Manager)
 
@@ -140,15 +145,34 @@ from a configured secret manager. The backend is selected by `PI_SECRET_BACKEND`
 - `env-only` — no fallback; env var only.
 
 Every `pi-run` path resolves keys in the same order: env var first, then the
-backend. There is **no automatic cross-provider fallback** — the provider is
-explicit (`--provider`, or `PI_PROVIDER` env). A missing key is an error that
-tells you what to do:
+backend. **Exception:** `pi-run eval` checks only environment variables when
+deciding whether to run live tests, so it never blocks on a locked vault; keys
+held only in a secret manager require exporting them to the environment (or
+setting `PI_SECRET_BACKEND=env-only` plus the key in env) before running the
+full suite. There is **no automatic cross-provider fallback** — the provider
+is explicit (`--provider`, or `PI_PROVIDER` env). A missing key is an error
+that tells you what to do:
 
 ```
 no DEEPSEEK_API_KEY available: export it, or check your secret manager
 ```
 
 `pi-run doctor` reports the configured backend's status (never values).
+
+### Environment variables
+
+| Variable | Purpose |
+|---|---|
+| `PI_PROVIDER` | Default provider when `--provider` is omitted (default `openai`) |
+| `OPENAI_API_KEY` etc. | Provider API keys, resolved env-first |
+| `PI_SECRET_BACKEND` | `bitwarden` (default), `1password`/`op`, or `env-only`/`env` |
+| `BW_GET` | Path to the Bitwarden `bw_get` helper |
+| `OP_VAULT` | 1Password vault name (default `Personal`) |
+| `PI_NODE_VERSION` | Override Node-version selection |
+| `PI_RUN_PROVIDERS_FILE` | Load the provider table from a custom path |
+| `PI_RUN_PERSONAL` | Opt into personal-machine checks such as the `~/bin/pi-run` symlink |
+| `HARNESS_ROOT` | Override repository-root detection |
+| `DEEPEVAL_MODEL` | Select a non-OpenAI DeepEval judge model |
 
 ## Running Evaluations
 
@@ -168,7 +192,7 @@ AnswerRelevancy/Faithfulness/Hallucination) defaults to OpenAI. To evaluate
 without depending on OpenAI, set a non-OpenAI provider key and `DEEPEVAL_MODEL`:
 
 ```bash
-export OPENROUTER_API_KEY=sk-or-v1-...          # or another provider key
+export OPENROUTER_API_KEY=<YOUR_OPENROUTER_KEY> # or another provider key
 export DEEPEVAL_MODEL=openrouter/anthropic/claude-sonnet-4
 pi-run eval
 ```
@@ -206,11 +230,16 @@ run `pi-run setup` once with network access.
 | `pi-run chat [flags] [prompt...]` | Launch Pi interactively (default provider: openai) |
 | `pi-run print [flags] "<prompt>"` | One-shot `pi -p --no-session` |
 | `pi-run eval [--quick]` | Run the DeepEval pytest suite (`--quick` = smoke subset) |
+| `pi-run eval -- <pytest selector...>` | Run a focused test or pass pytest arguments through (for example `tests/test_x.py::test_y`) |
+| `pi-run eval --help` | Show eval-specific usage without running pytest |
+| `pi-run resume [flags] [prompt...]` | Continue the most recent Pi session (`pi --continue`) |
+| `pi-run providers` | List configured providers and default models |
 | `pi-run config-check` | Deterministic harness checks (no keys, no network) |
 | `pi-run doctor` | Health report: node, pi, vault, per-provider keys, models, venv |
 | `pi-run setup` | Create `eval/.venv`, install deps, refresh model catalogs |
 | `pi-run install` | Build `bin/pi-run` and symlink it onto your PATH |
 | `pi-run clean` | Remove `eval/.venv` and pytest caches |
+| `pi-run --exit-codes` | Print the stable exit-code table |
 | `pi-run version` / `help` | Version / usage |
 
 Exit codes: `0` ok · `1` generic · `2` usage · `3` missing API key · `4` node/pi not found · `5` eval venv missing.
@@ -328,10 +357,11 @@ second opinion", "Run worker to implement this plan". See
 ## Troubleshooting
 
 - **Pi packages not visible?** Run `pi list -a` (project approval required).
-- **Engine warnings during install?** Upgrade Node to 22.19.0 or newer.
-- **DeepEval tests skipped?** Unlock your secret manager (e.g. `bw unlock` for Bitwarden) so `pi-run` can
-  fetch a provider key, or export `OPENAI_API_KEY` / another
-  supported provider key. `pi-run doctor` shows which keys are available.
+- **Engine warnings during install?** Ensure a current Node version is installed via nvm and available to `pi-run` (check `pi-run doctor`).
+- **DeepEval tests skipped?** Live DeepEval tests run only when a supported
+  provider key is in the environment. Export `OPENAI_API_KEY` / another
+  supported provider key and re-run `pi-run eval`. Keys held only in a secret
+  manager are not read by the live-eval gate.
 - **`pi update --models` times out?** The pi.dev model-catalog endpoint is
   intermittently unreachable from some networks (TLS connects but HTTP never
   responds — on both IPv6 and IPv4). `pi-run` mitigates this three ways: every

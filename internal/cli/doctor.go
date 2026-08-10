@@ -38,23 +38,30 @@ func runDoctor() int {
 		check("pi CLI present", pathExists(piPath))
 	}
 
-	// Secret backend status (informational; never a value).
+	// Secret backend status is informational: users may supply a key directly
+	// through the environment and do not need a configured secret manager.
 	be, err := newSecretBackend()
 	if err != nil {
-		check("secret backend", false)
+		fmt.Printf("  [info] secret backend: unavailable (%v)\n", err)
 	} else if status, err := be.Status(); err == nil {
 		fmt.Printf("  [info] %s backend: %s\n", be.Name(), status)
 	} else {
-		check(be.Name()+" backend reachable", false)
+		fmt.Printf("  [info] %s backend: unavailable (%v)\n", be.Name(), err)
 	}
 
-	// Key presence per provider (never the value).
+	// Key presence per provider is informational: only one is needed to launch
+	// chat or run live evaluations, and a fresh installation has none yet.
+	anyKey := false
 	for _, p := range Providers {
 		if _, err := resolveSecret(p.KeyEnv); err == nil {
-			check(p.KeyEnv+" present", true)
+			anyKey = true
+			fmt.Printf("  [info] %s: key present\n", p.KeyEnv)
 		} else {
-			check(p.KeyEnv+" present", false)
+			fmt.Printf("  [info] %s: not configured\n", p.KeyEnv)
 		}
+	}
+	if !anyKey {
+		fmt.Println("  [info] no provider key configured — set a key (env or secret manager) to run chat/live evals")
 	}
 
 	// Default models resolvable (informational; offline; PATH via execPi).

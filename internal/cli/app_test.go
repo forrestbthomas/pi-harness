@@ -93,8 +93,8 @@ func TestRunEvalWithoutVenv(t *testing.T) {
 }
 
 func TestUsageMentionsProviders(t *testing.T) {
-	if !strings.Contains(usage, "deepseek") || !strings.Contains(usage, "openrouter") {
-		t.Fatal("usage must document all providers")
+	if !strings.Contains(usage, "--provider <name>") || !strings.Contains(usage, "pi-run providers") {
+		t.Fatal("usage must direct users to pi-run providers for valid provider names")
 	}
 }
 
@@ -284,5 +284,325 @@ func TestRunProvidersEmptyTable(t *testing.T) {
 	// runProviders should handle empty table gracefully (prints nothing, exit 0).
 	if code := Run([]string{"providers"}); code != 0 {
 		t.Fatalf("providers empty exit = %d, want 0", code)
+	}
+}
+
+func installTestPaths(t *testing.T) (target, link string) {
+	t.Helper()
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	target = filepath.Join(t.TempDir(), "pi-run")
+	if err := os.WriteFile(target, []byte("test binary"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	link = filepath.Join(home, "bin", "pi-run")
+	if err := os.MkdirAll(filepath.Dir(link), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	return target, link
+}
+
+func TestRunInstallCreatesLink(t *testing.T) {
+	target, link := installTestPaths(t)
+	if err := installLink(target, link, false); err != nil {
+		t.Fatalf("installLink: %v", err)
+	}
+	got, err := os.Readlink(link)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != target {
+		t.Fatalf("link target = %q, want %q", got, target)
+	}
+}
+
+func TestRunInstallRefusesForeignSymlink(t *testing.T) {
+	target, link := installTestPaths(t)
+	foreign := filepath.Join(t.TempDir(), "other-pi-run")
+	if err := os.WriteFile(foreign, []byte("foreign"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(foreign, link); err != nil {
+		t.Fatal(err)
+	}
+	if err := installLink(target, link, false); err == nil {
+		t.Fatal("installLink unexpectedly overwrote foreign symlink")
+	}
+	got, err := os.Readlink(link)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != foreign {
+		t.Fatalf("foreign link changed to %q, want %q", got, foreign)
+	}
+}
+
+func TestRunInstallRefusesRegularFile(t *testing.T) {
+	target, link := installTestPaths(t)
+	if err := os.WriteFile(link, []byte("do not replace"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := installLink(target, link, false); err == nil {
+		t.Fatal("installLink unexpectedly overwrote regular file")
+	}
+	got, err := os.ReadFile(link)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != "do not replace" {
+		t.Fatalf("regular file changed to %q", got)
+	}
+}
+
+func TestRunInstallForceOverwrites(t *testing.T) {
+	target, link := installTestPaths(t)
+	foreign := filepath.Join(t.TempDir(), "other-pi-run")
+	if err := os.WriteFile(foreign, []byte("foreign"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(foreign, link); err != nil {
+		t.Fatal(err)
+	}
+	if err := installLink(target, link, true); err != nil {
+		t.Fatalf("installLink --force: %v", err)
+	}
+	got, err := os.Readlink(link)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != target {
+		t.Fatalf("link target = %q, want %q", got, target)
+	}
+}
+
+func TestRunInstallReplacesOwnLink(t *testing.T) {
+	target, link := installTestPaths(t)
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatal(err)
+	}
+	if err := installLink(target, link, false); err != nil {
+		t.Fatalf("installLink own link: %v", err)
+	}
+	got, err := os.Readlink(link)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != target {
+		t.Fatalf("link target = %q, want %q", got, target)
+	}
+}
+
+func TestRunInstallAtomicReplace(t *testing.T) {
+	target, link := installTestPaths(t)
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := installLink(target, link, false); err != nil {
+		t.Fatalf("installLink atomic replace: %v", err)
+	}
+	got, err := os.Readlink(link)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != target {
+		t.Fatalf("link target = %q, want %q", got, target)
+	}
+
+	entries, err := os.ReadDir(filepath.Dir(link))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range entries {
+		if strings.HasPrefix(entry.Name(), ".pi-run-link-") {
+			t.Fatalf("leftover temporary link %q", entry.Name())
+		}
+	}
+}
+
+func TestRunInstallReplacesRelativeOwnLink(t *testing.T) {
+	target, link := installTestPaths(t)
+	relativeTarget, err := filepath.Rel(filepath.Dir(link), target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(relativeTarget, link); err != nil {
+		t.Fatal(err)
+	}
+	if err := installLink(target, link, false); err != nil {
+		t.Fatalf("installLink relative own link: %v", err)
+	}
+	got, err := os.Readlink(link)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != target {
+		t.Fatalf("link target = %q, want %q", got, target)
+	}
+}
+
+func evalTestRoot(t *testing.T) (string, string) {
+	t.Helper()
+	root := t.TempDir()
+	t.Setenv("HARNESS_ROOT", root)
+	for _, key := range supportedProviderKeyEnvs {
+		t.Setenv(key, "")
+	}
+	venv := filepath.Join(root, "eval", ".venv", "bin")
+	if err := os.MkdirAll(venv, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	argsFile := filepath.Join(root, "pytest-args.txt")
+	script := "#!/bin/sh\nprintf '%s\\n' \"$@\" > \"" + argsFile + "\"\nexit 0\n"
+	if err := os.WriteFile(filepath.Join(venv, "python"), []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	return root, argsFile
+}
+
+func captureRunStdout(t *testing.T, args []string) (int, string) {
+	t.Helper()
+	old := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stdout = w
+	code := Run(args)
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	os.Stdout = old
+	var out strings.Builder
+	if _, err := io.Copy(&out, r); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return code, out.String()
+}
+
+func captureRunStderr(t *testing.T, args []string) (int, string) {
+	t.Helper()
+	old := os.Stderr
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stderr = w
+	code := Run(args)
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	os.Stderr = old
+	var out strings.Builder
+	if _, err := io.Copy(&out, r); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return code, out.String()
+}
+
+func TestRunEvalHelpDoesNotRunSuite(t *testing.T) {
+	_, argsFile := evalTestRoot(t)
+	code, out := captureRunStdout(t, []string{"eval", "--help"})
+	if code != 0 {
+		t.Fatalf("eval --help exit = %d, want 0", code)
+	}
+	if !strings.Contains(out, "Usage: pi-run eval") {
+		t.Fatalf("eval --help output missing usage: %q", out)
+	}
+	if _, err := os.Stat(argsFile); !os.IsNotExist(err) {
+		t.Fatalf("eval --help must not invoke pytest, args file err = %v", err)
+	}
+}
+
+func TestRunEvalUnknownFlagExit2(t *testing.T) {
+	_, argsFile := evalTestRoot(t)
+	code, out := captureRunStderr(t, []string{"eval", "--bogus"})
+	if code != 2 {
+		t.Fatalf("eval --bogus exit = %d, want 2", code)
+	}
+	if !strings.Contains(out, "unknown flag") {
+		t.Fatalf("eval --bogus stderr missing unknown flag: %q", out)
+	}
+	if _, err := os.Stat(argsFile); !os.IsNotExist(err) {
+		t.Fatalf("eval --bogus must not invoke pytest, args file err = %v", err)
+	}
+}
+
+func TestRunEvalPytestPassThrough(t *testing.T) {
+	_, argsFile := evalTestRoot(t)
+	selector := "tests/test_x.py::test_y"
+	if code := Run([]string{"eval", "--", selector}); code != 0 {
+		t.Fatalf("eval pass-through exit = %d, want 0", code)
+	}
+	args, err := os.ReadFile(argsFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(args), selector) {
+		t.Fatalf("pytest args %q missing pass-through selector %q", args, selector)
+	}
+}
+
+func TestRunEvalQuickStillWorks(t *testing.T) {
+	_, argsFile := evalTestRoot(t)
+	if code := Run([]string{"eval", "--quick"}); code != 0 {
+		t.Fatalf("eval --quick exit = %d, want 0", code)
+	}
+	args, err := os.ReadFile(argsFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"tests/test_code_quality.py",
+		"tests/test_agent_task_completion.py::test_dataset_expected_outputs_are_non_empty",
+	} {
+		if !strings.Contains(string(args), want) {
+			t.Fatalf("pytest args %q missing quick selector %q", args, want)
+		}
+	}
+}
+
+func TestUsageMentionsAllCommands(t *testing.T) {
+	for _, want := range []string{"resume", "providers", "--exit-codes", "eval"} {
+		if !strings.Contains(usage, want) {
+			t.Fatalf("usage missing command or flag %q", want)
+		}
+	}
+}
+
+func TestRunCleanPrintsRemovedAndMissingPaths(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("HARNESS_ROOT", root)
+
+	existing := filepath.Join(root, "eval", ".venv")
+	if err := os.MkdirAll(existing, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(existing, "marker"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	code, output := captureRunStdout(t, []string{"clean"})
+	if code != 0 {
+		t.Fatalf("Run(clean) code = %d, want 0; output:\n%s", code, output)
+	}
+	if !strings.Contains(output, "removed "+existing) {
+		t.Fatalf("clean output missing removed path %q:\n%s", existing, output)
+	}
+	missing := filepath.Join(root, "eval", ".pytest_cache")
+	if !strings.Contains(output, "nothing to clean: "+missing) {
+		t.Fatalf("clean output missing missing-path status %q:\n%s", missing, output)
+	}
+	if !strings.Contains(output, "clean complete") {
+		t.Fatalf("clean output missing completion summary:\n%s", output)
+	}
+	if _, err := os.Stat(existing); !os.IsNotExist(err) {
+		t.Fatalf("existing clean path still exists or stat failed: %v", err)
 	}
 }

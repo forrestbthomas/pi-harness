@@ -85,6 +85,7 @@ SUPPORTED_PROVIDER_KEYS = (
     "GEMINI_API_KEY",
     "GROQ_API_KEY",
     "DEEPSEEK_API_KEY",
+    "LOCAL_API_KEY",
 )
 
 
@@ -105,7 +106,7 @@ def get_secret(name: str) -> str | None:
     if value:
         return value
 
-    backend = os.environ.get("PI_SECRET_BACKEND", "bitwarden")
+    backend = os.environ.get("PI_SECRET_BACKEND", "bitwarden") or "bitwarden"
 
     if backend in ("env-only", "env"):
         return None
@@ -125,6 +126,9 @@ def get_secret(name: str) -> str | None:
             return None
         return result.stdout.strip() or None
 
+    if backend not in ("bitwarden", "bw"):
+        return None
+
     # bitwarden (default)
     bw_get = os.environ.get("BW_GET", str(Path.home() / "bin" / "bw_get"))
     try:
@@ -142,8 +146,8 @@ def get_secret(name: str) -> str | None:
 
 
 def has_api_key() -> bool:
-    """Return True if any supported provider API key is present (env or Bitwarden)."""
-    return any(get_secret(key) for key in SUPPORTED_PROVIDER_KEYS)
+    """True if any supported provider key is present in the environment (presence only)."""
+    return any_provider_key_env()
 
 
 def judge_provider() -> str:

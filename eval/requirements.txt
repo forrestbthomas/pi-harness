@@ -1,7 +1,9 @@
 # Python dependencies for the DeepEval evaluation suite.
-# Ranges use ~= (compatible release): allows patch/minor updates within the
-# specified major version, but bounds the floor so the suite stays
-# reproducible. Run `pi-run setup` to install into eval/.venv.
+# This suite intentionally uses the DeepEval + pytest stack: deepeval, pytest,
+# pytest-timeout, pypdf, and python-dotenv. Ranges use ~= (compatible release)
+# bounds for reproducibility. Add a new dependency only by deliberate decision:
+# update this policy comment and the README dependency-policy line together.
+# Run `pi-run setup` to install into eval/.venv.
 deepeval~=4.1
 pytest~=9.1
 python-dotenv~=1.2

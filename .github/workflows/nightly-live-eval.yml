@@ -1,5 +1,8 @@
 name: nightly-live-eval
 
+permissions:
+  contents: read
+
 on:
   schedule:
     - cron: '0 3 * * *'
@@ -22,6 +25,8 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: '3.11'
+          cache: pip
+          cache-dependency-path: eval/requirements.txt
       - name: Install deps
         run: |
           python -m venv eval/.venv

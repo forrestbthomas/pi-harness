@@ -16,23 +16,30 @@ NODE_VERSION="${PI_NODE_VERSION:-latest}"
 
 echo "== pi-harness bootstrap =="
 
-# 1. Node + pi
-if command -v node >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
-  echo "  node + pi already on PATH"
+# 1. Node + pi. pi-run requires an nvm-managed Node installation even if a
+# different Node or pi binary happens to be available on PATH.
+if [ -s "$HOME/.nvm/nvm.sh" ]; then
+  # shellcheck disable=SC1091
+  . "$HOME/.nvm/nvm.sh"
+fi
+if ! command -v nvm >/dev/null 2>&1; then
+  echo "  nvm not found — install it first:"
+  echo "    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash"
+  echo "  then re-run this bootstrap."
+  exit 1
+fi
+
+echo "  [global] Ensuring Node ${NODE_VERSION} via nvm ..."
+echo "  [global] This may install Node in your nvm-managed global toolchain."
+nvm install "$NODE_VERSION"
+
+NVM_NODE_BIN="$(dirname "$(nvm which current)")"
+if [ ! -x "$NVM_NODE_BIN/pi" ]; then
+  echo "  [global] Installing pi CLI with npm -g ..."
+  echo "  [global] This installs pi in the active nvm-managed Node toolchain."
+  npm install -g pi
 else
-  echo "  Ensuring Node ${NODE_VERSION} via nvm ..."
-  if [ -s "$HOME/.nvm/nvm.sh" ]; then
-    # shellcheck disable=SC1091
-    . "$HOME/.nvm/nvm.sh"
-  fi
-  if ! command -v node >/dev/null 2>&1; then
-    echo "  Installing node ${NODE_VERSION} via nvm ..."
-    nvm install "$NODE_VERSION"
-  fi
-  if ! command -v pi >/dev/null 2>&1; then
-    echo "  Installing pi CLI (npm global) ..."
-    npm install -g pi
-  fi
+  echo "  pi CLI already installed for the active nvm Node"
 fi
 
 # 2. Build pi-run
@@ -43,12 +50,17 @@ echo "  Building bin/pi-run ..."
 echo "  Setting up eval/.venv ..."
 (cd "$ROOT" && bin/pi-run setup)
 
-# 4. Key guidance
+# 4. PATH and key guidance
 echo ""
-echo "== Done. Provide an API key: =="
+echo "  bootstrap complete. Add bin/ to your PATH:"
+echo "    export PATH=\"$ROOT/bin:\$PATH\""
+echo "  or run: $ROOT/bin/pi-run install"
+echo "  verify: $ROOT/bin/pi-run version"
+echo ""
+echo "== Provide an API key: =="
 echo "  export OPENAI_API_KEY=sk-...          # or"
 echo "  export OPENROUTER_API_KEY=sk-or-v1-... # or"
 echo "  export DEEPSEEK_API_KEY=sk-...        # then:"
-echo "  pi-run chat"
+echo "  $ROOT/bin/pi-run chat"
 echo ""
 echo "Secret manager (optional): pi-run resolves keys env-first, then from a configured secret manager (PI_SECRET_BACKEND: bitwarden via bw_get, 1password via op, or env-only)."

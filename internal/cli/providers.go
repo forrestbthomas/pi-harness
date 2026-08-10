@@ -21,26 +21,50 @@ type providerFile struct {
 	Providers []Provider `json:"providers"`
 }
 
-// defaultProviders is the fallback routing table used when providers.json is
-// missing (e.g. running tests without a repo root). openai is the default.
+// defaultProviders is the complete routing table shipped in every binary.
+// providers.json can replace it in a repository checkout or through
+// PI_RUN_PROVIDERS_FILE. openai is the default.
 var defaultProviders = []Provider{
 	{Name: "openai", KeyEnv: "OPENAI_API_KEY", PiProvider: "openai", DefaultModel: "openai/gpt-5.6-terra"},
 	{Name: "openrouter", KeyEnv: "OPENROUTER_API_KEY", PiProvider: "openrouter", DefaultModel: "openai/gpt-5.6-terra"},
 	{Name: "deepseek", KeyEnv: "DEEPSEEK_API_KEY", PiProvider: "deepseek", DefaultModel: "deepseek/deepseek-v4-flash"},
+	{Name: "anthropic", KeyEnv: "ANTHROPIC_API_KEY", PiProvider: "anthropic", DefaultModel: "anthropic/claude-sonnet-4"},
+	{Name: "gemini", KeyEnv: "GEMINI_API_KEY", PiProvider: "gemini", DefaultModel: "gemini/gemini-2.5-pro"},
+	{Name: "groq", KeyEnv: "GROQ_API_KEY", PiProvider: "groq", DefaultModel: "groq/llama-3.3-70b-versatile"},
+	{Name: "local", KeyEnv: "LOCAL_API_KEY", PiProvider: "openai", DefaultModel: "local/model", BaseURL: "http://localhost:11434/v1"},
 }
 
-// Providers is the active routing table, loaded from providers.json when
-// available, else the built-in defaults.
+// Providers is the active routing table, loaded from a configured JSON file
+// when available, else the complete built-in defaults.
 var Providers = defaultProviders
 
 func init() {
-	root := repoRoot()
-	if root == "." {
-		return // cannot locate providers.json; keep defaults
+	Providers = loadActiveProviders(repoRoot())
+}
+
+// loadActiveProviders loads the configured provider table. Explicit overrides
+// and malformed tables warn loudly before falling back to built-in defaults;
+// a missing default repository table remains silent for released binaries.
+func loadActiveProviders(root string) []Provider {
+	path, explicit := providerConfigPath(root)
+	ps, err := loadProviders(path, explicit)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "pi-run: providers: warning: %v — using built-in provider defaults\n", err)
+		return defaultProviders
 	}
-	if ps, err := LoadProviders(filepath.Join(root, "providers.json")); err == nil && len(ps) > 0 {
-		Providers = ps
+	if len(ps) == 0 {
+		return defaultProviders
 	}
+	return ps
+}
+
+// providerConfigPath returns the provider table path and whether it was
+// explicitly selected through PI_RUN_PROVIDERS_FILE.
+func providerConfigPath(root string) (path string, explicit bool) {
+	if path := os.Getenv("PI_RUN_PROVIDERS_FILE"); path != "" {
+		return path, true
+	}
+	return filepath.Join(root, "providers.json"), false
 }
 
 // ProvidersFromJSON parses provider table JSON.
@@ -55,13 +79,28 @@ func ProvidersFromJSON(data []byte) ([]Provider, error) {
 	return f.Providers, nil
 }
 
-// LoadProviders reads a provider table from path.
+// LoadProviders reads a repository provider table. A missing or unreadable
+// repository table falls back to the complete provider set embedded in the binary.
 func LoadProviders(path string) ([]Provider, error) {
+	return loadProviders(path, false)
+}
+
+// loadProviders reads a provider table. Explicit overrides and malformed
+// repository tables return errors so configuration mistakes are not silent;
+// only a missing or unreadable default repository table falls back to defaults.
+func loadProviders(path string, explicit bool) ([]Provider, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
-		return nil, err
+		if explicit {
+			return nil, fmt.Errorf("read explicit providers file %q: %w", path, err)
+		}
+		return defaultProviders, nil
 	}
-	return ProvidersFromJSON(b)
+	ps, err := ProvidersFromJSON(b)
+	if err != nil {
+		return nil, fmt.Errorf("load providers file %q: %w", path, err)
+	}
+	return ps, nil
 }
 
 // LookupProvider returns the provider named name, or an error.

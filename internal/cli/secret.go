@@ -2,12 +2,19 @@ package cli
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
+
+// secretCmdTimeout bounds secret-manager helpers so a locked or hung backend
+// cannot indefinitely block chat, print, resume, or doctor. It is a variable
+// only so hermetic tests can use a short timeout.
+var secretCmdTimeout = 30 * time.Second
 
 // SecretBackend resolves API keys from a secret manager. Implementations must
 // never log or print secret values — only presence and status.
@@ -54,17 +61,15 @@ func (b *bitwardenBackend) bwGetPath() (string, error) {
 func (b *bitwardenBackend) Resolve(name string) (string, error) {
 	p, err := b.bwGetPath()
 	if err != nil {
-		return "", fmt.Errorf("resolve %s: %w", name, err)
+		return "", fmt.Errorf("%s: secret lookup failed", b.Name())
 	}
-	var out bytes.Buffer
-	cmd := exec.Command(p, name)
-	cmd.Stdout = &out
-	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("resolve %s: bw_get failed (vault locked? run `bw unlock`): %w", name, err)
+	out, err := runSecretCommand(b.Name(), "lookup", p, name)
+	if err != nil {
+		return "", err
 	}
-	v := strings.TrimSpace(out.String())
+	v := strings.TrimSpace(string(out))
 	if v == "" {
-		return "", fmt.Errorf("resolve %s: bw_get returned an empty value", name)
+		return "", fmt.Errorf("%s: secret lookup returned an empty value", b.Name())
 	}
 	return v, nil
 }
@@ -72,9 +77,9 @@ func (b *bitwardenBackend) Resolve(name string) (string, error) {
 func (b *bitwardenBackend) Status() (string, error) {
 	p, err := b.bwGetPath()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%s: secret status failed", b.Name())
 	}
-	out, err := exec.Command(p, "--status").Output()
+	out, err := runSecretCommand(b.Name(), "status", p, "--status")
 	if err != nil {
 		return "", err
 	}
@@ -93,25 +98,42 @@ func (b *onePasswordBackend) Resolve(name string) (string, error) {
 		vault = "Personal"
 	}
 	ref := fmt.Sprintf("op://%s/%s/credential", vault, name)
-	var out bytes.Buffer
-	cmd := exec.Command("op", "read", ref)
-	cmd.Stdout = &out
-	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("resolve %s: op read failed (is 1Password CLI signed in? run `op signin`): %w", name, err)
+	out, err := runSecretCommand(b.Name(), "lookup", "op", "read", ref)
+	if err != nil {
+		return "", err
 	}
-	v := strings.TrimSpace(out.String())
+	v := strings.TrimSpace(string(out))
 	if v == "" {
-		return "", fmt.Errorf("resolve %s: op read returned an empty value", name)
+		return "", fmt.Errorf("%s: secret lookup returned an empty value", b.Name())
 	}
 	return v, nil
 }
 
 func (b *onePasswordBackend) Status() (string, error) {
-	out, err := exec.Command("op", "account", "list").Output()
+	out, err := runSecretCommand(b.Name(), "status", "op", "account", "list")
 	if err != nil {
 		return "", err
 	}
 	return strings.TrimSpace(string(out)), nil
+}
+
+// runSecretCommand executes a secret-manager helper under the shared timeout.
+// It never returns helper output in errors because helper output may be secret
+// material.
+func runSecretCommand(backend, operation, command string, args ...string) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), secretCmdTimeout)
+	defer cancel()
+
+	var out bytes.Buffer
+	cmd := exec.CommandContext(ctx, command, args...)
+	cmd.Stdout = &out
+	if err := cmd.Run(); err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			return nil, fmt.Errorf("%s: secret %s timed out", backend, operation)
+		}
+		return nil, fmt.Errorf("%s: secret %s failed", backend, operation)
+	}
+	return out.Bytes(), nil
 }
 
 // envOnlyBackend resolves only from the environment; no fallback.

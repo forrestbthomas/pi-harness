@@ -106,7 +106,7 @@ def get_secret(name: str) -> str | None:
     if value:
         return value
 
-    backend = os.environ.get("PI_SECRET_BACKEND", "bitwarden")
+    backend = os.environ.get("PI_SECRET_BACKEND", "bitwarden") or "bitwarden"
 
     if backend in ("env-only", "env"):
         return None
@@ -125,6 +125,9 @@ def get_secret(name: str) -> str | None:
         if result.returncode != 0:
             return None
         return result.stdout.strip() or None
+
+    if backend not in ("bitwarden", "bw"):
+        return None
 
     # bitwarden (default)
     bw_get = os.environ.get("BW_GET", str(Path.home() / "bin" / "bw_get"))

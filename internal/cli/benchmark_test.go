@@ -3,7 +3,9 @@ package cli
 import (
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -168,6 +170,92 @@ func TestLoadBenchmarkTasksMissingDir(t *testing.T) {
 	_, errs := loadBenchmarkTasks(root, "")
 	if len(errs) != 1 || !strings.Contains(errs[0].Error(), "eval/benchmarks") {
 		t.Fatalf("errs = %v, want missing-dir error", errs)
+	}
+}
+
+func TestLoadBenchmarkTasksDuplicateIDs(t *testing.T) {
+	root := t.TempDir()
+	// Two directories with the same task id must be rejected: they would
+	// collide in Docker image/container names.
+	writeBenchmarkTask(t, root, "aaa", `{"id": "same", "prompt": "x"}`)
+	writeBenchmarkTask(t, root, "bbb", `{"id": "same", "prompt": "y"}`)
+	tasks, errs := loadBenchmarkTasks(root, "")
+	if len(errs) != 1 {
+		t.Fatalf("errs = %v, want 1 duplicate-id error", errs)
+	}
+	if !strings.Contains(errs[0].Error(), "duplicate benchmark id \"same\"") {
+		t.Fatalf("error %q should mention duplicate id", errs[0])
+	}
+	if len(tasks) != 2 {
+		t.Fatalf("tasks = %d, want both parsed (error reported separately)", len(tasks))
+	}
+}
+
+// TestSeedBenchmarksGradeWithSolutions is a hermetic smoke test (no Docker)
+// that proves the seed suite can actually pass the real runner's grading: for
+// each seed task it prepares the workspace exactly as prepareWorkspace does,
+// applies the task's solution over src/ when one ships (tasks without a
+// solution intentionally contain buggy code), then runs tests/run.sh with the
+// local tooling. With a solution grading must exit 0; without one it must
+// FAIL on the task's real bug — not on a layout error (src/ flattening, missing
+// files). This catches workspace-layout regressions that dry-run format
+// validation cannot see.
+func TestSeedBenchmarksGradeWithSolutions(t *testing.T) {
+	// Derive the repo root from this test file's own path (same pattern as
+	// TestModulePath) so the test is hermetic — no hardcoded user paths.
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller failed")
+	}
+	root := filepath.Dir(filepath.Dir(filepath.Dir(file)))
+	if _, err := os.Stat(filepath.Join(root, "eval", "benchmarks")); err != nil {
+		t.Skipf("seed benchmarks not found under %s: %v", root, err)
+	}
+	tasks, errs := loadBenchmarkTasks(root, "")
+	if len(errs) != 0 || len(tasks) == 0 {
+		t.Fatalf("seed tasks failed to load: tasks=%d errs=%v", len(tasks), errs)
+	}
+
+	if _, err := exec.LookPath("python3"); err != nil {
+		t.Skip("python3 not available; skipping seed-grade smoke test")
+	}
+
+	for _, task := range tasks {
+		t.Run(task.ID, func(t *testing.T) {
+			ws, err := prepareWorkspace(task, t.TempDir())
+			if err != nil {
+				t.Fatalf("prepareWorkspace: %v", err)
+			}
+			hasSolution := task.Solution != "" && dirExists(filepath.Join(task.Dir, task.Solution))
+			if hasSolution {
+				// Apply the solution over src/ so grading should pass.
+				if err := copyTree(filepath.Join(task.Dir, task.Solution), filepath.Join(ws, "src")); err != nil {
+					t.Fatalf("apply solution: %v", err)
+				}
+			}
+			// Run the task's verification script with local tooling (no Docker).
+			cmd := exec.Command("bash", filepath.Join(ws, task.TestScript))
+			cmd.Dir = ws
+			out, err := cmd.CombinedOutput()
+			if hasSolution {
+				if err != nil {
+					t.Fatalf("grading %s with solution failed (exit %v):\n%s", task.ID, err, out)
+				}
+				return
+			}
+			// No solution: the task ships buggy src/, so grading must fail — but
+			// on the real bug, not on a workspace-layout error. A layout failure
+			// (missing src/, flattened paths) would surface as one of these.
+			if err == nil {
+				t.Fatalf("task %s passed without a solution; expected the intentional bug to fail grading", task.ID)
+			}
+			text := string(out)
+			for _, marker := range []string{"No such file or directory", "ModuleNotFoundError", "command not found", "src/: No such file"} {
+				if strings.Contains(text, marker) {
+					t.Fatalf("task %s failed with a layout error (%q) instead of the task bug:\n%s", task.ID, marker, text)
+				}
+			}
+		})
 	}
 }
 
@@ -442,13 +530,36 @@ func TestPrepareWorkspaceCopiesSrcAndTests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"calc.py", "tests/run.sh"} {
+	// The workspace must preserve the src/ subdir (the seed suite and prompts
+	// reference src/... paths) plus tests/ at the workspace root.
+	for _, want := range []string{"src/calc.py", "tests/run.sh"} {
 		if _, err := os.Stat(filepath.Join(ws, want)); err != nil {
 			t.Fatalf("workspace missing %s: %v", want, err)
 		}
 	}
-	// The workspace must contain src contents at its root (not a src/ subdir).
-	if _, err := os.Stat(filepath.Join(ws, "src")); !os.IsNotExist(err) {
-		t.Fatalf("workspace should not contain a src/ subdir: %v", err)
+	// The workspace must not have flattened src contents at its root.
+	if _, err := os.Stat(filepath.Join(ws, "calc.py")); !os.IsNotExist(err) {
+		t.Fatalf("workspace should not contain a flattened src file at root: %v", err)
+	}
+}
+
+// TestPrepareWorkspacePreservesSrcForRepoLayout verifies the src/ subdir is
+// preserved even when only src/ and tests/ exist (no repo clone).
+func TestPrepareWorkspacePreservesSrcLayout(t *testing.T) {
+	root := t.TempDir()
+	dir := writeBenchmarkTask(t, root, "demo", `{"id": "demo", "prompt": "x"}`)
+	if err := os.MkdirAll(filepath.Join(dir, "src", "sub"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "src", "sub", "a.py"), []byte("a=1\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	task := benchmarkTask{ID: "demo", Dir: dir, TestScript: "tests/run.sh"}
+	ws, err := prepareWorkspace(task, t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(ws, "src", "sub", "a.py")); err != nil {
+		t.Fatalf("nested src path not preserved: %v", err)
 	}
 }

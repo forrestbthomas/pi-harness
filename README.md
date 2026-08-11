@@ -232,7 +232,8 @@ only **verification** runs in the container, against the same files the agent
 edited. Results print per-task pass/fail with timing and an aggregate score,
 and a JSON report is written to `eval/benchmark-results/<run-id>.json`
 (gitignored). Benchmarks require Docker — `--benchmark-dry-run` is the
-hermetic format-validation path for CI.
+hermetic format-validation path for CI. See
+[docs/benchmarks.md](docs/benchmarks.md) for how to add your own tasks.
 
 ## Model Routing
 

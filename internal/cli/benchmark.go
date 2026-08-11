@@ -190,6 +190,14 @@ func loadBenchmarkTasks(root, name string) ([]benchmarkTask, []error) {
 		}
 		tasks, errs = loadOneBenchmarkTask(benchRoot, e.Name(), tasks, errs)
 	}
+	seen := make(map[string]string, len(tasks))
+	for _, t := range tasks {
+		if prev, dup := seen[t.ID]; dup {
+			errs = append(errs, fmt.Errorf("duplicate benchmark id %q (in %q and %q)", t.ID, prev, t.Dir))
+			continue
+		}
+		seen[t.ID] = t.Dir
+	}
 	if len(tasks) == 0 && len(errs) == 0 {
 		return tasks, append(errs, fmt.Errorf("no benchmark tasks found under %s (each needs task.json + tests/run.sh)", benchRoot))
 	}
@@ -310,8 +318,10 @@ func runBenchmarkTask(task benchmarkTask, p Provider, model, key, nodeVersion, w
 		return res
 	}
 
-	// 2. Run the agent against the workspace.
-	code, err := execPiDir(nodeVersion, piArgs(p, model, "print", []string{task.Prompt}), launchEnv(p, key), ws)
+	// 2. Run the agent against the workspace, bounded by the task timeout so a
+	//    hung pi child cannot block the whole benchmark run.
+	agentTimeout := time.Duration(task.TimeoutSecs) * time.Second
+	code, err := execPiDirTimeout(nodeVersion, piArgs(p, model, "print", []string{task.Prompt}), launchEnv(p, key), ws, agentTimeout)
 	if err != nil || code != 0 {
 		res.Status = "error"
 		res.Error = fmt.Sprintf("agent run failed (exit %d: %v)", code, err)
@@ -351,7 +361,7 @@ func runBenchmarkTask(task benchmarkTask, p Provider, model, key, nodeVersion, w
 		res.Passed = true
 	} else {
 		res.Status = "fail"
-		res.Error = fmt.Sprintf("tests/run.sh exited %d", code)
+		res.Error = fmt.Sprintf("%s exited %d", task.TestScript, code)
 	}
 	return res
 }
@@ -382,8 +392,10 @@ func dockerRun(dockerPath string, args []string, timeout time.Duration, killName
 }
 
 // prepareWorkspace creates the working directory for one task: either a shallow
-// clone of task.Repo, or a copy of the task's src/ contents (if present) plus
-// its tests/. The same files are later mounted into the container.
+// clone of task.Repo, or a copy of the task's src/ subdir (preserved as src/)
+// plus its tests/. The seed suite and the task prompts reference src/... paths
+// (e.g. PYTHONPATH=src, edit src/calc.py), so the src/ subdir must be kept
+// intact in the workspace. The same files are later mounted into the container.
 func prepareWorkspace(task benchmarkTask, base string) (string, error) {
 	ws := filepath.Join(base, task.ID)
 	if err := os.MkdirAll(ws, 0o755); err != nil {
@@ -397,7 +409,7 @@ func prepareWorkspace(task benchmarkTask, base string) (string, error) {
 		return ws, nil
 	}
 	if srcDir := filepath.Join(task.Dir, "src"); dirExists(srcDir) {
-		if err := copyTree(srcDir, ws); err != nil {
+		if err := copyTree(srcDir, filepath.Join(ws, "src")); err != nil {
 			return "", fmt.Errorf("copy src/: %w", err)
 		}
 	}

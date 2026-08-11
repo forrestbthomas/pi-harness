@@ -11,6 +11,8 @@ import json
 import subprocess
 from pathlib import Path
 
+import pytest
+
 HARNESS = Path(__file__).resolve().parents[2]
 BENCHMARKS = HARNESS / "eval" / "benchmarks"
 DEFAULT_TEST_SCRIPT = "tests/run.sh"
@@ -68,13 +70,21 @@ def test_benchmark_task_formats():
 
 
 def test_benchmark_dry_run_passes():
-    result = subprocess.run(
+    """End-to-end dry-run must pass against the current binary.
+
+    Skips when the pi-run on PATH is older than the benchmark feature (e.g. a
+    Homebrew-installed release binary without --benchmark support), so the test
+    does not fail in environments that have not yet installed the new binary.
+    """
+    probe = subprocess.run(
         ["pi-run", "eval", "--benchmark", "--benchmark-dry-run"],
         cwd=HARNESS,
         capture_output=True,
         text=True,
     )
-    assert result.returncode == 0, (
+    if "unknown flag" in probe.stderr and "--benchmark" in probe.stderr:
+        pytest.skip("pi-run on PATH predates --benchmark support; install the new binary")
+    assert probe.returncode == 0, (
         f"pi-run eval --benchmark --benchmark-dry-run failed "
-        f"(exit {result.returncode}):\n{result.stdout}\n{result.stderr}"
+        f"(exit {probe.returncode}):\n{probe.stdout}\n{probe.stderr}"
     )

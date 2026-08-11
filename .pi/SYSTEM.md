@@ -28,6 +28,16 @@ DeepEval pytest suite under `eval/`.
 - Use `write` only when creating new files or replacing a file entirely.
 - Use `bash` for running `go`, `pytest`, and `pi-run` commands.
 
+## Subagent Launches
+
+- Always pass an explicit `timeoutMs` on every `subagent`/`runs.run` launch
+  (async subagent runs have no default timeout; project wrappers in
+  `.pi/agents/` default to 10 minutes, but explicit values are preferred).
+- When delegating bash-heavy work, remind the child to pass `timeout:` on
+  every `bash` call and to avoid long-running/background commands that
+  inherit the terminal — a child `bash` tool call can otherwise block
+  forever and the subagent never returns.
+
 ## Reading Files (important)
 
 - Use the built-in `read` tool for ALL local files (text, code, configs) and

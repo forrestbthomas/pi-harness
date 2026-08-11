@@ -1,6 +1,7 @@
 # Competitive Gap Analysis: AI Coding-Agent Harnesses (2026 Q2/3)
 
 **Date:** 2026-08-11
+**Revised:** 2026-08-11 — after v0.5.0 shipped (`pi-run eval --benchmark` + `pi-run cost`) and after discovering Pi-native competitors (Pi ModelBench, pi-bench, Agent Plugins 1.0.0) — see §1.5.
 **Purpose:** High-signal comparison of public AI coding-agent harnesses vs. pi-harness — what they have that we don't — to feed both **roadmap** (next features) and **positioning** (README/marketing/launch emphasis).
 **Method:** Web research across the Q2 2026 CLI-agent landscape (wal.sh comparison verified against official docs), eval-harness projects (SWE-bench, OpenHands, terminal-bench, aider), and platform agents (Claude Code, Codex CLI, OpenCode, Goose, Gemini CLI, Copilot CLI).
 
@@ -15,6 +16,22 @@
 - **Built-in, no-key-required evaluation**: `pi-run eval` with DeepEval + pytest, deterministic smoke subset that runs with **zero keys** — most agents have no bundled eval at all.
 - **Secret-manager pluggability**: Bitwarden/1Password/env-only via `PI_SECRET_BACKEND` — most CLI agents only read env vars.
 - **Zero-external-deps Go stdlib-only CLI**: single compiled binary, Homebrew tap, cross-platform release — unusual for this category (most are Node/Python apps).
+- **Docker-isolated benchmark runner (shipped v0.5.0)**: `pi-run eval --benchmark` runs the same task suite in isolated containers against any provider — scored pass/fail per task, JSON reports, 5 seed tasks, hermetic `--benchmark-dry-run` (no Docker/keys), exit 7 when Docker is unavailable.
+- **Cost tracking + budget cap (shipped v0.5.0)**: `pi-run cost` aggregates real spend from Pi session files (`usage.cost`, no price tables) per provider/model, and `pi-run chat|print --max-budget-usd` refuses to launch past the cap with a dedicated exit code 6.
+
+---
+
+## 1.5 New development: Pi-native competitors arrived
+
+Since the Q2 2026 research above, the benchmark/cost "space" gained **Pi-native competitors** — but they are **interactive extensions, not CLI/CI tools**:
+
+| Project | What it is | What it does | How it differs from us |
+|---|---|---|---|
+| **Pi ModelBench** (github.com/Deca/Pi-ModelBench) | Pi extension, `/benchmark` slash command | Deterministic model comparison with profiles (coding, coding-agent, simplebench, reasoning, structured-data, customer-support, writing); per-model quality/latency/tokens/cost; `--runs` for variability; HTML/JSON reports | The **coding-agent profile is nearly identical to our seed benchmark tasks** — but it runs **inside a live Pi TUI session** (interactive extension, not a CLI) |
+| **pi-bench** (github.com/fornace/pi-bench) | `/bench` slash command + standalone script | Probes every model with real streaming calls, ranks by latency/cost/quality, feeds model selection into pi-recap | Interactive/extension-oriented; no CI contract, no budget gate |
+| **Agent Plugins 1.0.0** (agent-plugins.org) | Vendor-neutral packaging spec | Standard for packaging skills + MCP servers (Amazon/Cursor/Microsoft/OpenAI/Vercel/Google) | Packaging/interop standard, not a benchmark tool — relevant to our plugin story, not to eval |
+
+**Implication:** model comparison is now a crowded *interactive* space. Our edge is making it a **repeatable, budgeted, gated CI artifact** — the CLI + Docker + cost + budget pieces we already ship are exactly what the extensions lack (see §5 new P0).
 
 ---
 
@@ -29,7 +46,7 @@
 | **aider** | 133-exercise Exercism benchmark (edit-format stress test), deterministic harness (logs request SHA hashes, strips timing), 2-attempt edit+fix loop | Our dataset is 5 samples; no edit-format benchmark; no determinism/randomness tracking |
 | **OpenHands eval harness** | `user_response_fn` simulation (automated replies when agent asks), max-iteration cap, `EvalOutput` collection, parallel `run_evaluation` | Our live eval needs a real provider key; no simulated-user interaction loop; no per-instance parallel eval runner |
 
-**Net:** our eval is a *smoke/quality gate* (runs in-tree, no keys for the deterministic subset). The community's eval harnesses are *research-grade benchmarks* (isolated, reproducible, scored, comparable). **Recommendation:** this is the clearest roadmap differentiator — add a small, SWE-bench-style **Docker-isolated task runner** + grow the dataset + a `pi-run eval --benchmark` mode. It also directly serves our anti-lock-in pitch ("run the same eval across any provider").
+**Net:** our eval was a *smoke/quality gate* (runs in-tree, no keys for the deterministic subset); the community's eval harnesses are *research-grade benchmarks* (isolated, reproducible, scored, comparable). **Status:** the v0.5.0 recommendation landed — we now ship a SWE-bench-style **Docker-isolated task runner** (`pi-run eval --benchmark`, 5 seed tasks); growing the dataset and adding diff-grading are the follow-ons. It directly serves our anti-lock-in pitch ("run the same eval across any provider").
 
 ### B. Sandboxing / isolation
 
@@ -60,7 +77,7 @@ We delegate permissions entirely to Pi/pi-subagents (the project's agent wrapper
 | **Copilot CLI** | 6 hook types incl. `errorOccurred` (unique) |
 | **Kiro** | `AgentSpawn`/`AgentStop` hooks, veto via exit code |
 
-We have **no harness-level hooks** (pi-subagents has internal lifecycle, but nothing user-extensible from the Go CLI). **Recommendation:** `pi-run` hook config (e.g., `pre-eval`, `post-eval`, `pre-chat`) would be a differentiator for CI integration.
+We have **no harness-level hooks** (pi-subagents has internal lifecycle, but nothing user-extensible from the Go CLI). **Recommendation:** `pi-run` hook config (e.g., `pre-eval`, `post-eval`, `pre-chat`) would be a differentiator for CI integration — note that `pi-run cost` already provides the pre-flight/budget gate that would sit inside such hooks.
 
 ### E. Session / memory / context tooling
 
@@ -101,7 +118,7 @@ We have none of these. **Recommendation:** skip for now (heavy), but note `codex
 | **Claude Code** | `--max-budget-usd` budget cap |
 | **pi-subagents** | per-run token/cost in results (we already surface this in subagent output) |
 
-Our harness CLI has **no budget cap** and no cost dashboard. **Recommendation:** add `pi-run chat --max-budget-usd`-style cap + a `pi-run cost` command aggregating session/subagent usage — high value for the anti-lock-in story ("know what each provider costs").
+Our harness CLI previously had **no budget cap** and no cost dashboard. **Status:** both shipped in v0.5.0 — `pi-run cost` (per provider/model, `--json`, `--since`, `--reset`) and `pi-run chat|print --max-budget-usd` (pre-flight refusal, exit 6). High value for the anti-lock-in story ("know what each provider costs"); next step is wiring the cap into the CI scorecard (§5).
 
 ---
 
@@ -121,15 +138,17 @@ So we're strong on the *convergent* surface; the gaps are the *divergent bets* (
 
 ## 4. Positioning takeaways (what to lead with)
 
-**Our moat is the "provider-agnostic harness + built-in eval" combo** — nobody else combines:
-- explicit multi-provider routing with reproducible eval (OpenCode has providers but no eval; SWE-bench has eval but no harness UX),
-- zero-key deterministic eval (unique),
-- secret-manager pluggability,
-- stdlib-only compiled binary with Homebrew distribution.
+**Our moat is the "provider-agnostic harness + built-in eval" combo — now a full choose → measure → control loop:**
+- **choose**: explicit multi-provider routing with reproducible eval (OpenCode has providers but no eval; SWE-bench has eval but no harness UX),
+- **measure**: Docker-isolated benchmark (`pi-run eval --benchmark`) + real spend aggregation (`pi-run cost`),
+- **control**: `--max-budget-usd` pre-flight cap with a dedicated exit code (6).
+
+Plus: zero-key deterministic eval (unique), secret-manager pluggability, stdlib-only compiled binary with Homebrew distribution. No competitor — CLI or Pi extension — spans the whole loop; the Pi-native extensions (§1.5) only cover the *measure* step, and only interactively.
 
 **Emphasize in README/marketing:**
 - "One harness, any provider, with a built-in eval" (already our tagline — keep).
-- **New:** "Run the same eval across OpenAI, Anthropic, DeepSeek, or local models — see which provider actually solves your tasks." (Eval = the killer differentiator once we add benchmark depth.)
+- **Now shipped:** "Run the same eval across OpenAI, Anthropic, DeepSeek, or local models — see which provider actually solves your tasks." (Docker-isolated benchmark + real cost per provider.)
+- **Headline next differentiator:** the **CI provider scorecard** (`pi-run ci-benchmark`, §5) — ModelBench and pi-bench compare models interactively in a TUI; we turn provider comparison into a repeatable, budgeted, build-gating CI artifact.
 - "No sandbox needed for trustworthy work" is NOT our story — be honest that sandboxing is a roadmap item, and lead with the eval + portability instead.
 
 ---
@@ -138,8 +157,9 @@ So we're strong on the *convergent* surface; the gaps are the *divergent bets* (
 
 | Priority | Feature | Effort | Source | Why |
 |---|---|---|---|---|
-| **P0** | `pi-run eval --benchmark`: Docker-isolated task runner + grow dataset (SWE-bench-style) | Medium | SWE-bench, terminal-bench | Closest to our core identity; directly enables provider comparisons; differentiator |
-| **P0** | Cost/usage tracking: `pi-run cost` + optional `--max-budget-usd` | Low | Claude Code, pi-subagents | High user value; reinforces anti-lock-in |
+| **SHIPPED (v0.5.0)** | `pi-run eval --benchmark`: Docker-isolated task runner (5 seed tasks); follow-ons: grow dataset, diff-grading | Medium | SWE-bench, terminal-bench | Closest to our core identity; enables provider comparisons; differentiator |
+| **SHIPPED (v0.5.0)** | Cost/usage tracking: `pi-run cost` + `--max-budget-usd` (exit 6) | Low | Claude Code, pi-subagents | High user value; reinforces anti-lock-in |
+| **P0 (new)** | Provider Scorecard in CI: `pi-run ci-benchmark` — run the same task suite against 2-3 providers in CI; produce a scorecard (pass rate, cost, latency); fail the build on regression or budget breach | Medium | Pi ModelBench, pi-bench, SWE-bench | ModelBench/pi-bench compare interactively; we uniquely can make provider comparison a repeatable, budgeted, gated CI artifact because we already have CLI + Docker + cost + budget |
 | **P1** | Permission surface: `pi-run chat --permission-mode` passthrough + per-agent policy docs | Low | Claude Code, Codex, Gemini | Safety; table-stakes convergent pattern |
 | **P1** | Hooks: `pre-eval`/`post-eval`/`pre-chat` in `pi-run` config | Low-Med | Claude Code, Copilot CLI | CI integration + extensibility |
 | **P1** | Provider breadth: Azure OpenAI + Models.dev-style catalog (15-20 providers) | Low-Med | OpenCode, Codex | Closing the portability gap |
@@ -156,3 +176,6 @@ So we're strong on the *convergent* surface; the gaps are the *divergent bets* (
 - aider Benchmarks (Exercism 133, edit formats, determinism)
 - OpenHands Evaluation Harness docs (user_response_fn, run_evaluation, EvalOutput)
 - pi.dev docs (Pi extensions/skills/packages); opencode.ai docs; goose docs
+- Pi ModelBench (github.com/Deca/Pi-ModelBench) — Pi extension, `/benchmark` slash command; deterministic model comparison with profiles (coding, coding-agent, simplebench, reasoning, structured-data, customer-support, writing), per-model quality/latency/tokens/cost, `--runs`, HTML/JSON reports; runs inside a live Pi TUI session
+- pi-bench (github.com/fornace/pi-bench) — `/bench` slash command + standalone script; probes every model with real streaming calls, ranks by latency/cost/quality, feeds model selection into pi-recap
+- Agent Plugins 1.0.0 (agent-plugins.org) — vendor-neutral packaging spec for skills + MCP servers (Amazon/Cursor/Microsoft/OpenAI/Vercel/Google)

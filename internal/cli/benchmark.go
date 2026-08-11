@@ -244,7 +244,7 @@ func reportBenchmarkDryRun(tasks []benchmarkTask, errs []error) int {
 func runBenchmarkLive(tasks []benchmarkTask, opts evalOptions, root string) int {
 	if _, err := exec.LookPath("docker"); err != nil {
 		fmt.Fprintln(os.Stderr, "pi-run: eval: benchmark: Docker not found on PATH — install Docker to run benchmarks, or use --benchmark-dry-run for format-only validation")
-		return 6
+		return 7
 	}
 	p, err := ResolveProvider(opts.provider)
 	if err != nil {
@@ -321,7 +321,7 @@ func runBenchmarkTask(task benchmarkTask, p Provider, model, key, nodeVersion, w
 	// 2. Run the agent against the workspace, bounded by the task timeout so a
 	//    hung pi child cannot block the whole benchmark run.
 	agentTimeout := time.Duration(task.TimeoutSecs) * time.Second
-	code, err := execPiDirTimeout(nodeVersion, piArgs(p, model, "print", []string{task.Prompt}), launchEnv(p, key), ws, agentTimeout)
+	code, err := execPiDirTimeout(nodeVersion, piArgs(p, model, "print", []string{task.Prompt}, false), launchEnv(p, key), ws, agentTimeout)
 	if err != nil || code != 0 {
 		res.Status = "error"
 		res.Error = fmt.Sprintf("agent run failed (exit %d: %v)", code, err)

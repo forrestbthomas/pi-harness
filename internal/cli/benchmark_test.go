@@ -394,12 +394,12 @@ func TestRunEvalBenchmarkNoDocker(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv("HARNESS_ROOT", root)
 	writeBenchmarkTask(t, root, "demo", `{"id": "demo", "prompt": "x"}`)
-	// Hide docker from PATH: the live path must fail fast with exit 6 before
+	// Hide docker from PATH: the live path must fail fast with exit 7 before
 	// any key/node resolution.
 	t.Setenv("PATH", t.TempDir())
 	code, out := captureRunStderr(t, []string{"eval", "--benchmark"})
-	if code != 6 {
-		t.Fatalf("no-docker exit = %d, want 6; stderr:\n%s", code, out)
+	if code != 7 {
+		t.Fatalf("no-docker exit = %d, want 7; stderr:\n%s", code, out)
 	}
 	if !strings.Contains(out, "Docker") {
 		t.Fatalf("stderr missing docker message:\n%s", out)

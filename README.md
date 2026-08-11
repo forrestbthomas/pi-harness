@@ -10,7 +10,7 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
 
 ## What You Get
 
-- **`pi-run` CLI** — a compiled Go binary (repo `bin/pi-run`) that owns the harness runtime: `chat`, `print`, `eval`, `config-check`, `doctor`, `setup`, `install`, `clean`, `version`.
+- **`pi-run` CLI** — a compiled Go binary (repo `bin/pi-run`) that owns the harness runtime: `chat`, `print`, `resume`, `cost`, `eval`, `config-check`, `doctor`, `setup`, `install`, `clean`, `version`.
 - **Pi CLI** installed globally (via nvm) and configured for this project.
 - **Curated Pi packages** installed project-locally:
   - `pi-mcp-adapter` — token-efficient MCP adapter.
@@ -172,6 +172,7 @@ no DEEPSEEK_API_KEY available: export it, or check your secret manager
 | `PI_RUN_PROVIDERS_FILE` | Load the provider table from a custom path |
 | `PI_RUN_PERSONAL` | Opt into personal-machine checks such as the `~/bin/pi-run` symlink |
 | `HARNESS_ROOT` | Override repository-root detection |
+| `PI_MAX_BUDGET_USD` | Default spend cap for `chat`/`print` when `--max-budget-usd` is omitted |
 | `DEEPEVAL_MODEL` | Select a non-OpenAI DeepEval judge model |
 
 ## Running Evaluations
@@ -259,6 +260,54 @@ change it there or with `/model` and the session persists the choice. To
 refresh model catalogs (new models / pricing, including the deepseek catalog),
 run `pi-run setup` once with network access.
 
+## Cost & Budgets
+
+`pi-run` reports **real spend** — every Pi session file records per-message
+`usage.cost` (USD) for each provider/model used, so no price tables are needed:
+
+```bash
+pi-run cost                    # per-provider/model table + total
+pi-run cost --json             # machine-readable
+pi-run cost --since 2026-08-01 # only sessions modified at/after <date>
+pi-run cost --reset            # archive the spend ledger, start a fresh period
+```
+
+`cost` scans `.pi/sessions/*.jsonl` (including subagent child sessions) and
+sums `usage.cost.total`, grouped by provider/model, counting how many session
+files each group appears in. Messages without `usage.cost` are skipped; if a
+provider reports no cost, it is simply not counted.
+
+**Budget cap** — refuse to launch before spend crosses a limit:
+
+```bash
+pi-run chat  --max-budget-usd 5.00
+pi-run print --max-budget-usd 5.00 "expensive task"
+PI_MAX_BUDGET_USD=5.00 pi-run chat   # or the env var
+```
+
+Before launching, `pi-run` computes cumulative spend (session files + the
+append-only ledger `.pi/cost-ledger.jsonl`) and exits with **code 6** if it is
+already at/above the cap:
+
+```
+pi-run: print: budget exceeded: $5.001234 already spent (cap $5.000000) — raise --max-budget-usd, or start a fresh period with `pi-run cost --reset`
+```
+
+After each run the run's spend is appended to the ledger
+(`{ts, provider, model, inputTokens, outputTokens, costUsd, mode}`); the ledger
+preserves spend even after sessions are cleaned up, and a warning is printed if
+the cap is exceeded mid-run. `pi-run cost --reset` archives the ledger to
+`.pi/cost-ledger-<ts>.archive.jsonl` and writes a reset marker — budget checks
+then count only sessions since the marker (session files are never deleted).
+The ledger and marker are gitignored.
+
+Notes (v1 contract): the pre-flight check is best-effort — spend recorded by
+*parallel* subagent sessions is attributed to whichever `pi-run` run finishes
+last, and runs launched outside `pi-run` are counted from their session files.
+Plain `pi-run print` runs stay one-shot (`--no-session`, no session file); when
+`--max-budget-usd` is set, the print session is persisted so its spend can be
+recorded in the ledger.
+
 ## `pi-run` Command Reference
 
 | Command | Behavior |
@@ -271,6 +320,7 @@ run `pi-run setup` once with network access.
 | `pi-run eval -- <pytest selector...>` | Run a focused test or pass pytest arguments through (for example `tests/test_x.py::test_y`) |
 | `pi-run eval --help` | Show eval-specific usage without running pytest |
 | `pi-run resume [flags] [prompt...]` | Continue the most recent Pi session (`pi --continue`) |
+| `pi-run cost [--json] [--since <date>] [--reset]` | Aggregate real spend from Pi session files (`usage.cost`), per provider/model, with total |
 | `pi-run providers` | List configured providers and default models |
 | `pi-run config-check` | Deterministic harness checks (no keys, no network) |
 | `pi-run doctor` | Health report: node, pi, vault, per-provider keys, models, venv |
@@ -280,7 +330,7 @@ run `pi-run setup` once with network access.
 | `pi-run --exit-codes` | Print the stable exit-code table |
 | `pi-run version` / `help` | Version / usage |
 
-Exit codes: `0` ok · `1` generic · `2` usage · `3` missing API key · `4` node/pi not found · `5` eval venv missing · `6` docker unavailable (benchmarks).
+Exit codes: `0` ok · `1` generic · `2` usage · `3` missing API key · `4` node/pi not found · `5` eval venv missing · `6` budget exceeded · `7` docker unavailable (benchmarks).
 
 ## Skills
 

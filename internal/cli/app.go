@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // Version is the build-time version, injected via -ldflags
@@ -21,6 +22,7 @@ Commands:
   chat          Launch Pi interactively (default provider: openai)
   print         Run Pi in print mode: pi -p --no-session "<prompt>"
   resume        Continue the most recent session (pi --continue)
+  cost          Aggregate real spend from Pi session files (--json/--since/--reset)
   eval          Run the DeepEval pytest suite (--quick for smoke subset) or the Docker benchmark runner
   config-check  Run deterministic harness checks (no keys, no network)
   doctor        Report harness health (node, pi, keys, models)
@@ -32,11 +34,17 @@ Commands:
   help          Show this help
   --exit-codes  Print the exit-code table
 
-Exit codes: 0 ok · 1 generic · 2 usage · 3 missing key · 4 node/pi missing · 5 eval venv missing · 6 docker unavailable
+Exit codes: 0 ok · 1 generic · 2 usage · 3 missing key · 4 node/pi missing · 5 eval venv missing · 6 budget exceeded · 7 docker unavailable
 
 chat/print flags:
   --provider <name>                        Provider (see 'pi-run providers'; env PI_PROVIDER; default openai)
   --model <id>                             Override the per-provider default model
+  --max-budget-usd <n>                     Refuse to launch when cumulative spend >= <n> USD (env PI_MAX_BUDGET_USD)
+
+cost flags:
+  --json                                   Machine-readable JSON output
+  --since <date>                           Only count sessions modified at/after <date> (YYYY-MM-DD or RFC3339)
+  --reset                                  Archive the spend ledger and start a fresh budget period
 
 Eval flags:
   --quick                                  Run the deterministic smoke subset
@@ -56,7 +64,8 @@ const exitCodesText = `Exit codes:
   3  missing API key
   4  node/pi not found
   5  eval venv missing
-  6  docker unavailable (benchmarks)
+  6  budget exceeded
+  7  docker unavailable (benchmarks)
 `
 
 // Run is the CLI entry point. It returns the process exit code.
@@ -78,6 +87,8 @@ func Run(args []string) int {
 		return 0
 	case "chat", "print", "resume":
 		return runLaunch(args[0], args[1:])
+	case "cost":
+		return runCost(args[1:])
 	case "eval":
 		return runEval(args[1:])
 	case "config-check":
@@ -113,11 +124,17 @@ func Run(args []string) int {
 
 // runLaunch handles `chat`, `print`, and `resume`.
 func runLaunch(mode string, args []string) int {
-	providerFlag, modelFlag, rest := splitLaunchArgs(args)
+	providerFlag, modelFlag, budgetFlag, rest := splitLaunchArgs(args)
 
 	// Validate the prompt BEFORE touching keys (usage error wins over key error).
 	if mode == "print" && len(rest) == 0 {
 		fmt.Fprintf(os.Stderr, "pi-run: print: requires a prompt\n\n%s", usage)
+		return 2
+	}
+
+	capUSD, err := resolveBudgetCap(budgetFlag)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "pi-run: %s: %v\n", mode, err)
 		return 2
 	}
 
@@ -127,15 +144,29 @@ func runLaunch(mode string, args []string) int {
 		return 2
 	}
 
+	model := modelFlag
+	if model == "" {
+		model = p.DefaultModel
+	}
+
+	// Pre-flight budget check: refuse BEFORE resolving keys or launching pi.
+	root := repoRoot()
+	preSpend, err := currentSpend(root)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "pi-run: %s: budget check failed: %v\n", mode, err)
+		return 1
+	}
+	if capUSD > 0 && preSpend >= capUSD {
+		fmt.Fprintf(os.Stderr,
+			"pi-run: %s: budget exceeded: $%.6f already spent (cap $%.6f) — raise --max-budget-usd, or start a fresh period with `pi-run cost --reset`\n",
+			mode, preSpend, capUSD)
+		return exitBudgetExceeded
+	}
+
 	key, err := resolveSecret(p.KeyEnv)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "pi-run: %s: no %s available: export it, or check your secret manager (`pi-run doctor`)\n", mode, p.KeyEnv)
 		return 3
-	}
-
-	model := modelFlag
-	if model == "" {
-		model = p.DefaultModel
 	}
 
 	nodeVersion, err := resolveNodeVersion(os.Getenv("HOME"))
@@ -143,18 +174,31 @@ func runLaunch(mode string, args []string) int {
 		fmt.Fprintf(os.Stderr, "pi-run: %s: %v\n", mode, err)
 		return 4
 	}
-	code, err := execPi(nodeVersion, piArgs(p, model, mode, rest), launchEnv(p, key))
+
+	runStart := time.Now()
+	code, err := execPi(nodeVersion, piArgs(p, model, mode, rest, capUSD > 0), launchEnv(p, key))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
+
+	// Record this run's spend in the ledger (best-effort; never fatal).
+	postSpend, rerr := recordRunSpend(root, runStart, mode, p.Name, model, preSpend)
+	if rerr != nil {
+		fmt.Fprintf(os.Stderr, "pi-run: %s: warning: could not record spend: %v\n", mode, rerr)
+	} else if capUSD > 0 && postSpend > capUSD {
+		fmt.Fprintf(os.Stderr,
+			"pi-run: %s: warning: cumulative spend $%.6f now exceeds --max-budget-usd $%.6f\n",
+			mode, postSpend, capUSD)
+	}
 	return code
 }
 
-// splitLaunchArgs separates pi-run's own flags (--provider/--model) from
-// pass-through args. Everything else is kept in order; "--" ends flag parsing
-// and its tail is also kept (allowing messages that start with a dash).
-func splitLaunchArgs(args []string) (provider, model string, rest []string) {
+// splitLaunchArgs separates pi-run's own flags (--provider/--model/
+// --max-budget-usd) from pass-through args. Everything else is kept in order;
+// "--" ends flag parsing and its tail is also kept (allowing messages that
+// start with a dash).
+func splitLaunchArgs(args []string) (provider, model, budget string, rest []string) {
 	i := 0
 	for i < len(args) {
 		a := args[i]
@@ -173,6 +217,12 @@ func splitLaunchArgs(args []string) (provider, model string, rest []string) {
 			i += 2
 		case strings.HasPrefix(a, "--model="):
 			model = strings.TrimPrefix(a, "--model=")
+			i++
+		case a == "--max-budget-usd" && i+1 < len(args):
+			budget = args[i+1]
+			i += 2
+		case strings.HasPrefix(a, "--max-budget-usd="):
+			budget = strings.TrimPrefix(a, "--max-budget-usd=")
 			i++
 		default:
 			rest = append(rest, a)

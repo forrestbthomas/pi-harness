@@ -24,6 +24,11 @@ github-repo-controller/bin/
 # pi-subagents runtime artifacts (may contain sensitive session transcripts)
 .pi-subagents/
 
+# Spend ledger (local cost tracking; per-run spend totals)
+.pi/cost-ledger.jsonl
+.pi/cost-ledger-*.archive.jsonl
+.pi/cost-ledger.reset
+
 # DeepEval cache
 eval/.deepeval/
 

@@ -43,14 +43,20 @@ func nodeBinDir(home, version string) (string, error) {
 
 // piArgs builds the argv for `pi` (minus the program name).
 // mode: "chat", "print", or "resume". rest = pass-through flags and message positionals.
+// persist is set when a budget cap is active: print runs then keep a session
+// file so their spend can be recorded in the ledger (without a cap, print
+// stays one-shot with --no-session).
 // pi runs with --offline so startup network ops (version check, changelog,
 // catalog refresh) never hang on the flaky pi.dev endpoint; the stored model
 // catalogs are used instead. `pi-run setup` is the explicit online path.
-func piArgs(p Provider, model, mode string, rest []string) []string {
+func piArgs(p Provider, model, mode string, rest []string, persist bool) []string {
 	args := []string{"--provider", p.PiProvider, "--model", model, "--offline"}
 	switch mode {
 	case "print":
-		args = append(args, "-p", "--no-session")
+		args = append(args, "-p")
+		if !persist {
+			args = append(args, "--no-session")
+		}
 	case "resume":
 		args = append(args, "--continue")
 	}

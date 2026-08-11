@@ -6,6 +6,8 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-11
+
 ### Added
 - `pi-run cost`: aggregate real spend from Pi session files (`usage.cost.total`
   per message, no price tables) — per provider/model table, `--json` machine
@@ -22,10 +24,6 @@ All notable changes to this project are documented here. Format follows
   format validation (no Docker, no keys), per-task pass/fail grading with
   timing, and JSON reports under `eval/benchmark-results/` (gitignored). Exit
   code 7 when Docker is unavailable.
-
-## [0.6.0] - 2026-08-11
-
-### Added
 - `pi-run ci-benchmark`: provider scorecard in CI. Runs the benchmark suite
   against 2+ providers (`--providers openai,deepseek`, optional `--models`),
   writes a per-provider scorecard (`eval/benchmark-results/scorecard-<run>.json`:

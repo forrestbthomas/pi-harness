@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -69,7 +70,7 @@ func runCmd(cmd string, args []string, dir string) (int, error) {
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 	if err := c.Run(); err != nil {
-		if ee, ok := err.(*exec.ExitError); ok {
+		if ee, ok := errors.AsType[*exec.ExitError](err); ok {
 			return ee.ExitCode(), nil
 		}
 		return 1, err

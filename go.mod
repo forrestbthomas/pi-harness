@@ -1,3 +1,3 @@
 module github.com/forrestthomas1/pi-harness
 
-go 1.21.5
+go 1.26.5

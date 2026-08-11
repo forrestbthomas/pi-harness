@@ -1,7 +1,7 @@
 > **pi-harness** — a provider-agnostic coding-agent harness + evaluation suite that keeps you out of AI-vendor lock-in.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Go Version](https://img.shields.io/badge/Go-1.21-blue.svg)](https://golang.org/dl/)
+[![Go Version](https://img.shields.io/badge/Go-1.26-blue.svg)](https://golang.org/dl/)
 [![CI](https://github.com/forrestbthomas/pi-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/forrestbthomas/pi-harness/actions/workflows/ci.yml)
 
 # Pi Coding Agent Harness + DeepEval Evaluation Suite
@@ -29,7 +29,7 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
 
 - Node.js via `nvm` (`pi-run` selects the highest nvm-installed semantic version; override with `PI_NODE_VERSION`).
 - Python 3.11+ (for the DeepEval suite).
-- Go 1.21+ (only to build/update `pi-run`).
+- Go 1.26+ (only to build/update `pi-run`).
 - An API key. The harness is **provider-agnostic**: it ships with a data-driven
   provider table (`providers.json`) covering OpenAI (default), OpenRouter,
   DeepSeek, Anthropic, Gemini, Groq, and a local OpenAI-compatible endpoint

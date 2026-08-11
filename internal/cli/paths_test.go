@@ -50,8 +50,8 @@ func TestNoHardcodedUserPaths(t *testing.T) {
 	// not fail the portability scan.
 	loreMaintainedSection := func(b []byte) []byte {
 		const marker = "<!-- This section is maintained by the coding agent via lore"
-		if i := bytes.Index(b, []byte(marker)); i >= 0 {
-			return b[:i]
+		if before, _, ok0 := bytes.Cut(b, []byte(marker)); ok0 {
+			return before
 		}
 		return b
 	}

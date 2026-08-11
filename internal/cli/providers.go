@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // Provider is a single routing entry.
@@ -123,14 +124,14 @@ func providerNames() string {
 }
 
 func joinStrings(items []string, sep string) string {
-	out := ""
+	var out strings.Builder
 	for i, s := range items {
 		if i > 0 {
-			out += sep
+			out.WriteString(sep)
 		}
-		out += s
+		out.WriteString(s)
 	}
-	return out
+	return out.String()
 }
 
 // ResolveProvider picks the provider from --provider, then PI_PROVIDER env,

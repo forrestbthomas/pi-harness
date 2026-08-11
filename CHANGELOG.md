@@ -6,6 +6,15 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-08-10
+
+### Changed
+- Build toolchain bumped from Go 1.21 to Go 1.26.5 (CI, go.mod, README).
+  Go 1.21 is past end-of-life; 1.26 includes security fixes and performance
+  improvements (new GC). No CLI behavior change.
+- Adopted modern Go language/stdlib features: `for i := range n` (1.22),
+  `errors.AsType` (1.26), `slices.Index` (1.21+), `strings.Builder` and
+  `bytes.Cut` via `go fix` modernizers; CI now runs the race detector.
 ## [0.4.1] - 2026-08-10
 
 ### Fixed

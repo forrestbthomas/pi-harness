@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -84,7 +85,7 @@ func execPi(nodeVersion string, args []string, extraEnv []string) (int, error) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		if ee, ok := err.(*exec.ExitError); ok {
+		if ee, ok := errors.AsType[*exec.ExitError](err); ok {
 			return ee.ExitCode(), nil // pi printed its own errors; pass the code through
 		}
 		return 1, err
@@ -135,7 +136,7 @@ func maxSemver(versions []string) string {
 
 func semverGreater(a, b string) bool {
 	pa, pb := strings.Split(strings.TrimPrefix(a, "v"), "."), strings.Split(strings.TrimPrefix(b, "v"), ".")
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		na, _ := strconv.Atoi(pa[i])
 		nb, _ := strconv.Atoi(pb[i])
 		if na != nb {

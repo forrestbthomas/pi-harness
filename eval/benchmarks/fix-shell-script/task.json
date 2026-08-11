@@ -1,0 +1,7 @@
+{
+  "id": "fix-shell-script",
+  "prompt": "src/build.sh prints a greeting using the NAME environment variable (default \"pi-harness\"), but it currently crashes or prints the wrong name because of a variable typo. Fix the script so it prints exactly \"hello pi-harness\" when NAME is unset. The verification script tests/run.sh must exit 0.",
+  "timeoutSecs": 300,
+  "testScript": "tests/run.sh",
+  "dockerfile": "environment/Dockerfile"
+}

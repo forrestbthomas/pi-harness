@@ -67,8 +67,15 @@ func launchEnv(p Provider, key string) []string {
 }
 
 // execPi spawns `pi <args>` with the nvm node bin dir prepended to PATH and the
-// given extra env (KEY_ENV=value pairs). Returns pi's exit code.
+// given extra env (KEY_ENV=value pairs), in the current working directory.
 func execPi(nodeVersion string, args []string, extraEnv []string) (int, error) {
+	return execPiDir(nodeVersion, args, extraEnv, "")
+}
+
+// execPiDir is execPi with an explicit working directory for the child (used
+// by the benchmark runner so the agent edits the task workspace). An empty dir
+// runs in the caller's working directory.
+func execPiDir(nodeVersion string, args []string, extraEnv []string, dir string) (int, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return 1, err
@@ -80,6 +87,7 @@ func execPi(nodeVersion string, args []string, extraEnv []string) (int, error) {
 	// Use the absolute pi path: exec.Command resolves the binary against the
 	// parent's PATH, not cmd.Env, so PATH alone is not enough.
 	cmd := exec.Command(filepath.Join(binDir, "pi"), args...)
+	cmd.Dir = dir
 	cmd.Env = childEnv(binDir, extraEnv)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout

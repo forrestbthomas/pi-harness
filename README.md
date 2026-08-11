@@ -199,6 +199,41 @@ pi-run eval
 
 `pi-run eval --quick` and the config tests run without any key.
 
+## Benchmarks
+
+`pi-run eval --benchmark` runs the same coding tasks in Docker-isolated
+containers against any provider — see which model actually solves your tasks.
+
+```bash
+# Validate all task formats (hermetic: no Docker, no API keys) — CI-safe
+pi-run eval --benchmark-dry-run
+
+# Run the full benchmark suite against the default provider (requires Docker + a key)
+pi-run eval --benchmark
+
+# Run one task, routed to another provider/model
+pi-run eval --benchmark fix-divide-by-zero --provider deepseek --model deepseek/deepseek-v4-flash
+```
+
+Each task lives in `eval/benchmarks/<name>/` and ships a `task.json` plus a
+`tests/run.sh` verification script (exit 0 = pass):
+
+```
+eval/benchmarks/fix-divide-by-zero/
+├── task.json             # id, prompt (or instruction.md), optional setupCmd/repo/timeoutSecs
+├── environment/Dockerfile  # optional; default base is python:3.12-slim
+├── src/                  # task workspace the agent edits
+├── tests/run.sh          # exit 0 = pass, anything else = fail
+└── solution/             # optional oracle (for future diff grading)
+```
+
+The agent edits a local workspace (copied from `src/`, or cloned from `repo`);
+only **verification** runs in the container, against the same files the agent
+edited. Results print per-task pass/fail with timing and an aggregate score,
+and a JSON report is written to `eval/benchmark-results/<run-id>.json`
+(gitignored). Benchmarks require Docker — `--benchmark-dry-run` is the
+hermetic format-validation path for CI.
+
 ## Model Routing
 
 `pi-run` selects the provider (`--provider` / `PI_PROVIDER`; default `openai`),
@@ -230,6 +265,8 @@ run `pi-run setup` once with network access.
 | `pi-run chat [flags] [prompt...]` | Launch Pi interactively (default provider: openai) |
 | `pi-run print [flags] "<prompt>"` | One-shot `pi -p --no-session` |
 | `pi-run eval [--quick]` | Run the DeepEval pytest suite (`--quick` = smoke subset) |
+| `pi-run eval --benchmark [name]` | Run Docker-isolated benchmark tasks (all by default; requires Docker) |
+| `pi-run eval --benchmark-dry-run` | Validate benchmark task formats only (no Docker, no keys) |
 | `pi-run eval -- <pytest selector...>` | Run a focused test or pass pytest arguments through (for example `tests/test_x.py::test_y`) |
 | `pi-run eval --help` | Show eval-specific usage without running pytest |
 | `pi-run resume [flags] [prompt...]` | Continue the most recent Pi session (`pi --continue`) |
@@ -242,7 +279,7 @@ run `pi-run setup` once with network access.
 | `pi-run --exit-codes` | Print the stable exit-code table |
 | `pi-run version` / `help` | Version / usage |
 
-Exit codes: `0` ok · `1` generic · `2` usage · `3` missing API key · `4` node/pi not found · `5` eval venv missing.
+Exit codes: `0` ok · `1` generic · `2` usage · `3` missing API key · `4` node/pi not found · `5` eval venv missing · `6` docker unavailable (benchmarks).
 
 ## Skills
 
@@ -294,7 +331,10 @@ agent loads the matching skill automatically. `enableSkillCommands` is on in
     ├── conftest.py            # Shared fixtures and Pi runner helper (uses pi-run)
     ├── datasets/
     │   └── coding_samples.jsonl
+    ├── benchmarks/            # Docker-isolated benchmark tasks (task.json + tests/run.sh)
+    │   └── benchmark-results/  # Git-ignored JSON run reports
     └── tests/
+        ├── test_benchmark_format.py  # Hermetic benchmark task-format checks
         ├── test_coding_correctness.py
         ├── test_code_quality.py
         ├── test_agent_task_completion.py
@@ -308,6 +348,10 @@ agent loads the matching skill automatically. `enableSkillCommands` is on in
 2. Create a new test file in `eval/tests/`.
 3. Use `run_pi_print()` from `conftest.py` to capture agent outputs (it runs `pi-run print`).
 4. Run `pi-run eval` to see the results.
+
+To add a benchmark task instead, create `eval/benchmarks/<name>/task.json` +
+`tests/run.sh` (see [Benchmarks](#benchmarks)) and validate it with
+`pi-run eval --benchmark-dry-run`.
 
 ## Pi Project Settings
 

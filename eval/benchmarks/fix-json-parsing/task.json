@@ -1,0 +1,7 @@
+{
+  "id": "fix-json-parsing",
+  "instruction": "instruction.md",
+  "timeoutSecs": 300,
+  "testScript": "tests/run.sh",
+  "dockerfile": "environment/Dockerfile"
+}

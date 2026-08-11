@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 )
 
@@ -34,7 +35,7 @@ func runConfigCheck() int {
 		if enabled, ok := s["enabledModels"].([]any); ok {
 			patterns := toStrings(enabled)
 			check("enabledModels has openai/* before openrouter/*",
-				firstIndexOf(patterns, "openai/*") < firstIndexOf(patterns, "openrouter/*"))
+				slices.Index(patterns, "openai/*") < slices.Index(patterns, "openrouter/*"))
 		} else {
 			check("enabledModels present", false)
 		}
@@ -73,7 +74,7 @@ func runConfigCheck() int {
 			name := filepath.Base(rc)
 			check(name+" has no pi-harness functions", !strings.Contains(string(text), "pi-harness()"))
 			for _, v := range secretVars {
-				for _, line := range strings.Split(string(text), "\n") {
+				for line := range strings.SplitSeq(string(text), "\n") {
 					if strings.HasPrefix(strings.TrimSpace(line), "export "+v+"=") && !strings.Contains(line, "bw_get") {
 						check(name+" has no static "+v+" export", false)
 					}
@@ -137,15 +138,6 @@ func toStrings(v []any) []string {
 		}
 	}
 	return out
-}
-
-func firstIndexOf(list []string, want string) int {
-	for i, s := range list {
-		if s == want {
-			return i
-		}
-	}
-	return len(list) // not found sorts last
 }
 
 var secretRe = regexp.MustCompile(`sk-[A-Za-z0-9_-]{8,}`)

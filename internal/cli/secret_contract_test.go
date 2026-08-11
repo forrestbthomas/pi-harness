@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -119,7 +120,7 @@ func TestSecretBackendPythonResolveParity(t *testing.T) {
 	pythonResolves := func() (bool, error) {
 		cmd := exec.Command(python, script, "resolve-available", "OPENAI_API_KEY")
 		if err := cmd.Run(); err != nil {
-			if ee, ok := err.(*exec.ExitError); ok && ee.ExitCode() == 1 {
+			if ee, ok := errors.AsType[*exec.ExitError](err); ok && ee.ExitCode() == 1 {
 				return false, nil
 			}
 			return false, err

@@ -4,6 +4,8 @@ eval/__pycache__/
 eval/tests/__pycache__/
 eval/.pytest_cache/
 eval/outputs/
+# Benchmark run reports (JSON)
+eval/benchmark-results/
 .env
 *.pyc
 .DS_Store
@@ -21,6 +23,11 @@ github-repo-controller/bin/
 
 # pi-subagents runtime artifacts (may contain sensitive session transcripts)
 .pi-subagents/
+
+# Spend ledger (local cost tracking; per-run spend totals)
+.pi/cost-ledger.jsonl
+.pi/cost-ledger-*.archive.jsonl
+.pi/cost-ledger.reset
 
 # DeepEval cache
 eval/.deepeval/

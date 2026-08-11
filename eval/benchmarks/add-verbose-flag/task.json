@@ -1,0 +1,6 @@
+{
+  "id": "add-verbose-flag",
+  "prompt": "Add a --verbose flag to the CLI in src/cli.py. When --verbose is passed, the program must also print the line \"verbose mode on\" after the greeting. The existing greeting behavior must stay unchanged. The verification script tests/run.sh must exit 0.",
+  "timeoutSecs": 300,
+  "testScript": "tests/run.sh"
+}

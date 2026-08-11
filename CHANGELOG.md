@@ -6,6 +6,17 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+### Added
+- `pi-run cost`: aggregate real spend from Pi session files (`usage.cost.total`
+  per message, no price tables) — per provider/model table, `--json` machine
+  output, `--since <date>` filter, `--reset` to archive the spend ledger and
+  start a fresh budget period.
+- `pi-run chat|print --max-budget-usd <n>` (env `PI_MAX_BUDGET_USD`): pre-flight
+  budget check that refuses to launch when cumulative spend is already at/above
+  the cap (exit code 6 = budget exceeded), plus an append-only spend ledger
+  (`.pi/cost-ledger.jsonl`, gitignored) recording each run's provider, model,
+  tokens, and cost.
+
 ## [0.4.3] - 2026-08-11
 
 ### Fixed

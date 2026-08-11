@@ -33,7 +33,7 @@ func TestNodeBinDirMissing(t *testing.T) {
 
 func TestPiArgsChatOpenAI(t *testing.T) {
 	p, _ := LookupProvider("openai")
-	got := piArgs(p, p.DefaultModel, "chat", nil)
+	got := piArgs(p, p.DefaultModel, "chat", nil, false)
 	want := []string{"--provider", "openai", "--model", "openai/gpt-5.6-terra", "--offline"}
 	if len(got) != len(want) {
 		t.Fatalf("got %v, want %v", got, want)
@@ -47,7 +47,7 @@ func TestPiArgsChatOpenAI(t *testing.T) {
 
 func TestPiArgsPrintDeepSeek(t *testing.T) {
 	p, _ := LookupProvider("deepseek")
-	got := piArgs(p, p.DefaultModel, "print", []string{"hello"})
+	got := piArgs(p, p.DefaultModel, "print", []string{"hello"}, false)
 	want := []string{"--provider", "deepseek", "--model", "deepseek/deepseek-v4-flash", "--offline", "-p", "--no-session", "hello"}
 	if len(got) != len(want) {
 		t.Fatalf("got %v, want %v", got, want)
@@ -61,7 +61,7 @@ func TestPiArgsPrintDeepSeek(t *testing.T) {
 
 func TestPiArgsPassThroughFlagsAndMessage(t *testing.T) {
 	p, _ := LookupProvider("openai")
-	got := piArgs(p, "openai/gpt-5.6-terra", "chat", []string{"--tools", "read", "refactor x"})
+	got := piArgs(p, "openai/gpt-5.6-terra", "chat", []string{"--tools", "read", "refactor x"}, false)
 	want := []string{"--provider", "openai", "--model", "openai/gpt-5.6-terra", "--offline", "--tools", "read", "refactor x"}
 	if len(got) != len(want) {
 		t.Fatalf("got %v, want %v", got, want)
@@ -75,7 +75,7 @@ func TestPiArgsPassThroughFlagsAndMessage(t *testing.T) {
 
 func TestPiArgsResumeAppendsContinue(t *testing.T) {
 	p, _ := LookupProvider("openai")
-	got := piArgs(p, p.DefaultModel, "resume", nil)
+	got := piArgs(p, p.DefaultModel, "resume", nil, false)
 	want := []string{"--provider", "openai", "--model", "openai/gpt-5.6-terra", "--offline", "--continue"}
 	if len(got) != len(want) {
 		t.Fatalf("got %v, want %v", got, want)
@@ -89,7 +89,7 @@ func TestPiArgsResumeAppendsContinue(t *testing.T) {
 
 func TestPiArgsResumePreservesPassThrough(t *testing.T) {
 	p, _ := LookupProvider("deepseek")
-	got := piArgs(p, "deepseek/deepseek-v4-flash", "resume", []string{"--session", "abc123", "continue refactor"})
+	got := piArgs(p, "deepseek/deepseek-v4-flash", "resume", []string{"--session", "abc123", "continue refactor"}, false)
 	want := []string{"--provider", "deepseek", "--model", "deepseek/deepseek-v4-flash", "--offline", "--continue", "--session", "abc123", "continue refactor"}
 	if len(got) != len(want) {
 		t.Fatalf("got %v, want %v", got, want)

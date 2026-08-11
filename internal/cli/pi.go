@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // childEnv builds the environment for spawned pi processes: the nvm node bin
@@ -67,8 +69,15 @@ func launchEnv(p Provider, key string) []string {
 }
 
 // execPi spawns `pi <args>` with the nvm node bin dir prepended to PATH and the
-// given extra env (KEY_ENV=value pairs). Returns pi's exit code.
+// given extra env (KEY_ENV=value pairs), in the current working directory.
 func execPi(nodeVersion string, args []string, extraEnv []string) (int, error) {
+	return execPiDir(nodeVersion, args, extraEnv, "")
+}
+
+// execPiDir is execPi with an explicit working directory for the child (used
+// by the benchmark runner so the agent edits the task workspace). An empty dir
+// runs in the caller's working directory.
+func execPiDir(nodeVersion string, args []string, extraEnv []string, dir string) (int, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return 1, err
@@ -80,6 +89,7 @@ func execPi(nodeVersion string, args []string, extraEnv []string) (int, error) {
 	// Use the absolute pi path: exec.Command resolves the binary against the
 	// parent's PATH, not cmd.Env, so PATH alone is not enough.
 	cmd := exec.Command(filepath.Join(binDir, "pi"), args...)
+	cmd.Dir = dir
 	cmd.Env = childEnv(binDir, extraEnv)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -87,6 +97,39 @@ func execPi(nodeVersion string, args []string, extraEnv []string) (int, error) {
 	if err := cmd.Run(); err != nil {
 		if ee, ok := errors.AsType[*exec.ExitError](err); ok {
 			return ee.ExitCode(), nil // pi printed its own errors; pass the code through
+		}
+		return 1, err
+	}
+	return 0, nil
+}
+
+// execPiDirTimeout is execPiDir bounded by a wall-clock timeout. On expiry the
+// child is killed (SIGKILL after the context deadline) so a hung pi process
+// cannot block the caller forever — used by the benchmark runner for the agent
+// step, which has no other bound. An empty dir runs in the caller's cwd.
+func execPiDirTimeout(nodeVersion string, args []string, extraEnv []string, dir string, timeout time.Duration) (int, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return 1, err
+	}
+	binDir, err := nodeBinDir(home, nodeVersion)
+	if err != nil {
+		return 4, err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, filepath.Join(binDir, "pi"), args...)
+	cmd.Dir = dir
+	cmd.Env = childEnv(binDir, extraEnv)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			return 1, fmt.Errorf("pi agent run timed out after %s", timeout)
+		}
+		if ee, ok := errors.AsType[*exec.ExitError](err); ok {
+			return ee.ExitCode(), nil
 		}
 		return 1, err
 	}

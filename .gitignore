@@ -4,6 +4,8 @@ eval/__pycache__/
 eval/tests/__pycache__/
 eval/.pytest_cache/
 eval/outputs/
+# Benchmark run reports (JSON)
+eval/benchmark-results/
 .env
 *.pyc
 .DS_Store

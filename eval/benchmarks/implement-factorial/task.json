@@ -1,0 +1,7 @@
+{
+  "id": "implement-factorial",
+  "prompt": "Implement the factorial function in src/factorial.py so it returns n! for non-negative integers (0! == 1). The verification script tests/run.sh must exit 0.",
+  "timeoutSecs": 300,
+  "testScript": "tests/run.sh",
+  "solution": "solution/factorial.py"
+}

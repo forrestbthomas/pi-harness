@@ -21,7 +21,7 @@ Commands:
   chat          Launch Pi interactively (default provider: openai)
   print         Run Pi in print mode: pi -p --no-session "<prompt>"
   resume        Continue the most recent session (pi --continue)
-  eval          Run the DeepEval pytest suite (--quick for smoke subset)
+  eval          Run the DeepEval pytest suite (--quick for smoke subset) or the Docker benchmark runner
   config-check  Run deterministic harness checks (no keys, no network)
   doctor        Report harness health (node, pi, keys, models)
   setup         Create eval/.venv, install deps, refresh model catalogs
@@ -32,7 +32,7 @@ Commands:
   help          Show this help
   --exit-codes  Print the exit-code table
 
-Exit codes: 0 ok · 1 generic · 2 usage · 3 missing key · 4 node/pi missing · 5 eval venv missing
+Exit codes: 0 ok · 1 generic · 2 usage · 3 missing key · 4 node/pi missing · 5 eval venv missing · 6 docker unavailable
 
 chat/print flags:
   --provider <name>                        Provider (see 'pi-run providers'; env PI_PROVIDER; default openai)
@@ -40,6 +40,9 @@ chat/print flags:
 
 Eval flags:
   --quick                                  Run the deterministic smoke subset
+  --benchmark [name]                       Run Docker-isolated benchmark tasks (all when name omitted)
+  --benchmark-dry-run                      Validate benchmark task format only (no Docker, no keys)
+  --provider <name> / --model <id>         Agent provider/model for --benchmark
   --                                       Pass remaining arguments directly to pytest
 
 Everything else is passed through to pi unchanged (use -- to escape a message
@@ -53,6 +56,7 @@ const exitCodesText = `Exit codes:
   3  missing API key
   4  node/pi not found
   5  eval venv missing
+  6  docker unavailable (benchmarks)
 `
 
 // Run is the CLI entry point. It returns the process exit code.

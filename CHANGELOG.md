@@ -6,6 +6,14 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+### Added
+- `pi-run eval --benchmark`: Docker-isolated, scored benchmark runner. Run the
+  same task suite against any provider and compare results. Includes a seed
+  benchmark suite under `eval/benchmarks/`, hermetic `--benchmark-dry-run`
+  format validation (no Docker, no keys), per-task pass/fail grading with
+  timing, and JSON reports under `eval/benchmark-results/` (gitignored). Exit
+  code 6 when Docker is unavailable.
+
 ## [0.4.3] - 2026-08-11
 
 ### Fixed

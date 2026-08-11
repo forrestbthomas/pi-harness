@@ -104,7 +104,15 @@ type scorecardGateStatus struct {
 	BelowFailFloor bool
 	Regressions    []scorecardRegression
 	BudgetExceeded bool
-	TotalCostUSD   float64
+	// TotalCostUSD is the display total: the sum of the collapsed (median)
+	// per-provider costs, shown in the scorecard table and budget diagnostic.
+	TotalCostUSD float64
+	// ActualSpendUSD is the gate's cost basis: the sum of EVERY raw per-run
+	// row's cost delta across all providers and repeats. With --runs n this
+	// equals the real spend (~n × median per provider), so the budget gate
+	// catches a breach at the actual spend level even when the median rows
+	// look cheap. Equal to TotalCostUSD when runs == 1.
+	ActualSpendUSD float64
 }
 
 // splitList splits a comma-separated flag value into trimmed entries,
@@ -265,6 +273,13 @@ func parseScorecardArgs(args []string) (opts scorecardOptions, exitCode int) {
 			return scorecardUsageError(err.Error())
 		}
 	}
+	seen := make(map[string]bool, len(opts.providers))
+	for _, name := range opts.providers {
+		if seen[name] {
+			return scorecardUsageError(fmt.Sprintf("duplicate provider %q in --providers", name))
+		}
+		seen[name] = true
+	}
 	return opts, -1
 }
 
@@ -358,7 +373,7 @@ func runScorecard(args []string) int {
 		fmt.Fprintf(os.Stderr, "pi-run: ci-benchmark: gate failed: %s regressed %.0f%% -> %.0f%% (tolerance %.2f)\n", r.Provider, r.Baseline*100, r.Current*100, r.Tolerance)
 	}
 	if st.BudgetExceeded {
-		fmt.Fprintf(os.Stderr, "pi-run: ci-benchmark: budget exceeded: total run cost $%.6f >= cap $%.6f\n", st.TotalCostUSD, budgetCap)
+		fmt.Fprintf(os.Stderr, "pi-run: ci-benchmark: budget exceeded: total run cost $%.6f >= cap $%.6f\n", st.ActualSpendUSD, budgetCap)
 	}
 	return code
 }
@@ -380,6 +395,12 @@ func runScorecardProvider(tasks []benchmarkTask, p Provider, model, root string,
 		if err != nil {
 			return scorecardProvider{}, repeats, err
 		}
+		// Cost attribution note: benchmark agent runs use --no-session
+		// (persist=false in piArgs), so in CI they write no session files and
+		// the ledger cost delta is ~0 — the budget gate is then primarily
+		// meaningful for local runs where sessions persist, or when --runs
+		// repeats accumulate attributable spend. This matches the cost spec's
+		// no-estimation rule; the pass-rate and baseline gates are unaffected.
 		start := time.Now()
 		res, err := runProviderBenchmark(runTasks, evalOptions{provider: p.Name, model: model}, root)
 		if err != nil {
@@ -505,6 +526,11 @@ func medianInts(vals []int) int {
 // metric reports its median across the runs (flakiness mitigation). passed/
 // total/errors come from the repeat whose pass rate is closest to the median
 // pass rate so the row stays self-consistent; ties pick the earliest repeat.
+//
+// Display note: with runs > 1 the reported passed/total come from that
+// representative repeat while PassRate is the median, so the table can show
+// e.g. PASSED 4 TOTAL 5 PASS-RATE 0.90 (4/5 != 0.90). This is display-only;
+// the gate reads PassRate directly and is unaffected.
 func collapseScorecardRuns(rows []scorecardProvider) scorecardProvider {
 	if len(rows) == 0 {
 		return scorecardProvider{}
@@ -569,18 +595,19 @@ func baselineRegressions(baseline map[string]float64, rows []scorecardProvider, 
 
 // evaluateScorecardGates applies the ci-benchmark gates (§4.4) to the collapsed
 // per-provider rows. repeats carries every per-run row across providers so an
-// errored repeat never hides behind the median collapse. failBelow <= 0
-// disables the fail-below gate, baseline nil disables the regression gate, and
-// budgetCap <= 0 disables the budget gate.
+// errored repeat never hides behind the median collapse, and so the budget gate
+// sees the ACTUAL spend (sum of all repeats) rather than the median rows.
+// failBelow <= 0 disables the fail-below gate, baseline nil disables the
+// regression gate, and budgetCap <= 0 disables the budget gate.
 func evaluateScorecardGates(rows []scorecardProvider, repeats []scorecardProvider, failBelow float64, baseline map[string]float64, tolerance float64, budgetCap float64) scorecardGateStatus {
 	var st scorecardGateStatus
 	for _, r := range rows {
 		st.TotalCostUSD += r.CostUSD
 	}
 	for _, r := range repeats {
+		st.ActualSpendUSD += r.CostUSD
 		if r.Errors > 0 {
 			st.Incomplete = true
-			break
 		}
 	}
 	for _, r := range rows {
@@ -591,7 +618,9 @@ func evaluateScorecardGates(rows []scorecardProvider, repeats []scorecardProvide
 	if baseline != nil {
 		st.Regressions = baselineRegressions(baseline, rows, tolerance)
 	}
-	if budgetCap > 0 && st.TotalCostUSD >= budgetCap {
+	// Gate on ACTUAL spend (all repeats) so --runs n cannot hide a real cost
+	// breach behind the median collapse. TotalCostUSD stays the display total.
+	if budgetCap > 0 && st.ActualSpendUSD >= budgetCap {
 		st.BudgetExceeded = true
 	}
 	return st

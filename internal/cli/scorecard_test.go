@@ -140,6 +140,23 @@ func TestEvaluateScorecardGates(t *testing.T) {
 		{name: "fail-below zero disabled", rows: passing, failBelow: 0, wantCode: 0},
 		{name: "budget at cap", rows: passing, tolerance: 0.05, budgetCap: 3, wantCode: exitBudgetExceeded},
 		{name: "budget boundary passes", rows: passing, tolerance: 0.05, budgetCap: 3.01, wantCode: 0},
+		// runs>1: median rows (collapsed) look cheap but actual spend across
+		// all repeats exceeds the cap — the budget gate must use ACTUAL spend.
+		// Median rows: openai 1 + deepseek 2 = 3 < cap 4. Actual repeats:
+		// (1+1)+(2+2) = 6 >= cap 4 → budget breach detected.
+		{name: "budget uses actual spend across runs", rows: passing, repeats: []scorecardProvider{
+			{Provider: "openai", CostUSD: 1},
+			{Provider: "openai", CostUSD: 1},
+			{Provider: "deepseek", CostUSD: 2},
+			{Provider: "deepseek", CostUSD: 2},
+		}, tolerance: 0.05, budgetCap: 4, wantCode: exitBudgetExceeded},
+		// runs>1 but actual spend still under cap → passes (no false positive).
+		{name: "budget actual spend under cap passes", rows: passing, repeats: []scorecardProvider{
+			{Provider: "openai", CostUSD: 1},
+			{Provider: "openai", CostUSD: 1},
+			{Provider: "deepseek", CostUSD: 2},
+			{Provider: "deepseek", CostUSD: 2},
+		}, tolerance: 0.05, budgetCap: 6.01, wantCode: 0},
 		{name: "baseline regression", rows: passing, baseline: map[string]float64{"deepseek": 0.9}, tolerance: 0.05, wantCode: exitScorecardFailed, wantRegs: 1},
 		{name: "baseline tolerance boundary passes", rows: passing, baseline: map[string]float64{"openai": 0.9, "deepseek": 0.85}, tolerance: 0.05, wantCode: 0},
 		{name: "baseline provider only in current", rows: passing, baseline: map[string]float64{"other": 0.5}, tolerance: 0.05, wantCode: 0},
@@ -360,6 +377,7 @@ func TestParseScorecardArgsUsageErrors(t *testing.T) {
 		{"--providers", "openai,deepseek", "--baseline-tolerance", "-0.1"},
 		{"--providers", "openai,", "x"}, // empty list entry
 		{"--providers", "openai,frobnicate"},
+		{"--providers", "openai,openai"}, // duplicate provider
 		{"--providers", "openai,deepseek", "--bogus"},
 	}
 	for _, args := range tests {

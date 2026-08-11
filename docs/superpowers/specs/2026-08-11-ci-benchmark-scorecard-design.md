@@ -267,25 +267,46 @@ jobs:
       - uses: actions/setup-go@v5
         with: { go-version: "1.26" }
       - name: Build pi-run
-        run: go build -o bin/pi-run ./cmd/pi-run
-      - name: Set up node + install the Pi CLI
-        uses: actions/setup-node@v4
-        with: { node-version: "22" }
-      - run: npm install -g pi   # the published package the harness launches as `pi`
+        run: |
+          go build -o bin/pi-run ./cmd/pi-run
+          # GitHub runner shells do not put the workspace bin/ on PATH.
+          echo "$GITHUB_WORKSPACE/bin" >> "$GITHUB_PATH"
+      - name: Set up Node via nvm + install the Pi CLI
+        # pi-run resolves the pi binary from the HIGHEST nvm-managed Node
+        # toolchain (~/.nvm/versions/node/<v>/bin/pi); it does NOT use a PATH
+        # node from actions/setup-node. Install node + pi under nvm instead.
+        # Set PI_NODE_VERSION to pin an exact nvm version.
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+          nvm install "${PI_NODE_VERSION:-latest}"
+          npm install -g pi
       - name: Pull last scorecard (baseline)
         uses: actions/download-artifact@v4
         with:
           name: benchmark-scorecard
           path: eval/benchmark-results/
         continue-on-error: true  # first run has no baseline yet
+      - name: Resolve baseline (latest scorecard if any)
+        # The CLI writes only timestamped scorecard-<run>.json; give the gate a
+        # fixed scorecard-latest.json name when a prior artifact exists.
+        run: |
+          if ls eval/benchmark-results/scorecard-*.json >/dev/null 2>&1; then
+            cp "$(ls -t eval/benchmark-results/scorecard-*.json | head -1)" \
+              eval/benchmark-results/scorecard-latest.json
+          fi
+        continue-on-error: true
       - name: Run provider scorecard gate
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-        run: >-
-          pi-run ci-benchmark --providers openai,deepseek
-          --fail-below 0.8 --max-budget-usd 5.0
-          --baseline eval/benchmark-results/scorecard-latest.json
+        run: |
+          BASELINE=""
+          if [ -f eval/benchmark-results/scorecard-latest.json ]; then
+            BASELINE="--baseline eval/benchmark-results/scorecard-latest.json"
+          fi
+          pi-run ci-benchmark --providers openai,deepseek \
+            --fail-below 0.8 --max-budget-usd 5.0 $BASELINE
       - name: Upload scorecard (becomes next run's baseline)
         uses: actions/upload-artifact@v4
         with:
@@ -297,8 +318,13 @@ jobs:
 Notes: providers run sequentially (clean cost attribution); keys come from repo
 secrets and are never echoed (the CLI only logs key *names*, matching today's
 behavior); the artifact-chained `scorecard-latest.json` is the v1 file-based
-baseline; constrained CI without Docker can still run
-`pi-run eval --benchmark-dry-run` as a format-only gate.
+baseline — the resolve-baseline step copies the newest timestamped scorecard to
+that fixed name, and the gate step only passes `--baseline` when the file
+actually exists (a missing file is a usage error, so the flag must be
+conditional); pi must be installed under an **nvm-managed** Node toolchain (the
+CLI resolves `~/.nvm/versions/node/<highest>/bin/pi`, not the PATH node from
+`actions/setup-node`) — pin `PI_NODE_VERSION` to match; constrained CI without
+Docker can still run `pi-run eval --benchmark-dry-run` as a format-only gate.
 
 ### 4.7 Reuse of `runBenchmarkLive` + cost plumbing
 

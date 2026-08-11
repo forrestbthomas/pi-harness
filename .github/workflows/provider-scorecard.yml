@@ -25,13 +25,25 @@ jobs:
         with:
           go-version: '1.26'
       - name: Build pi-run
-        run: go build -o bin/pi-run ./cmd/pi-run
-      - name: Set up node + install the Pi CLI
-        # actions/setup-node@v7
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
-        with:
-          node-version: '22'
-      - run: npm install -g pi # the published package the harness launches as `pi`
+        run: |
+          go build -o bin/pi-run ./cmd/pi-run
+          # Put the repo bin/ on PATH for later steps (GitHub runner shells do
+          # not include the workspace bin/ by default).
+          echo "$GITHUB_WORKSPACE/bin" >> "$GITHUB_PATH"
+      - name: Set up Node via nvm + install the Pi CLI
+        # pi-run resolves the pi binary from the HIGHEST nvm-managed Node
+        # toolchain (~/.nvm/versions/node/<v>/bin/pi) — see internal/cli/pi.go
+        # resolveNodeVersion. GitHub-hosted runners ship nvm; we must install
+        # node + pi under nvm so the CLI finds pi, NOT into the PATH node from
+        # actions/setup-node. Set PI_NODE_VERSION to pin an exact nvm version.
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+          nvm install "${PI_NODE_VERSION:-latest}"
+          # Install pi into the active nvm-managed Node toolchain.
+          npm install -g pi
+          echo "nvm node: $(nvm which current)"
+          echo "pi path:  $(command -v pi)"
       - name: Pull last scorecard (baseline)
         # actions/download-artifact@v7
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
@@ -39,18 +51,43 @@ jobs:
           name: benchmark-scorecard
           path: eval/benchmark-results/
         continue-on-error: true # first run has no baseline yet
+      - name: Resolve baseline (latest scorecard if any)
+        # The CLI writes only timestamped scorecard-<run>.json files; give the
+        # gate a fixed scorecard-latest.json name when a prior artifact exists.
+        # First run (no artifact) leaves no baseline — the gate treats a
+        # missing --baseline as a usage error, so only pass --baseline when the
+        # file exists (handled in the gate step below via conditionals-free
+        # shell: skip the flag entirely when no baseline is present).
+        run: |
+          if ls eval/benchmark-results/scorecard-*.json >/dev/null 2>&1; then
+            LATEST="$(ls -t eval/benchmark-results/scorecard-*.json | head -1)"
+            cp "$LATEST" eval/benchmark-results/scorecard-latest.json
+            echo "baseline: $LATEST"
+          else
+            echo "no prior scorecard — running without a baseline"
+          fi
+        continue-on-error: true
       - name: Run provider scorecard gate
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-        run: >-
-          pi-run ci-benchmark --providers openai,deepseek
-          --fail-below 0.8 --max-budget-usd 5.0
-          --baseline eval/benchmark-results/scorecard-latest.json
+        # PI_NODE_VERSION pins the nvm toolchain the CLI resolves (matches the
+        # nvm install above when set; otherwise the CLI uses the highest nvm
+        # version, which is the one we installed).
+        run: |
+          BASELINE=""
+          if [ -f eval/benchmark-results/scorecard-latest.json ]; then
+            BASELINE="--baseline eval/benchmark-results/scorecard-latest.json"
+          fi
+          pi-run ci-benchmark --providers openai,deepseek \
+          --fail-below 0.8 --max-budget-usd 5.0 $BASELINE
       - name: Upload scorecard (becomes next run's baseline)
         # actions/upload-artifact@v7
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: benchmark-scorecard
           path: eval/benchmark-results/scorecard-*.json
+          # Retention bounds accumulation: the download step restores all prior
+          # scorecard-*.json and this upload re-ships them plus the new one, so
+          # the artifact grows ~1 file per run. 90 days keeps it bounded.
           retention-days: 90

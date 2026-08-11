@@ -10,7 +10,7 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
 
 ## What You Get
 
-- **`pi-run` CLI** — a compiled Go binary (repo `bin/pi-run`) that owns the harness runtime: `chat`, `print`, `resume`, `cost`, `eval`, `config-check`, `doctor`, `setup`, `install`, `clean`, `version`.
+- **`pi-run` CLI** — a compiled Go binary (repo `bin/pi-run`) that owns the harness runtime: `chat`, `print`, `resume`, `cost`, `ci-benchmark`, `eval`, `config-check`, `doctor`, `setup`, `install`, `clean`, `version`.
 - **Pi CLI** installed globally (via nvm) and configured for this project.
 - **Curated Pi packages** installed project-locally:
   - `pi-mcp-adapter` — token-efficient MCP adapter.
@@ -308,6 +308,54 @@ Plain `pi-run print` runs stay one-shot (`--no-session`, no session file); when
 `--max-budget-usd` is set, the print session is persisted so its spend can be
 recorded in the ledger.
 
+## Provider Scorecard in CI
+
+`pi-run ci-benchmark` runs the benchmark suite against **2+ providers** and
+**gates the build** on the result — the choose → measure → control loop as a
+repeatable CI artifact: choose providers, measure them with the
+[Benchmarks](#benchmarks) suite, and control spend and quality with explicit
+gates.
+
+```bash
+# Run the suite against two providers and gate on pass rate + budget
+pi-run ci-benchmark --providers openai,deepseek --fail-below 0.8 --max-budget-usd 5.0
+
+# Compare against a previous scorecard/run JSON (regression gate, default tolerance 0.05)
+pi-run ci-benchmark --providers openai,deepseek --fail-below 0.8 \
+  --baseline eval/benchmark-results/scorecard-latest.json
+```
+
+| Flag | Meaning |
+|---|---|
+| `--providers <a,b>` | Comma-separated providers, **≥ 2**, order-significant (e.g. `openai,deepseek`) |
+| `--models <m1,m2>` | Optional per-provider model overrides (same order as `--providers`); defaults to each provider's `defaultModel` |
+| `--fail-below <rate>` | Fail (exit 8) if any provider pass rate < `<rate>` (e.g. `0.8`) |
+| `--max-budget-usd <n>` | Fail (exit 6) if total run cost ≥ `n` (`PI_MAX_BUDGET_USD` also applies) |
+| `--baseline <path>` | Previous scorecard or per-provider run JSON to diff pass rates against (file-based baseline) |
+| `--baseline-tolerance <n>` | Max allowed per-provider pass-rate drop vs baseline (default `0.05`) |
+| `--runs <n>` | Repeat each provider suite n times; gate on the **median** pass rate (default 1) |
+| `--quick-profile` | Cap per-task agent timeout at 60 s — cheap, best-effort smoke run |
+
+Each run writes a machine-readable scorecard to
+`eval/benchmark-results/scorecard-<run>.json` (gitignored; per-provider pass
+rate, cost, latency, tokens) and prints a human-readable table. Providers run
+sequentially so per-provider cost attribution stays clean; any errored task
+makes the run incomplete and fails the gate. Benchmarks require Docker (exit 7
+when unavailable).
+
+**Exit codes:** `6` budget exceeded · `7` docker unavailable · `8` scorecard
+gate failed (incomplete run, pass rate below `--fail-below`, or regression vs
+`--baseline`).
+
+**Run it in CI:** see
+[`.github/workflows/provider-scorecard.yml`](.github/workflows/provider-scorecard.yml)
+— a weekly-scheduled / manual GitHub Actions job that runs the scorecard across
+two providers, gates on `--fail-below` + `--max-budget-usd`, and uploads the
+scorecard JSON as an artifact that becomes the next run's baseline.
+
+See [docs/benchmarks.md](docs/benchmarks.md) for how to add your own benchmark
+tasks.
+
 ## `pi-run` Command Reference
 
 | Command | Behavior |
@@ -321,6 +369,7 @@ recorded in the ledger.
 | `pi-run eval --help` | Show eval-specific usage without running pytest |
 | `pi-run resume [flags] [prompt...]` | Continue the most recent Pi session (`pi --continue`) |
 | `pi-run cost [--json] [--since <date>] [--reset]` | Aggregate real spend from Pi session files (`usage.cost`), per provider/model, with total |
+| `pi-run ci-benchmark --providers <a,b> [flags]` | Provider scorecard in CI: run the benchmark suite against 2+ providers, gate on pass rate / budget / baseline |
 | `pi-run providers` | List configured providers and default models |
 | `pi-run config-check` | Deterministic harness checks (no keys, no network) |
 | `pi-run doctor` | Health report: node, pi, vault, per-provider keys, models, venv |
@@ -330,7 +379,7 @@ recorded in the ledger.
 | `pi-run --exit-codes` | Print the stable exit-code table |
 | `pi-run version` / `help` | Version / usage |
 
-Exit codes: `0` ok · `1` generic · `2` usage · `3` missing API key · `4` node/pi not found · `5` eval venv missing · `6` budget exceeded · `7` docker unavailable (benchmarks).
+Exit codes: `0` ok · `1` generic · `2` usage · `3` missing API key · `4` node/pi not found · `5` eval venv missing · `6` budget exceeded · `7` docker unavailable (benchmarks) · `8` scorecard gate failed (ci-benchmark).
 
 ## Skills
 

@@ -23,6 +23,18 @@ All notable changes to this project are documented here. Format follows
   timing, and JSON reports under `eval/benchmark-results/` (gitignored). Exit
   code 7 when Docker is unavailable.
 
+## [0.6.0] - 2026-08-11
+
+### Added
+- `pi-run ci-benchmark`: provider scorecard in CI. Runs the benchmark suite
+  against 2+ providers (`--providers openai,deepseek`, optional `--models`),
+  writes a per-provider scorecard (`eval/benchmark-results/scorecard-<run>.json`:
+  pass rate, cost, latency, tokens), and gates the build: exit 8 when any
+  provider drops below `--fail-below <rate>` or regresses vs `--baseline <path>`
+  (default tolerance 0.05), exit 6 when run cost hits `--max-budget-usd`.
+  Includes `--runs <n>` median repeats for flaky runs and `--quick-profile` for
+  cheap scheduled smoke runs.
+
 ## [0.4.3] - 2026-08-11
 
 ### Fixed

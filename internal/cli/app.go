@@ -24,6 +24,7 @@ Commands:
   resume        Continue the most recent session (pi --continue)
   cost          Aggregate real spend from Pi session files (--json/--since/--reset)
   eval          Run the DeepEval pytest suite (--quick for smoke subset) or the Docker benchmark runner
+  ci-benchmark  Run the benchmark suite against 2+ providers and gate on a scorecard
   config-check  Run deterministic harness checks (no keys, no network)
   doctor        Report harness health (node, pi, keys, models)
   setup         Create eval/.venv, install deps, refresh model catalogs
@@ -34,7 +35,7 @@ Commands:
   help          Show this help
   --exit-codes  Print the exit-code table
 
-Exit codes: 0 ok · 1 generic · 2 usage · 3 missing key · 4 node/pi missing · 5 eval venv missing · 6 budget exceeded · 7 docker unavailable
+Exit codes: 0 ok · 1 generic · 2 usage · 3 missing key · 4 node/pi missing · 5 eval venv missing · 6 budget exceeded · 7 docker unavailable · 8 scorecard gate failed
 
 chat/print flags:
   --provider <name>                        Provider (see 'pi-run providers'; env PI_PROVIDER; default openai)
@@ -53,6 +54,15 @@ Eval flags:
   --provider <name> / --model <id>         Agent provider/model for --benchmark
   --                                       Pass remaining arguments directly to pytest
 
+ci-benchmark flags:
+  --providers <a,b> / --models <m1,m2>     Providers (>=2) and optional per-provider model overrides
+  --fail-below <rate>                      Fail (exit 8) if any provider pass rate < rate
+  --max-budget-usd <n>                     Fail (exit 6) if total run cost >= n (env PI_MAX_BUDGET_USD)
+  --baseline <path> / --baseline-tolerance <n>
+                                           Diff pass rates against a prior scorecard/run (default tolerance 0.05)
+  --runs <n>                               Repeat each provider suite n times; gate on median pass rate
+  --quick-profile                          Cap per-task agent timeout at 60s (cheap smoke run)
+
 Everything else is passed through to pi unchanged (use -- to escape a message
 that starts with a dash, e.g. pi-run print -- "-weird prompt").
 `
@@ -66,6 +76,7 @@ const exitCodesText = `Exit codes:
   5  eval venv missing
   6  budget exceeded
   7  docker unavailable (benchmarks)
+  8  scorecard gate failed (ci-benchmark)
 `
 
 // Run is the CLI entry point. It returns the process exit code.
@@ -91,6 +102,8 @@ func Run(args []string) int {
 		return runCost(args[1:])
 	case "eval":
 		return runEval(args[1:])
+	case "ci-benchmark":
+		return runScorecard(args[1:])
 	case "config-check":
 		return runConfigCheck()
 	case "doctor":

@@ -52,6 +52,14 @@ This harness is subagent-capable via the `pi-subagents` package (in
 review this diff", "Run worker to implement this plan". See
 `examples/subagents.md` for a worked scout → worker → reviewer loop.
 
+**Subagent timeouts (required):** always pass an explicit `timeoutMs` on
+subagent launches (e.g. `timeoutMs: 600000`), because async subagent runs
+have no default timeout and a child `bash` tool call can block forever when a
+command starts a background process that inherits the terminal. Project agent
+wrappers in `.pi/agents/` already set a 10-minute default, but explicit launch
+values are still preferred. Children are instructed (in the wrappers) to pass
+`timeout:` on every `bash` call and to avoid long-running/background commands.
+
 <!-- This section is maintained by the coding agent via lore (https://github.com/BYK/loreai) -->
 ## Long-term Knowledge
 

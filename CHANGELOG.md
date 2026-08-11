@@ -6,6 +6,18 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-08-11
+
+### Fixed
+- Subagent children could hang forever on tool calls: a child `bash` call that
+  starts a background process inheriting the terminal (no bash default timeout
+  + no async wall-clock default) blocked the parent indefinitely. Added
+  project agent wrappers (`.pi/agents/worker|reviewer|scout.md`) with a
+  10-minute `timeoutMs` default and a working rule to always pass `timeout:`
+  on `bash` calls and avoid background/inherit-terminal commands; documented
+  the required explicit `timeoutMs` convention (#22).
+- Upstream: filed pi-subagents issue #978 and PR #979 (default async timeout)
+  with deterministic reproductions of the hang.
 ## [0.4.2] - 2026-08-10
 
 ### Changed

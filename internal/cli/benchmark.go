@@ -239,59 +239,47 @@ func reportBenchmarkDryRun(tasks []benchmarkTask, errs []error) int {
 	return 0
 }
 
+// benchmarkExitError wraps a benchmark failure with its documented exit code
+// (1 generic, 2 provider resolution, 3 missing key, 4 node/pi missing, 7
+// docker unavailable). Both runBenchmarkLive and ci-benchmark map it back to
+// the code so eval --benchmark and the scorecard share one pre-flight.
+type benchmarkExitError struct {
+	code int
+	err  error
+}
+
+func (e *benchmarkExitError) Error() string { return e.err.Error() }
+
+// benchmarkErrorCode maps a runProviderBenchmark error to its exit code, 1
+// for anything not wrapped in a benchmarkExitError.
+func benchmarkErrorCode(err error) int {
+	if be, ok := errors.AsType[*benchmarkExitError](err); ok {
+		return be.code
+	}
+	return 1
+}
+
 // runBenchmarkLive runs each task end-to-end: prepare the workspace, run the
-// agent against it, verify inside Docker, and record per-task results.
+// agent against it, verify inside Docker, and record per-task results. It is a
+// thin wrapper over runProviderBenchmark that keeps the eval --benchmark
+// output and exit codes unchanged.
 func runBenchmarkLive(tasks []benchmarkTask, opts evalOptions, root string) int {
-	if _, err := exec.LookPath("docker"); err != nil {
-		fmt.Fprintln(os.Stderr, "pi-run: eval: benchmark: Docker not found on PATH — install Docker to run benchmarks, or use --benchmark-dry-run for format-only validation")
-		return 7
-	}
-	p, err := ResolveProvider(opts.provider)
+	run, err := runProviderBenchmark(tasks, opts, root)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "pi-run: eval: benchmark: %v\n", err)
-		return 2
-	}
-	key, err := resolveSecret(p.KeyEnv)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "pi-run: eval: benchmark: no %s available: export it, or check your secret manager (`pi-run doctor`)\n", p.KeyEnv)
-		return 3
-	}
-	home, err := os.UserHomeDir()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return 1
-	}
-	nodeVersion, err := resolveNodeVersion(home)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "pi-run: eval: benchmark: %v\n", err)
-		return 4
-	}
-	model := opts.model
-	if model == "" {
-		model = p.DefaultModel
+		return benchmarkErrorCode(err)
 	}
 
-	runID := benchmarkRunID(p.Name, model)
-	wsBase, err := os.MkdirTemp("", "pi-bench-"+runID)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return 1
-	}
-	defer os.RemoveAll(wsBase)
-
-	fmt.Printf("== pi-run eval --benchmark (%s/%s) ==\n", p.Name, model)
-	results := make([]benchmarkTaskResult, 0, len(tasks))
-	for _, task := range tasks {
-		res := runBenchmarkTask(task, p, model, key, nodeVersion, wsBase, runID)
-		results = append(results, res)
+	fmt.Printf("== pi-run eval --benchmark (%s/%s) ==\n", run.Provider, run.Model)
+	for _, res := range run.Tasks {
 		fmt.Printf("  %s %s (%.1fs)\n", strings.ToUpper(res.Status), res.ID, res.Duration)
 		if res.Error != "" {
 			fmt.Printf("       %s\n", res.Error)
 		}
 	}
-	summary := aggregateBenchmarkResults(results)
+	summary := run.Summary
 	fmt.Printf("== score: %d/%d passed (%.0f%%) ==\n", summary.Passed, summary.Total, summary.Score*100)
-	path, err := writeBenchmarkResults(root, runID, p.Name, model, results, summary)
+	path, err := writeBenchmarkResults(root, run.RunID, run.Provider, run.Model, run.Tasks, summary)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "pi-run: eval: benchmark: %v\n", err)
 		return 1
@@ -302,6 +290,61 @@ func runBenchmarkLive(tasks []benchmarkTask, opts evalOptions, root string) int 
 		return 1
 	}
 	return 0
+}
+
+// runProviderBenchmark runs the same per-task loop as eval --benchmark —
+// workspace prep, execPiDirTimeout agent run, Docker build/run, grade — for
+// one provider and returns the graded result instead of printing/writing it.
+// It performs the same pre-flight checks as the eval wrapper (docker 7,
+// provider 2, key 3, node 4); failures are wrapped in benchmarkExitError so
+// callers map them to the documented exit codes. ci-benchmark reuses this
+// function per provider, so per-provider cost attribution stays clean.
+func runProviderBenchmark(tasks []benchmarkTask, opts evalOptions, root string) (benchmarkRunResult, error) {
+	if _, err := exec.LookPath("docker"); err != nil {
+		return benchmarkRunResult{}, &benchmarkExitError{7, errors.New("Docker not found on PATH — install Docker to run benchmarks, or use --benchmark-dry-run for format-only validation")}
+	}
+	p, err := ResolveProvider(opts.provider)
+	if err != nil {
+		return benchmarkRunResult{}, &benchmarkExitError{2, err}
+	}
+	key, err := resolveSecret(p.KeyEnv)
+	if err != nil {
+		return benchmarkRunResult{}, &benchmarkExitError{3, fmt.Errorf("no %s available: export it, or check your secret manager (`pi-run doctor`)", p.KeyEnv)}
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return benchmarkRunResult{}, &benchmarkExitError{1, err}
+	}
+	nodeVersion, err := resolveNodeVersion(home)
+	if err != nil {
+		return benchmarkRunResult{}, &benchmarkExitError{4, err}
+	}
+	model := opts.model
+	if model == "" {
+		model = p.DefaultModel
+	}
+
+	runID := benchmarkRunID(p.Name, model)
+	wsBase, err := os.MkdirTemp("", "pi-bench-"+runID)
+	if err != nil {
+		return benchmarkRunResult{}, err
+	}
+	defer os.RemoveAll(wsBase)
+
+	results := make([]benchmarkTaskResult, 0, len(tasks))
+	for _, task := range tasks {
+		results = append(results, runBenchmarkTask(task, p, model, key, nodeVersion, wsBase, runID))
+	}
+	summary := aggregateBenchmarkResults(results)
+	return benchmarkRunResult{
+		RunID:     runID,
+		Provider:  p.Name,
+		Model:     model,
+		DryRun:    false,
+		Timestamp: time.Now().Format(time.RFC3339),
+		Tasks:     results,
+		Summary:   summary,
+	}, nil
 }
 
 // runBenchmarkTask executes one task and returns its graded result.

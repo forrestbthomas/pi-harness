@@ -31,6 +31,7 @@ Commands:
   install       Build the binary into bin/ and symlink pi-run onto your PATH
   clean         Remove eval/.venv and pytest caches
   providers     List configured providers and default models
+  hooks         List or run .pi/hooks.json hooks (pre-eval, post-eval, pre-chat)
   version       Print version
   help          Show this help
   --exit-codes  Print the exit-code table
@@ -41,6 +42,8 @@ chat/print flags:
   --provider <name>                        Provider (see 'pi-run providers'; env PI_PROVIDER; default openai)
   --model <id>                             Override the per-provider default model
   --max-budget-usd <n>                     Refuse to launch when cumulative spend >= <n> USD (env PI_MAX_BUDGET_USD)
+  --permission-mode <mode>                 Permission tier: default|plan|acceptEdits|bypassPermissions (env PI_PERMISSION_MODE). plan = read-only tools (--tools read,grep,find,ls); acceptEdits = Pi defaults (edits allowed); bypassPermissions = --approve (trust project-local files)
+  --read-only                              Alias for --permission-mode plan (read-only session)
 
 cost flags:
   --json                                   Machine-readable JSON output
@@ -129,6 +132,8 @@ func Run(args []string) int {
 		return runClean()
 	case "providers":
 		return runProviders()
+	case "hooks":
+		return runHooksCmd(args[1:])
 	default:
 		fmt.Fprintf(os.Stderr, "pi-run: unknown command %q\n\n%s", args[0], usage)
 		return 2
@@ -137,11 +142,18 @@ func Run(args []string) int {
 
 // runLaunch handles `chat`, `print`, and `resume`.
 func runLaunch(mode string, args []string) int {
-	providerFlag, modelFlag, budgetFlag, rest := splitLaunchArgs(args)
+	providerFlag, modelFlag, budgetFlag, permissionModeFlag, rest := splitLaunchArgs(args)
 
-	// Validate the prompt BEFORE touching keys (usage error wins over key error).
+	// Validate the prompt and permission mode BEFORE touching keys (usage
+	// error wins over key error).
 	if mode == "print" && len(rest) == 0 {
 		fmt.Fprintf(os.Stderr, "pi-run: print: requires a prompt\n\n%s", usage)
+		return 2
+	}
+
+	permissionMode, err := resolvePermissionMode(permissionModeFlag)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "pi-run: %s: %v\n", mode, err)
 		return 2
 	}
 
@@ -188,8 +200,15 @@ func runLaunch(mode string, args []string) int {
 		return 4
 	}
 
+	// Hooks: pre-chat fires before launching pi. A failing hook (without
+	// continueOnError) aborts the launch with the hook's exit code.
+	if err := runHooks(hookEventPreChat); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return hookExitCode(err)
+	}
+
 	runStart := time.Now()
-	code, err := execPi(nodeVersion, piArgs(p, model, mode, rest, capUSD > 0), launchEnv(p, key))
+	code, err := execPi(nodeVersion, piArgs(p, model, mode, rest, capUSD > 0, permissionMode), launchEnv(p, key))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
@@ -208,10 +227,10 @@ func runLaunch(mode string, args []string) int {
 }
 
 // splitLaunchArgs separates pi-run's own flags (--provider/--model/
-// --max-budget-usd) from pass-through args. Everything else is kept in order;
-// "--" ends flag parsing and its tail is also kept (allowing messages that
-// start with a dash).
-func splitLaunchArgs(args []string) (provider, model, budget string, rest []string) {
+// --max-budget-usd/--permission-mode/--read-only) from pass-through args.
+// Everything else is kept in order; "--" ends flag parsing and its tail is
+// also kept (allowing messages that start with a dash).
+func splitLaunchArgs(args []string) (provider, model, budget, permissionMode string, rest []string) {
 	i := 0
 	for i < len(args) {
 		a := args[i]
@@ -237,12 +256,51 @@ func splitLaunchArgs(args []string) (provider, model, budget string, rest []stri
 		case strings.HasPrefix(a, "--max-budget-usd="):
 			budget = strings.TrimPrefix(a, "--max-budget-usd=")
 			i++
+		case a == "--permission-mode" && i+1 < len(args):
+			permissionMode = args[i+1]
+			i += 2
+		case strings.HasPrefix(a, "--permission-mode="):
+			permissionMode = strings.TrimPrefix(a, "--permission-mode=")
+			i++
+		case a == "--read-only":
+			permissionMode = "plan" // alias for --permission-mode plan
+			i++
 		default:
 			rest = append(rest, a)
 			i++
 		}
 	}
 	return
+}
+
+// permissionModes is the validated set of harness-level permission tiers. It
+// mirrors the common Claude Code permission-mode set. The value is NOT passed
+// to pi unchanged: piArgs maps each tier to Pi's real flags (plan ->
+// --tools read,grep,find,ls; bypassPermissions -> --approve; default/
+// acceptEdits -> no flag), because Pi has no --permission-mode flag.
+var permissionModes = map[string]bool{
+	"default":           true,
+	"plan":              true,
+	"acceptEdits":       true,
+	"bypassPermissions": true,
+}
+
+// resolvePermissionMode returns the effective permission tier: the
+// --permission-mode flag wins over the PI_PERMISSION_MODE env var. An empty
+// result means no explicit tier (pi's own defaults apply). Unknown values are
+// usage errors.
+func resolvePermissionMode(flagVal string) (string, error) {
+	v := flagVal
+	if v == "" {
+		v = os.Getenv("PI_PERMISSION_MODE")
+	}
+	if v == "" {
+		return "", nil
+	}
+	if !permissionModes[v] {
+		return "", fmt.Errorf("unknown permission mode %q (valid: default, plan, acceptEdits, bypassPermissions)", v)
+	}
+	return v, nil
 }
 
 // runInstall builds the binary and symlinks it onto the user's PATH.

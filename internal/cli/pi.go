@@ -46,10 +46,17 @@ func nodeBinDir(home, version string) (string, error) {
 // persist is set when a budget cap is active: print runs then keep a session
 // file so their spend can be recorded in the ledger (without a cap, print
 // stays one-shot with --no-session).
+// permissionMode is the harness-level permission tier (default|plan|
+// acceptEdits|bypassPermissions). It is NOT a Pi flag: Pi has no
+// --permission-mode. The tier is mapped to Pi's real tool-control surface:
+//   plan             -> --tools read,grep,find,ls (read-only toolset)
+//   acceptEdits      -> no extra flag (Pi's default already permits edits)
+//   bypassPermissions -> --approve (trust project-local files)
+//   default / empty  -> no flag
 // pi runs with --offline so startup network ops (version check, changelog,
 // catalog refresh) never hang on the flaky pi.dev endpoint; the stored model
 // catalogs are used instead. `pi-run setup` is the explicit online path.
-func piArgs(p Provider, model, mode string, rest []string, persist bool) []string {
+func piArgs(p Provider, model, mode string, rest []string, persist bool, permissionMode string) []string {
 	args := []string{"--provider", p.PiProvider, "--model", model, "--offline"}
 	switch mode {
 	case "print":
@@ -60,16 +67,40 @@ func piArgs(p Provider, model, mode string, rest []string, persist bool) []strin
 	case "resume":
 		args = append(args, "--continue")
 	}
+	switch permissionMode {
+	case "plan":
+		args = append(args, "--tools", "read,grep,find,ls")
+	case "bypassPermissions":
+		args = append(args, "--approve")
+	case "", "default", "acceptEdits":
+		// default: no flag; acceptEdits: Pi's default already permits edits.
+	}
 	return append(args, rest...)
 }
 
 // launchEnv returns the provider key and any provider-specific environment
-// needed by the Pi child. BaseURL is currently meaningful for OpenAI-compatible
-// providers, including the built-in local provider.
+// needed by the Pi child. BaseURL is meaningful for OpenAI-compatible
+// providers (e.g. local, azure, mistral) via OPENAI_BASE_URL and for
+// Anthropic-compatible providers (e.g. AWS Bedrock) via ANTHROPIC_BASE_URL;
+// Anthropic-routed providers also receive the key under ANTHROPIC_API_KEY so
+// pi's anthropic provider can authenticate when the entry's own keyEnv differs
+// (e.g. BEDROCK_API_KEY).
 func launchEnv(p Provider, key string) []string {
 	env := []string{p.KeyEnv + "=" + key}
-	if p.BaseURL != "" {
-		env = append(env, "OPENAI_BASE_URL="+p.BaseURL)
+	switch p.PiProvider {
+	case "anthropic":
+		if p.KeyEnv != "ANTHROPIC_API_KEY" {
+			env = append(env, "ANTHROPIC_API_KEY="+key)
+		}
+		if p.BaseURL != "" {
+			env = append(env, "ANTHROPIC_BASE_URL="+p.BaseURL)
+		}
+	default:
+		// OpenAI-compatible and any provider without a pi provider: base URL
+		// travels via OPENAI_BASE_URL (legacy flat behavior).
+		if p.BaseURL != "" {
+			env = append(env, "OPENAI_BASE_URL="+p.BaseURL)
+		}
 	}
 	return env
 }

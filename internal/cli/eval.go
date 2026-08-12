@@ -7,8 +7,10 @@ import (
 	"strings"
 )
 
-// supportedProviderKeyEnvs mirrors eval/conftest.py's SUPPORTED_PROVIDER_KEYS.
-// Env-only (no Bitwarden) so the eval command never blocks on a vault.
+// supportedProviderKeyEnvs mirrors eval/conftest.py's SUPPORTED_PROVIDER_KEYS
+// and must cover every keyEnv in the provider catalog (providers.json /
+// defaultProviders). Env-only (no Bitwarden) so the eval command never blocks
+// on a vault.
 var supportedProviderKeyEnvs = []string{
 	"OPENROUTER_API_KEY",
 	"OPENAI_API_KEY",
@@ -17,6 +19,16 @@ var supportedProviderKeyEnvs = []string{
 	"GROQ_API_KEY",
 	"DEEPSEEK_API_KEY",
 	"LOCAL_API_KEY",
+	"AZURE_OPENAI_API_KEY",
+	"OLLAMA_API_KEY",
+	"MISTRAL_API_KEY",
+	"COHERE_API_KEY",
+	"TOGETHER_API_KEY",
+	"PERPLEXITY_API_KEY",
+	"FIREWORKS_API_KEY",
+	"MOONSHOT_API_KEY",
+	"XAI_API_KEY",
+	"BEDROCK_API_KEY",
 }
 
 const evalUsage = `Usage: pi-run eval [--quick] [--benchmark [name]] [--benchmark-dry-run]
@@ -132,6 +144,14 @@ func runEval(cliArgs []string) int {
 	}
 
 	root := repoRoot()
+
+	// Hooks: pre-eval fires before pytest, post-eval always after — even when
+	// pytest fails — so CI cleanup/notification steps still run.
+	if err := runHooks(hookEventPreEval); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return hookExitCode(err)
+	}
+
 	evalDir := filepath.Join(root, "eval")
 	venvPython := filepath.Join(evalDir, ".venv", "bin", "python")
 	if _, err := os.Stat(venvPython); err != nil {
@@ -153,7 +173,13 @@ func runEval(cliArgs []string) int {
 	code, err := runCmd(venvPython, args, evalDir)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		return 1
+		code = 1
+	}
+	// post-eval always fires after the suite; a failed post-eval hook (without
+	// continueOnError) overrides pytest's exit code so CI can't miss it.
+	if err := runHooks(hookEventPostEval); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return hookExitCode(err)
 	}
 	return code
 }

@@ -79,3 +79,10 @@ Structure your findings clearly:
 ```
 
 When reviewing code, cite file paths and line numbers. When reviewing plans, cite specific sections and assumptions.
+
+## Permissions
+
+Run under the harness `plan` permission mode (the `--read-only` alias): review
+is an inspect-and-report activity, so the session must not write to the repo.
+`pi-run chat --permission-mode plan` guarantees that. If a fix is genuinely
+required, report it with evidence instead of editing.

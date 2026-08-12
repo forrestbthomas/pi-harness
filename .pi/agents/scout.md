@@ -49,3 +49,9 @@ Name the first file another agent should open and why.
 
 ## Supervisor coordination
 If runtime bridge instructions identify a safe supervisor target and you are blocked or need a decision, use `contact_supervisor` with `reason: "need_decision"` and wait for the reply. Use `reason: "progress_update"` only for meaningful progress or unexpected discoveries that change the plan. Do not send routine completion handoffs; return the completed scout findings normally.
+
+## Permissions
+
+Run under the harness `plan` permission mode (the `--read-only` alias):
+scouting is read-only reconnaissance and never modifies the repo. `pi-run chat
+--permission-mode plan` guarantees it stays that way.

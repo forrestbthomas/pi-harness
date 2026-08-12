@@ -3,8 +3,8 @@ package cli
 import (
 	"io"
 	"os"
-	"reflect"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"testing"
@@ -75,6 +75,38 @@ func TestDefaultProvidersIncludeAllShippedProviders(t *testing.T) {
 	for _, p := range defaultProviders {
 		if p.Name == "local" && p.BaseURL != "http://localhost:11434/v1" {
 			t.Fatalf("local fallback baseURL = %q", p.BaseURL)
+		}
+	}
+}
+
+// TestDefaultProvidersMatchRepoProvidersJSON enforces that the embedded
+// defaultProviders table and the repository providers.json stay in sync:
+// providers.json is the file-based override source of truth, and the embedded
+// table must cover the same catalog so released binaries route identically.
+func TestDefaultProvidersMatchRepoProvidersJSON(t *testing.T) {
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller failed")
+	}
+	root := filepath.Dir(filepath.Dir(filepath.Dir(file)))
+	ps, err := LoadProviders(filepath.Join(root, "providers.json"))
+	if err != nil {
+		t.Fatalf("LoadProviders: %v", err)
+	}
+	if len(ps) != len(defaultProviders) {
+		t.Fatalf("providers.json has %d providers but embedded table has %d; keep them in sync", len(ps), len(defaultProviders))
+	}
+	jsonByName := make(map[string]Provider, len(ps))
+	for _, p := range ps {
+		jsonByName[p.Name] = p
+	}
+	for _, p := range defaultProviders {
+		jp, ok := jsonByName[p.Name]
+		if !ok {
+			t.Fatalf("providers.json missing provider %q present in embedded table", p.Name)
+		}
+		if jp != p {
+			t.Fatalf("providers.json entry %q (%+v) differs from embedded entry (%+v)", p.Name, jp, p)
 		}
 	}
 }

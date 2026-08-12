@@ -33,7 +33,7 @@ func TestNodeBinDirMissing(t *testing.T) {
 
 func TestPiArgsChatOpenAI(t *testing.T) {
 	p, _ := LookupProvider("openai")
-	got := piArgs(p, p.DefaultModel, "chat", nil, false)
+	got := piArgs(p, p.DefaultModel, "chat", nil, false, "")
 	want := []string{"--provider", "openai", "--model", "openai/gpt-5.6-terra", "--offline"}
 	if len(got) != len(want) {
 		t.Fatalf("got %v, want %v", got, want)
@@ -47,7 +47,7 @@ func TestPiArgsChatOpenAI(t *testing.T) {
 
 func TestPiArgsPrintDeepSeek(t *testing.T) {
 	p, _ := LookupProvider("deepseek")
-	got := piArgs(p, p.DefaultModel, "print", []string{"hello"}, false)
+	got := piArgs(p, p.DefaultModel, "print", []string{"hello"}, false, "")
 	want := []string{"--provider", "deepseek", "--model", "deepseek/deepseek-v4-flash", "--offline", "-p", "--no-session", "hello"}
 	if len(got) != len(want) {
 		t.Fatalf("got %v, want %v", got, want)
@@ -61,7 +61,7 @@ func TestPiArgsPrintDeepSeek(t *testing.T) {
 
 func TestPiArgsPassThroughFlagsAndMessage(t *testing.T) {
 	p, _ := LookupProvider("openai")
-	got := piArgs(p, "openai/gpt-5.6-terra", "chat", []string{"--tools", "read", "refactor x"}, false)
+	got := piArgs(p, "openai/gpt-5.6-terra", "chat", []string{"--tools", "read", "refactor x"}, false, "")
 	want := []string{"--provider", "openai", "--model", "openai/gpt-5.6-terra", "--offline", "--tools", "read", "refactor x"}
 	if len(got) != len(want) {
 		t.Fatalf("got %v, want %v", got, want)
@@ -75,7 +75,7 @@ func TestPiArgsPassThroughFlagsAndMessage(t *testing.T) {
 
 func TestPiArgsResumeAppendsContinue(t *testing.T) {
 	p, _ := LookupProvider("openai")
-	got := piArgs(p, p.DefaultModel, "resume", nil, false)
+	got := piArgs(p, p.DefaultModel, "resume", nil, false, "")
 	want := []string{"--provider", "openai", "--model", "openai/gpt-5.6-terra", "--offline", "--continue"}
 	if len(got) != len(want) {
 		t.Fatalf("got %v, want %v", got, want)
@@ -89,7 +89,7 @@ func TestPiArgsResumeAppendsContinue(t *testing.T) {
 
 func TestPiArgsResumePreservesPassThrough(t *testing.T) {
 	p, _ := LookupProvider("deepseek")
-	got := piArgs(p, "deepseek/deepseek-v4-flash", "resume", []string{"--session", "abc123", "continue refactor"}, false)
+	got := piArgs(p, "deepseek/deepseek-v4-flash", "resume", []string{"--session", "abc123", "continue refactor"}, false, "")
 	want := []string{"--provider", "deepseek", "--model", "deepseek/deepseek-v4-flash", "--offline", "--continue", "--session", "abc123", "continue refactor"}
 	if len(got) != len(want) {
 		t.Fatalf("got %v, want %v", got, want)
@@ -203,15 +203,39 @@ func TestResolveNodeVersionEnvOverride(t *testing.T) {
 }
 
 func TestLaunchEnvAddsBaseURLOnlyWhenConfigured(t *testing.T) {
-	without := launchEnv(Provider{KeyEnv: "OPENAI_API_KEY"}, "test-key")
+	without := launchEnv(Provider{KeyEnv: "OPENAI_API_KEY"}, "testvalue")
 	for _, item := range without {
 		if strings.HasPrefix(item, "OPENAI_BASE_URL=") {
 			t.Fatalf("unexpected base URL in environment: %q", item)
 		}
 	}
 
-	with := launchEnv(Provider{KeyEnv: "LOCAL_API_KEY", BaseURL: "http://localhost:11434/v1"}, "test-key")
+	with := launchEnv(Provider{KeyEnv: "LOCAL_API_KEY", BaseURL: "http://localhost:11434/v1"}, "testvalue")
 	if !strings.Contains(strings.Join(with, "\n"), "OPENAI_BASE_URL=http://localhost:11434/v1") {
 		t.Fatalf("launch environment missing configured base URL: %v", with)
+	}
+}
+
+func TestLaunchEnvAnthropicCompatibleProvider(t *testing.T) {
+	// Anthropic-routed providers (e.g. AWS Bedrock) must hand pi the key under
+	// ANTHROPIC_API_KEY and the base URL under ANTHROPIC_BASE_URL so pi's
+	// anthropic provider can reach the compatible endpoint.
+	bedrock := Provider{KeyEnv: "BEDROCK_API_KEY", PiProvider: "anthropic", BaseURL: "https://bedrock-runtime.us-east-1.amazonaws.com/anthropic/v1"}
+	env := strings.Join(launchEnv(bedrock, "testvalue"), "\n")
+	for _, want := range []string{
+		"BEDROCK_API_KEY=testvalue",
+		"ANTHROPIC_API_KEY=testvalue",
+		"ANTHROPIC_BASE_URL=https://bedrock-runtime.us-east-1.amazonaws.com/anthropic/v1",
+	} {
+		if !strings.Contains(env, want) {
+			t.Fatalf("launch environment missing %q: %v", want, env)
+		}
+	}
+
+	// The plain anthropic entry keeps its own key env and must not duplicate
+	// ANTHROPIC_API_KEY.
+	plain := launchEnv(Provider{KeyEnv: "ANTHROPIC_API_KEY", PiProvider: "anthropic"}, "testvalue")
+	if strings.Join(plain, "\n") != "ANTHROPIC_API_KEY=testvalue" {
+		t.Fatalf("plain anthropic launch environment changed: %v", plain)
 	}
 }

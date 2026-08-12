@@ -121,6 +121,53 @@ def _property(metadata, name):
     return value
 
 
+def _ordered_properties(test: dict) -> dict[str, list]:
+    """Return {property name: values in recorded order} from user_properties.
+
+    pytest-json-report 1.5.0 serializes record_property under
+    ``test["user_properties"]`` as a FLAT, ORDERED list of single-key dicts:
+    ``[{str(key): val}, ...]`` (plugin.py: ``user_properties =
+    [{str(key): val} for key, val in report.user_properties]``). The live
+    suite (eval/tests/test_live_suite.py) records each repeat as one set of
+    properties (pass, costUsd, judgeCostUsd, tokens, latencyMs), so the list
+    reads: [pass0, cost0, judge0, tokens0, latency0, pass1, cost1, ...]. We
+    bucket by name preserving order so callers can zip values back into
+    per-run rows.
+    """
+    out: dict[str, list] = {}
+    for item in test.get("user_properties") or []:
+        if not isinstance(item, dict):
+            continue
+        for key, value in item.items():
+            out.setdefault(key, []).append(value)
+    return out
+
+
+def _zip_runs(props: dict[str, list], outcome: str) -> list[dict]:
+    """Zip bucketed property lists into per-run rows (one row per repeat).
+
+    The live suite records every property once per repeat in lockstep, so the
+    number of runs is the length of any property list (they are all equal). A
+    missing/None property for a run means the metric was not recorded for that
+    repeat; downstream aggregation treats it as 0/absent without failing the
+    case (the suite itself only emits complete rows).
+    """
+    n = max((len(values) for values in props.values()), default=0)
+    runs = []
+    for i in range(n):
+        runs.append(
+            {
+                "outcome": outcome,
+                "pass": props.get("pass", [None] * n)[i],
+                "costUsd": props.get("costUsd", [None] * n)[i],
+                "judgeCostUsd": props.get("judgeCostUsd", [None] * n)[i],
+                "tokens": props.get("tokens", [None] * n)[i],
+                "latencyMs": props.get("latencyMs", [None] * n)[i],
+            }
+        )
+    return runs
+
+
 def extract_case_id(nodeid: str) -> str | None:
     """Recover the case id from a live-suite parametrized nodeid.
 
@@ -139,22 +186,20 @@ def parse_report(path) -> dict:
 
 
 def collect_cases(report: dict) -> dict[str, list[dict]]:
-    """Map case id -> list of per-run dicts from report['tests']."""
+    """Map case id -> list of per-run dicts from report['tests'].
+
+    Each live-suite test entry carries ALL EVAL_RUNS_PER_CASE repeats inside
+    one ``user_properties`` list (flat, ordered); we zip the property values
+    back into one row per repeat (see _zip_runs).
+    """
     cases: dict[str, list[dict]] = {}
     for test in report.get("tests", []):
         case_id = extract_case_id(test.get("nodeid", ""))
         if case_id is None:
             continue
-        metadata = test.get("metadata") or {}
-        run = {
-            "outcome": test.get("outcome", ""),
-            "pass": _property(metadata, "pass"),
-            "costUsd": _property(metadata, "costUsd"),
-            "judgeCostUsd": _property(metadata, "judgeCostUsd"),
-            "tokens": _property(metadata, "tokens"),
-            "latencyMs": _property(metadata, "latencyMs"),
-        }
-        cases.setdefault(case_id, []).append(run)
+        props = _ordered_properties(test)
+        runs = _zip_runs(props, test.get("outcome", ""))
+        cases.setdefault(case_id, []).extend(runs)
     return cases
 
 
@@ -226,6 +271,11 @@ def compute_totals(cases_raw: dict[str, list[dict]], case_aggs: dict[str, dict])
 
     n_cases = len(case_aggs)
     pass_rates = [agg["passRate"] for agg in case_aggs.values()]
+    # A case counts as "passed" for the cost-per-successful-task denominator
+    # only when ALL of its runs passed (passRate == 1.0). A tolerance-passing
+    # case (e.g. 0.67) is deliberately excluded: it did not fully succeed, so
+    # its spend should not be counted as "successful task" economics. This is
+    # the strict definition; document if it ever needs to become partial-credit.
     n_passed = sum(1 for rate in pass_rates if rate == 1.0)
     overall = statistics.fmean(pass_rates) if pass_rates else 0.0
     total_cost = total_agent + total_judge
@@ -433,6 +483,10 @@ def write_baseline(baseline_path, case_aggs: dict[str, dict], runs: int) -> dict
         "schemaVersion": SCHEMA_VERSION,
         "generated": utc_now(),
         "runsPerCase": runs,
+        # NOTE: agentModel records the --model-tier tier name (e.g. "cheap"),
+        # not the resolved model id — the resolved id is not plumbed into the
+        # report. It is informational (re-baseline provenance), so a tier name
+        # is acceptable; do not treat it as the exact model string.
         "agentModel": os.environ.get("PI_MODEL_TIER") or "unknown",
         "judgeModel": os.environ.get("OPENAI_MODEL_NAME") or "unknown",
         "cases": cases,

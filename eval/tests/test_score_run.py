@@ -54,22 +54,40 @@ def std_run(passed, cost=0.01, judge=0.0, tokens=1000, latency=100.0, outcome=No
 
 
 def make_report(cases, exitcode=0, nodeid_fn=None):
-    """Build a pytest-json-report dict.
+    """Build a pytest-json-report dict matching the REAL plugin output.
 
     cases: dict case_id -> list of std_run() dicts.
     nodeid_fn: optional callable(case_id, index) -> nodeid override.
+
+    pytest-json-report 1.5.0 serializes one TEST ENTRY PER CASE (the live
+    suite is parametrized per case and runs all EVAL_RUNS_PER_CASE repeats
+    inside one test), with record_property values under test["user_properties"]
+    as a FLAT, ORDERED list of single-key dicts:
+    [{pass}, {costUsd}, {judgeCostUsd}, {tokens}, {latencyMs}, {pass}, ...].
     """
     tests = []
     for case_id, runs in cases.items():
-        for index, run in enumerate(runs):
-            metadata = {k: v for k, v in run.items() if k != "outcome" and v is not None}
-            if nodeid_fn:
-                nodeid = nodeid_fn(case_id, index)
-            else:
-                nodeid = f"tests/test_live_suite.py::test_case[{case_id}]"
-            tests.append(
-                {"nodeid": nodeid, "outcome": run["outcome"], "metadata": metadata, "duration": 0.1}
-            )
+        user_properties = []
+        for run in runs:
+            for key, value in run.items():
+                if key != "outcome" and value is not None:
+                    user_properties.append({key: value})
+        # The plugin records the LAST pytest outcome for the whole test entry;
+        # with all repeats inside one entry, use the last run's outcome (the
+        # per-run pass flags come from user_properties, not the entry outcome).
+        outcome = runs[-1]["outcome"] if runs else "passed"
+        if nodeid_fn:
+            nodeid = nodeid_fn(case_id, 0)
+        else:
+            nodeid = f"tests/test_live_suite.py::test_case[{case_id}]"
+        tests.append(
+            {
+                "nodeid": nodeid,
+                "outcome": outcome,
+                "user_properties": user_properties,
+                "duration": 0.1,
+            }
+        )
     return {"created": 0, "duration": 1.0, "exitcode": exitcode, "tests": tests}
 
 
@@ -132,16 +150,21 @@ def test_extract_case_id_ignores_other_files():
 
 def test_collect_cases_only_consumes_live_suite_nodeids():
     report = make_report(
-        {"coding-001": [std_run(True), std_run(True)]},
+        {
+            # metrics nodeid is NOT a live-suite case -> ignored entirely
+            "coding-001-AnswerRelevancyMetric": [std_run(True)],
+            # live-suite nodeid -> kept
+            "coding-002": [std_run(True), std_run(True)],
+        },
         nodeid_fn=lambda case_id, index: (
             "tests/test_live_metrics.py::test_metrics[coding-001-AnswerRelevancyMetric]"
-            if index == 0
-            else "tests/test_live_suite.py::test_case[coding-001]"
+            if case_id.startswith("coding-001-")
+            else f"tests/test_live_suite.py::test_case[{case_id}]"
         ),
     )
     cases = score_run.collect_cases(report)
-    assert list(cases) == ["coding-001"]
-    assert len(cases["coding-001"]) == 1  # the metrics nodeid is ignored
+    assert list(cases) == ["coding-002"]
+    assert len(cases["coding-002"]) == 2  # both repeats zipped from user_properties
 
 
 # ---------------------------------------------------------------------------

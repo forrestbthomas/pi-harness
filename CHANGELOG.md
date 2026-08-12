@@ -6,6 +6,21 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-12
+
+### Added
+- `pi-run chat|print --permission-mode default|plan|acceptEdits|bypassPermissions`
+  (+ `--read-only` alias, `PI_PERMISSION_MODE` env). Maps to Pi's real flags:
+  plan → `--tools read,grep,find,ls`; bypassPermissions → `--approve`;
+  default/acceptEdits → none. Per-agent permission policies in
+  `.pi/agents/worker|reviewer|scout.md` (#29).
+- Command hooks via `.pi/hooks.json`: pre-eval / post-eval / pre-chat hooks
+  (cmd, timeoutSecs default 30, continueOnError); `pi-run hooks list` and
+  `hooks run <event>`; missing config is a no-op (#29).
+- Provider breadth: catalog grew from 7 to 17 providers — added azure,
+  ollama, mistral, cohere, together, perplexity, fireworks, moonshot, xai,
+  bedrock (baseURLs where applicable). No cross-provider auto-fallback;
+  key-env lists stay in sync between Go and Python (#29).
 ## [0.6.0] - 2026-08-11
 
 ### Added

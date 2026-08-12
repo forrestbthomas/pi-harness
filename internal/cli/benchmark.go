@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 )
@@ -28,6 +29,19 @@ const defaultBenchmarkTimeout = 300
 // are allowed and the first character must be alphanumeric.
 var benchmarkNameRe = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9._-]*$`)
 
+// Shared task taxonomy (live-agent-eval-v2 spec §4.6): the same categories and
+// difficulty levels used by the live JSONL surface and the unified manifest
+// (eval/datasets/tasks.json), so live vs benchmark scores are comparable.
+// Benchmark tasks are always deterministically graded (spec §4.5: Docker
+// grading has no judge), so grader must be "deterministic".
+var benchmarkCategories = []string{
+	"code-gen", "bug-fix", "shell/ops", "concept", "negative-edge", "harness-routing",
+}
+
+var benchmarkDifficulties = []string{"easy", "medium", "hard"}
+
+const benchmarkGraderDeterministic = "deterministic"
+
 // benchmarkTask is the parsed eval/benchmarks/<name>/task.json shape. Dir is
 // the absolute task directory (not part of the file format).
 type benchmarkTask struct {
@@ -40,6 +54,13 @@ type benchmarkTask struct {
 	TestScript  string `json:"testScript,omitempty"`  // relative path; default tests/run.sh
 	Dockerfile  string `json:"dockerfile,omitempty"`  // relative path; default pinned base image
 	Solution    string `json:"solution,omitempty"`    // optional oracle for future diff grading
+
+	// Schema extension (spec §4.6): shared-taxonomy fields. Validated when
+	// present so older task.json files keep parsing; the Python format lint
+	// (test_benchmark_format.py) requires them on shipped tasks.
+	Category   string `json:"category,omitempty"`
+	Difficulty string `json:"difficulty,omitempty"`
+	Grader     string `json:"grader,omitempty"`
 
 	Dir string `json:"-"` // absolute task directory
 }
@@ -143,6 +164,15 @@ func validateBenchmarkTask(t *benchmarkTask) error {
 		if _, err := os.Stat(filepath.Join(t.Dir, t.Solution)); err != nil {
 			return fmt.Errorf("solution %q not found in task directory: %v", t.Solution, err)
 		}
+	}
+	if t.Category != "" && !slices.Contains(benchmarkCategories, t.Category) {
+		return fmt.Errorf("category %q must be one of %v", t.Category, benchmarkCategories)
+	}
+	if t.Difficulty != "" && !slices.Contains(benchmarkDifficulties, t.Difficulty) {
+		return fmt.Errorf("difficulty %q must be one of %v", t.Difficulty, benchmarkDifficulties)
+	}
+	if t.Grader != "" && t.Grader != benchmarkGraderDeterministic {
+		return fmt.Errorf("grader %q must be %q (benchmark tasks are deterministically graded, spec §4.5)", t.Grader, benchmarkGraderDeterministic)
 	}
 	return nil
 }

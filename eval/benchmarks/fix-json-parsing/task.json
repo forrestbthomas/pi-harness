@@ -1,5 +1,8 @@
 {
   "id": "fix-json-parsing",
+  "category": "bug-fix",
+  "difficulty": "medium",
+  "grader": "deterministic",
   "instruction": "instruction.md",
   "timeoutSecs": 300,
   "testScript": "tests/run.sh",

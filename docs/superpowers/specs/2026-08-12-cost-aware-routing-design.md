@@ -160,7 +160,7 @@ PI_MODEL_TIER=<fast|balanced|cheap> pi-run chat "task"   # env fallback
 - Parsing: `splitLaunchArgs` (`internal/cli/app.go:247-295`) gains
   `--model-tier` and `--model-tier=` forms, alongside the existing flags; all
   other args still pass through to pi unchanged.
-- `resume` rejects the flag (exit 2) — see §3 OUT.
+- `resume` rejects the **flag** (exit 2) and **ignores `PI_MODEL_TIER` env entirely** — see §3 OUT. A resumed session continues with the model it was launched with; the env must not silently swap it.
 - `--model` is unchanged and still takes precedence over tier resolution *as an
   explicit exact-id override* **unless both are given** (§4.3c).
 
@@ -170,7 +170,8 @@ PI_MODEL_TIER=<fast|balanced|cheap> pi-run chat "task"   # env fallback
 |---|---|---|---|
 | (a) | Tier is **unknown** (not `fast`/`balanced`/`cheap`, e.g. `--model-tier turbo`) | Stderr usage error naming the valid set — `pi-run: chat: unknown model tier "turbo" (valid: fast, balanced, cheap)` — before any key/node access, and no pi launch. Mirrors the unknown-permission-mode error (`internal/cli/app.go:306-317`). | **2** (usage) |
 | (b) | Tier is **known** but the selected provider has **no model for it** (e.g. `--provider deepseek --model-tier cheap`, deepseek ships no `cheap` entry) | Stderr usage error listing the tiers that provider actually offers, e.g. `pi-run: chat: provider "deepseek" has no model for tier "cheap" (available: balanced, fast)`. **No fallback to another tier, model, or provider.** | **2** (usage) |
-| (c) | `--model-tier` **and** `--model` **both** given | Stderr usage error — `pi-run: chat: --model-tier and --model are mutually exclusive; pick one` — and no pi launch. Rejected rather than "`--model` wins" because silently ignoring an explicit flag is the same surprise class as fallback, and precedence rules that differ between flag and env forms are a footgun. | **2** (usage) |
+| (c) | `--model-tier` **and** `--model` **both** given as **flags** | Stderr usage error — `pi-run: chat: --model-tier and --model are mutually exclusive; pick one` — and no pi launch. Rejected rather than "`--model` wins" because silently ignoring an explicit flag is the same surprise class as fallback, and precedence rules that differ between flag and env forms are a footgun. | **2** (usage) |
+| (c') | **env** `PI_MODEL_TIER` set **and** explicit `--model` flag given | `--model` wins (no error). The env var is a *default*, not an explicit flag, so an explicit `--model` overrides it — exactly the flag-wins-over-env precedent in `resolveBudgetCap` (`internal/cli/cost.go:477-491`) and `resolvePermissionMode` (`internal/cli/app.go:306-317`). A globally exported `PI_MODEL_TIER` must never break existing `--model` invocations. | 0 / normal launch |
 | (d) | `--model-tier` given with **no provider** | Provider resolves exactly as today — default `openai` (`ResolveProvider`, `internal/cli/providers.go:152-161`) — and the tier resolves against `openai`'s tier map. Provider selection is untouched by the tier flag. | 0 / normal launch path (key/node/etc. as today) |
 
 Failure order in `runLaunch` (all exit-2 checks happen before key resolution, so
@@ -311,7 +312,10 @@ func resolveLaunchModel(p Provider, tier, modelFlag string) (string, error)
 `runLaunch` wiring: `splitLaunchArgs` returns the tier flag; `runLaunch`
 computes `tier := tierFlag; if tier == "" { tier = os.Getenv("PI_MODEL_TIER") }`
 then `model, err := resolveLaunchModel(p, tier, modelFlag)`, error → exit 2
-(printed like the other usage errors, `internal/cli/app.go:163-174`). The
+(printed like the other usage errors, `internal/cli/app.go:163-174`). Because
+the env is only consulted when the flag is absent, an exported `PI_MODEL_TIER`
+never conflicts with an explicit `--model` (rule (c')) and never applies to
+`resume` (which rejects the flag and never reads the env). The
 resolved `model` flows into the existing `piArgs` call unchanged
 (`internal/cli/pi.go:59-92`) — pi.go needs **no** edits.
 

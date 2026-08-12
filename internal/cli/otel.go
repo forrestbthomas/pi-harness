@@ -76,11 +76,11 @@ func otelExportWarning(err error) {
 // The span name "invoke_agent" with kind CLIENT follows the GenAI agent span
 // conventions; status.code uses the OTLP status enum (1 = OK, 2 = ERROR).
 func buildOTLPTracesRequest(providerName, model, mode string, start, end time.Time, exitCode int) ([]byte, error) {
-	traceID, err := randomTraceID()
+	traceID, err := randomID(16) // OTLP trace ids are 16 bytes (32 hex chars)
 	if err != nil {
 		return nil, fmt.Errorf("generate trace id: %w", err)
 	}
-	spanID, err := randomTraceID()
+	spanID, err := randomID(8) // OTLP span ids are 8 bytes (16 hex chars)
 	if err != nil {
 		return nil, fmt.Errorf("generate span id: %w", err)
 	}
@@ -121,10 +121,11 @@ func buildOTLPTracesRequest(providerName, model, mode string, start, end time.Ti
 	return json.Marshal(req)
 }
 
-// randomTraceID returns 16 lowercase hex chars (8 random bytes), the OTLP wire
-// format for both trace and span ids.
-func randomTraceID() (string, error) {
-	b := make([]byte, 8)
+// randomID returns n random bytes as lowercase hex. OTLP trace ids are 16
+// bytes (32 hex chars) and span ids are 8 bytes (16 hex chars); keep them
+// distinct so real collectors do not truncate the trace id.
+func randomID(n int) (string, error) {
+	b := make([]byte, n)
 	if _, err := rand.Read(b); err != nil {
 		return "", err
 	}

@@ -112,8 +112,12 @@ func TestMaybeExportOTLPSpanPostsOTLP(t *testing.T) {
 		t.Fatal("traceId and spanId must be distinct")
 	}
 	for name, id := range map[string]string{"traceId": span.TraceID, "spanId": span.SpanID} {
-		if len(id) != 16 {
-			t.Fatalf("%s = %q, want 16 hex chars", name, id)
+		wantLen := 32
+		if name == "spanId" {
+			wantLen = 16 // OTLP: trace id 16 bytes (32 hex), span id 8 bytes (16 hex)
+		}
+		if len(id) != wantLen {
+			t.Fatalf("%s = %q, want %d hex chars", name, id, wantLen)
 		}
 		if _, err := hex.DecodeString(id); err != nil {
 			t.Fatalf("%s = %q is not hex: %v", name, id, err)

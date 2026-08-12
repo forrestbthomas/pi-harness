@@ -1,0 +1,8 @@
+{
+  "name": "example-fix-divide-by-zero",
+  "version": "0.1.0",
+  "description": "Example plugin manifest (DRAFT schema) showing how a pi-harness benchmark task could be packaged; no runtime consumes this yet. See docs/plugins.md.",
+  "author": "testvalue-author",
+  "type": "benchmark",
+  "entry": "payload/task.json"
+}

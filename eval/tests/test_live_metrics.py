@@ -28,6 +28,7 @@ import time
 import pytest
 from conftest import has_api_key, load_dataset, run_pi_print
 from deepeval.metrics import GEval, TaskCompletionMetric
+from deepeval.test_case.llm_test_case import SingleTurnParams
 from test_code_quality import CodeQualityMetric
 
 # Judge model, pinned EXPLICITLY (spec review MINOR-1): passing model= to the
@@ -89,6 +90,10 @@ def _rubric_for(sample: dict) -> GEval:
         name=f"code-task-rubric-{category}",
         criteria=_CATEGORY_CRITERIA.get(category, _DEFAULT_CRITERIA),
         evaluation_steps=_EVALUATION_STEPS,
+        # deepeval 4.1.7 requires evaluation_params (a non-empty list of
+        # SingleTurnParams) at construction — criteria/steps alone raise
+        # "GEval requires evaluation_params" in measure().
+        evaluation_params=[SingleTurnParams.INPUT, SingleTurnParams.ACTUAL_OUTPUT],
         model=_JUDGE_MODEL,  # pinned explicitly (spec review MINOR-1)
         async_mode=False,
     )

@@ -20,21 +20,21 @@ func hermeticLaunchEnv(t *testing.T) {
 }
 
 func TestSplitLaunchArgsPermissionMode(t *testing.T) {
-	_, _, _, pm, rest := splitLaunchArgs([]string{"--permission-mode", "acceptEdits", "hello"})
+	_, _, _, pm, _, rest := splitLaunchArgs([]string{"--permission-mode", "acceptEdits", "hello"})
 	if pm != "acceptEdits" || len(rest) != 1 || rest[0] != "hello" {
 		t.Fatalf("got permissionMode=%q rest=%v", pm, rest)
 	}
 }
 
 func TestSplitLaunchArgsPermissionModeEquals(t *testing.T) {
-	_, _, _, pm, _ := splitLaunchArgs([]string{"--permission-mode=plan", "hi"})
+	_, _, _, pm, _, _ := splitLaunchArgs([]string{"--permission-mode=plan", "hi"})
 	if pm != "plan" {
 		t.Fatalf("got permissionMode=%q, want plan", pm)
 	}
 }
 
 func TestSplitLaunchArgsReadOnlyAlias(t *testing.T) {
-	_, _, _, pm, rest := splitLaunchArgs([]string{"--read-only"})
+	_, _, _, pm, _, rest := splitLaunchArgs([]string{"--read-only"})
 	if pm != "plan" {
 		t.Fatalf("--read-only must alias --permission-mode plan, got %q", pm)
 	}
@@ -44,14 +44,14 @@ func TestSplitLaunchArgsReadOnlyAlias(t *testing.T) {
 }
 
 func TestSplitLaunchArgsReadOnlyLastWins(t *testing.T) {
-	_, _, _, pm, _ := splitLaunchArgs([]string{"--read-only", "--permission-mode", "acceptEdits"})
+	_, _, _, pm, _, _ := splitLaunchArgs([]string{"--read-only", "--permission-mode", "acceptEdits"})
 	if pm != "acceptEdits" {
 		t.Fatalf("later --permission-mode must win, got %q", pm)
 	}
 }
 
 func TestSplitLaunchArgsPermissionModeNotInRest(t *testing.T) {
-	_, _, _, pm, rest := splitLaunchArgs([]string{"--permission-mode", "plan", "--tools", "read", "x"})
+	_, _, _, pm, _, rest := splitLaunchArgs([]string{"--permission-mode", "plan", "--tools", "read", "x"})
 	if pm != "plan" || len(rest) != 3 || rest[0] != "--tools" || rest[1] != "read" || rest[2] != "x" {
 		t.Fatalf("got permissionMode=%q rest=%v", pm, rest)
 	}
@@ -121,7 +121,9 @@ func TestPiArgsIncludesPermissionMode(t *testing.T) {
 
 func TestPiArgsPermissionModesMapToPiFlags(t *testing.T) {
 	p, _ := LookupProvider("openai")
-	joined := func(mode string) string { return strings.Join(piArgs(p, p.DefaultModel, "chat", nil, false, mode), " ") }
+	joined := func(mode string) string {
+		return strings.Join(piArgs(p, p.DefaultModel, "chat", nil, false, mode), " ")
+	}
 
 	// plan -> read-only tool allowlist
 	if got := joined("plan"); !strings.Contains(got, "--tools read,grep,find,ls") {

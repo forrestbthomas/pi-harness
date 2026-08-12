@@ -44,6 +44,7 @@ Exit codes: 0 ok · 1 generic · 2 usage · 3 missing key · 4 node/pi missing �
 chat/print flags:
   --provider <name>                        Provider (see 'pi-run providers'; env PI_PROVIDER; default openai)
   --model <id>                             Override the per-provider default model
+  --model-tier <fast|balanced|cheap>       Within-provider model tier (env PI_MODEL_TIER; flag wins over env; balanced = provider default model; mutually exclusive with --model; not supported for resume)
   --max-budget-usd <n>                     Refuse to launch when cumulative spend >= <n> USD (env PI_MAX_BUDGET_USD)
   --permission-mode <mode>                 Permission tier: default|plan|acceptEdits|bypassPermissions (env PI_PERMISSION_MODE). plan = read-only tools (--tools read,grep,find,ls); acceptEdits = Pi defaults (edits allowed); bypassPermissions = --approve (trust project-local files)
   --read-only                              Alias for --permission-mode plan (read-only session)
@@ -153,12 +154,20 @@ func Run(args []string) int {
 
 // runLaunch handles `chat`, `print`, and `resume`.
 func runLaunch(mode string, args []string) int {
-	providerFlag, modelFlag, budgetFlag, permissionModeFlag, rest := splitLaunchArgs(args)
+	providerFlag, modelFlag, budgetFlag, permissionModeFlag, tierFlag, rest := splitLaunchArgs(args)
 
 	// Validate the prompt and permission mode BEFORE touching keys (usage
 	// error wins over key error).
 	if mode == "print" && len(rest) == 0 {
 		fmt.Fprintf(os.Stderr, "pi-run: print: requires a prompt\n\n%s", usage)
+		return 2
+	}
+
+	// resume continues a session with the model it was launched with: the
+	// --model-tier flag is a usage error, and PI_MODEL_TIER is never read for
+	// resume (the env must not silently swap a resumed session's model).
+	if mode == "resume" && tierFlag != "" {
+		fmt.Fprintf(os.Stderr, "pi-run: resume: --model-tier cannot be used with resume (a resumed session continues with its original model)\n")
 		return 2
 	}
 
@@ -174,15 +183,32 @@ func runLaunch(mode string, args []string) int {
 		return 2
 	}
 
+	// (c) --model-tier and --model are mutually exclusive as explicit flags.
+	// Rejected (rather than "--model wins") because silently ignoring an
+	// explicit flag is the same surprise class as fallback. Checked before
+	// provider resolution so usage errors always win over key/node errors.
+	if tierFlag != "" && modelFlag != "" {
+		fmt.Fprintf(os.Stderr, "pi-run: %s: --model-tier and --model are mutually exclusive; pick one\n", mode)
+		return 2
+	}
+	// Effective tier: the flag wins; PI_MODEL_TIER is a default consulted only
+	// when the flag is absent, never against an explicit --model (c': an
+	// explicit --model overrides the env tier) and never for resume.
+	tier := tierFlag
+	if tier == "" && mode != "resume" && modelFlag == "" {
+		tier = os.Getenv("PI_MODEL_TIER")
+	}
+
 	p, err := ResolveProvider(providerFlag)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "pi-run: %s: %v\n", mode, err)
 		return 2
 	}
 
-	model := modelFlag
-	if model == "" {
-		model = p.DefaultModel
+	model, err := resolveLaunchModel(p, tier, modelFlag)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "pi-run: %s: %v\n", mode, err)
+		return 2
 	}
 
 	// Pre-flight budget check: refuse BEFORE resolving keys or launching pi.
@@ -241,10 +267,11 @@ func runLaunch(mode string, args []string) int {
 }
 
 // splitLaunchArgs separates pi-run's own flags (--provider/--model/
-// --max-budget-usd/--permission-mode/--read-only) from pass-through args.
+// --model-tier/--max-budget-usd/--permission-mode/--read-only) from
+// pass-through args.
 // Everything else is kept in order; "--" ends flag parsing and its tail is
 // also kept (allowing messages that start with a dash).
-func splitLaunchArgs(args []string) (provider, model, budget, permissionMode string, rest []string) {
+func splitLaunchArgs(args []string) (provider, model, budget, permissionMode, tier string, rest []string) {
 	i := 0
 	for i < len(args) {
 		a := args[i]
@@ -263,6 +290,12 @@ func splitLaunchArgs(args []string) (provider, model, budget, permissionMode str
 			i += 2
 		case strings.HasPrefix(a, "--model="):
 			model = strings.TrimPrefix(a, "--model=")
+			i++
+		case a == "--model-tier" && i+1 < len(args):
+			tier = args[i+1]
+			i += 2
+		case strings.HasPrefix(a, "--model-tier="):
+			tier = strings.TrimPrefix(a, "--model-tier=")
 			i++
 		case a == "--max-budget-usd" && i+1 < len(args):
 			budget = args[i+1]
@@ -447,10 +480,11 @@ func runClean() int {
 	return 0
 }
 
-// runProviders lists configured providers and their default models.
+// runProviders lists configured providers, their default models, the model
+// tiers each provider offers, and the key env var.
 func runProviders() int {
 	for _, p := range Providers {
-		line := fmt.Sprintf("%s\t%s\t%s", p.Name, p.DefaultModel, p.KeyEnv)
+		line := fmt.Sprintf("%s\t%s\t%s\t%s", p.Name, p.DefaultModel, joinStrings(availableTiers(p), ","), p.KeyEnv)
 		if p.BaseURL != "" {
 			line += "\t" + p.BaseURL
 		}

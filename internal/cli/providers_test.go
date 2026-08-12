@@ -1,6 +1,10 @@
 package cli
 
-import "testing"
+import (
+	"reflect"
+	"strings"
+	"testing"
+)
 
 func TestLookupProviderKnown(t *testing.T) {
 	for _, name := range []string{"openai", "openrouter", "deepseek", "azure", "ollama", "bedrock"} {
@@ -34,7 +38,7 @@ func TestExpandedCatalogIncludesNewProviders(t *testing.T) {
 		if !ok {
 			t.Fatalf("defaultProviders missing provider %q", name)
 		}
-		if got != want {
+		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("provider %q = %+v, want %+v", name, got, want)
 		}
 	}
@@ -127,5 +131,168 @@ func TestAnyProviderKeyEnvIncludesLocal(t *testing.T) {
 	t.Setenv("LOCAL_API_KEY", "testvalue")
 	if !anyProviderKeyEnv() {
 		t.Fatal("LOCAL_API_KEY must make provider key availability true")
+	}
+}
+
+func TestResolveModelTier(t *testing.T) {
+	openai, err := LookupProvider("openai")
+	if err != nil {
+		t.Fatal(err)
+	}
+	deepseek, err := LookupProvider("deepseek")
+	if err != nil {
+		t.Fatal(err)
+	}
+	gemini, err := LookupProvider("gemini")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		name    string
+		p       Provider
+		tier    string
+		want    string
+		wantErr bool
+		errText string
+	}{
+		{"empty defaults to default model", openai, "", "openai/gpt-5.6-terra", false, ""},
+		{"balanced aliases default model", openai, "balanced", "openai/gpt-5.6-terra", false, ""},
+		{"openai fast maps", openai, "fast", "openai/gpt-5.6-mini", false, ""},
+		{"openai cheap maps", openai, "cheap", "openai/gpt-5.1-mini", false, ""},
+		{"gemini cheap maps", gemini, "cheap", "gemini/gemini-2.5-flash-lite", false, ""},
+		{"deepseek fast maps", deepseek, "fast", "deepseek/deepseek-v4-pro", false, ""},
+		{"unknown tier errors listing valid tiers", openai, "turbo", "", true, "valid: fast, balanced, cheap"},
+		{"known but unmapped errors listing provider tiers", deepseek, "cheap", "", true, "available: balanced, fast"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := resolveModelTier(tc.p, tc.tier)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatalf("resolveModelTier(%q) = %q, want error", tc.tier, got)
+				}
+				if !strings.Contains(err.Error(), tc.errText) {
+					t.Fatalf("error %q must contain %q", err, tc.errText)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("resolveModelTier(%q): %v", tc.tier, err)
+			}
+			if got != tc.want {
+				t.Fatalf("resolveModelTier(%q) = %q, want %q", tc.tier, got, tc.want)
+			}
+		})
+	}
+}
+
+// TestResolveModelTierNeverFallsBack asserts the no-silent-fallback invariant
+// structurally: for every shipped provider and every known tier, the result is
+// either an error or exactly the requested map entry / DefaultModel — never a
+// different tier's model.
+func TestResolveModelTierNeverFallsBack(t *testing.T) {
+	for _, p := range defaultProviders {
+		for _, tier := range []string{"fast", "balanced", "cheap"} {
+			got, err := resolveModelTier(p, tier)
+			if tier == "balanced" {
+				if err != nil || got != p.DefaultModel {
+					t.Fatalf("provider %q tier balanced = %q (err %v); want DefaultModel %q", p.Name, got, err, p.DefaultModel)
+				}
+				continue
+			}
+			if want, ok := p.ModelTiers[tier]; ok {
+				if err != nil || got != want {
+					t.Fatalf("provider %q tier %q = %q (err %v); want mapped %q", p.Name, tier, got, err, want)
+				}
+			} else if err == nil {
+				t.Fatalf("provider %q tier %q must error (unmapped), got model %q — silent fallback", p.Name, tier, got)
+			}
+		}
+	}
+}
+
+func TestDefaultProvidersTierMapsValid(t *testing.T) {
+	for _, p := range defaultProviders {
+		for tier, model := range p.ModelTiers {
+			if !knownModelTiers[tier] || tier == "balanced" {
+				t.Fatalf("provider %q has invalid tier key %q", p.Name, tier)
+			}
+			if strings.TrimSpace(model) == "" {
+				t.Fatalf("provider %q tier %q has empty model", p.Name, tier)
+			}
+		}
+	}
+	// The five v1 tiered providers must ship a tier map.
+	for _, name := range []string{"openai", "openrouter", "deepseek", "anthropic", "gemini"} {
+		var p Provider
+		for _, q := range defaultProviders {
+			if q.Name == name {
+				p = q
+			}
+		}
+		if len(p.ModelTiers) == 0 {
+			t.Fatalf("provider %q must ship a modelTiers map", name)
+		}
+	}
+}
+
+func TestAvailableTiers(t *testing.T) {
+	openai, _ := LookupProvider("openai")
+	deepseek, _ := LookupProvider("deepseek")
+	groq, _ := LookupProvider("groq")
+	tests := []struct {
+		name string
+		p    Provider
+		want []string
+	}{
+		{"openai sorted with balanced present", openai, []string{"balanced", "cheap", "fast"}},
+		{"deepseek omits cheap", deepseek, []string{"balanced", "fast"}},
+		{"groq without tier map has only balanced", groq, []string{"balanced"}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := availableTiers(tc.p)
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Fatalf("availableTiers = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestResolveLaunchModel(t *testing.T) {
+	p, err := LookupProvider("openai")
+	if err != nil {
+		t.Fatal(err)
+	}
+	explicit := "anthropic/claude-sonnet-4"
+	tests := []struct {
+		name    string
+		tier    string
+		model   string
+		want    string
+		wantErr bool
+	}{
+		{"tier only", "fast", "", "openai/gpt-5.6-mini", false},
+		{"model only", "", explicit, explicit, false},
+		{"neither uses default", "", "", "openai/gpt-5.6-terra", false},
+		{"flag conflict errors", "fast", explicit, "", true},
+		{"unknown tier errors", "turbo", "", "", true},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := resolveLaunchModel(p, tc.tier, tc.model)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatalf("resolveLaunchModel(%q, %q) = %q, want error", tc.tier, tc.model, got)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("resolveLaunchModel(%q, %q): %v", tc.tier, tc.model, err)
+			}
+			if got != tc.want {
+				t.Fatalf("resolveLaunchModel(%q, %q) = %q, want %q", tc.tier, tc.model, got, tc.want)
+			}
+		})
 	}
 }

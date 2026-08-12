@@ -108,6 +108,25 @@ func runConfigCheck() int {
 		fmt.Println("  [info] superpowers/agent-skills checks skipped (set PI_RUN_PERSONAL=1 to enable)")
 	}
 
+	// 7. providers.json: the repo tier maps must pass validateTiers
+	//    (deterministic; no keys, no network). A missing file means the
+	//    embedded defaults apply (valid by construction); only a present-but-
+	//    invalid table fails.
+	tiersOK := true
+	if b := readFile(filepath.Join(root, "providers.json")); len(b) > 0 {
+		if ps, err := ProvidersFromJSON(b); err != nil {
+			tiersOK = false
+		} else {
+			for _, p := range ps {
+				if err := validateTiers(p); err != nil {
+					tiersOK = false
+					break
+				}
+			}
+		}
+	}
+	check("providers.json modelTiers valid", tiersOK)
+
 	if fail {
 		fmt.Println("== config-check: FAILURES FOUND ==")
 		return 1

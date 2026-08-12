@@ -240,7 +240,7 @@ A reviewer should verify:
       (`internal/cli/app.go` has no `plugin` case).
 - [ ] **Example JSON is valid**: `examples/plugins/manifest.example.json`
       passes `python3 -m json.tool` (or `jq`) and uses only `testvalue`-style
-      placeholders — no secrets, no real-looking key material, no "test-key".
+      placeholders — no secrets, no real-looking key material.
 - [ ] **Citations are accurate**: P2 research synthesis §1.3/§3 (Working
       Draft + P3 row), §1.2 (MCP layer), competitive gap analysis §1.5/§6
       (vendor participation, packaging-spec-not-benchmark), docs/benchmarks.md

@@ -358,6 +358,10 @@ func runScorecard(args []string) int {
 		return 1
 	}
 	fmt.Printf("scorecard written to %s\n", path)
+	if _, err := writeScorecardLatest(root, sc); err != nil {
+		fmt.Fprintf(os.Stderr, "pi-run: ci-benchmark: %v\n", err)
+		return 1
+	}
 
 	printScorecardTable(os.Stdout, sc, st)
 
@@ -640,12 +644,16 @@ func scorecardExitCode(st scorecardGateStatus) int {
 	}
 }
 
+// scorecardNow is a package-level seam so tests can pin the scorecard
+// timestamp and run ID. Production behavior is unchanged.
+var scorecardNow = time.Now
+
 // buildScorecard assembles the scorecard artifact from the run data.
 func buildScorecard(opts scorecardOptions, rows []scorecardProvider, tasks []benchmarkTask, baseline map[string]float64, budgetCap float64, st scorecardGateStatus, code int) scorecard {
 	sc := scorecard{
 		SchemaVersion: 1,
 		RunID:         scorecardRunID(opts.providers),
-		Timestamp:     time.Now().UTC().Format(time.RFC3339),
+		Timestamp:     scorecardNow().UTC().Format(time.RFC3339),
 		Suite:         fmt.Sprintf("eval/benchmarks (%d tasks)", len(tasks)),
 		QuickProfile:  opts.quickProfile,
 		Runs:          opts.runs,
@@ -670,7 +678,7 @@ func buildScorecard(opts scorecardOptions, rows []scorecardProvider, tasks []ben
 // scorecardRunID builds the scorecard filename stem: timestamp + joined
 // provider names, e.g. 20260811T150405-openai-deepseek.
 func scorecardRunID(providers []string) string {
-	return time.Now().Format("20060102T150405") + "-" + strings.Join(providers, "-")
+	return scorecardNow().Format("20060102T150405") + "-" + strings.Join(providers, "-")
 }
 
 // writeScorecard writes the scorecard JSON under eval/benchmark-results/
@@ -681,6 +689,26 @@ func writeScorecard(root string, sc scorecard) (string, error) {
 		return "", fmt.Errorf("create %s: %w", dir, err)
 	}
 	path := filepath.Join(dir, "scorecard-"+sc.RunID+".json")
+	b, err := json.MarshalIndent(sc, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	if err := os.WriteFile(path, append(b, '\n'), 0o644); err != nil {
+		return "", err
+	}
+	return path, nil
+}
+
+// writeScorecardLatest mirrors writeScorecard but writes the fixed-name
+// pointer file eval/benchmark-results/scorecard-latest.json (byte-identical to
+// the most recent scorecard-<run>.json). The CLI owns the artifact directory,
+// so the latest pointer is hermetic-testable and needs no shell glue.
+func writeScorecardLatest(root string, sc scorecard) (string, error) {
+	dir := filepath.Join(root, "eval", "benchmark-results")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return "", fmt.Errorf("create %s: %w", dir, err)
+	}
+	path := filepath.Join(dir, "scorecard-latest.json")
 	b, err := json.MarshalIndent(sc, "", "  ")
 	if err != nil {
 		return "", err

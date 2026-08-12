@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"testing"
@@ -646,6 +647,134 @@ func TestUsageMentionsAllCommands(t *testing.T) {
 	for _, want := range []string{"resume", "providers", "--exit-codes", "eval"} {
 		if !strings.Contains(usage, want) {
 			t.Fatalf("usage missing command or flag %q", want)
+		}
+	}
+}
+
+// usageCommandsBlock returns the text of the usage const's Commands: block
+// (between the "Commands:" header and the following "Exit codes:" line in
+// app.go).
+func usageCommandsBlock(src string) string {
+	start := strings.Index(src, "Commands:")
+	if start < 0 {
+		return ""
+	}
+	rest := src[start+len("Commands:"):]
+	if end := strings.Index(rest, "Exit codes:"); end >= 0 {
+		rest = rest[:end]
+	}
+	return rest
+}
+
+// usageCommandRe matches one documented command line in the Commands: block:
+// two leading spaces, the command word (\w or -), then whitespace. The
+// project-understand continuation line (16 leading spaces) never matches.
+var usageCommandRe = regexp.MustCompile(`(?m)^  ([\w-]+)\s`)
+
+// parseUsageCommands derives the documented command set from the usage text.
+func parseUsageCommands(src string) map[string]bool {
+	cmds := map[string]bool{}
+	for _, m := range usageCommandRe.FindAllStringSubmatch(usageCommandsBlock(src), -1) {
+		cmds[m[1]] = true
+	}
+	return cmds
+}
+
+// runDispatchFrom extracts the top-level switch's case-label groups and the
+// handled command set (case labels plus the pre-switch --exit-codes special
+// case) from Run in app.go. The nested install flag switch is excluded by
+// brace-depth tracking, so --force never leaks into the command surface.
+func runDispatchFrom(src string) (groups [][]string, handled map[string]bool) {
+	handled = map[string]bool{}
+	fnStart := strings.Index(src, "func Run(args []string) int {")
+	if fnStart < 0 {
+		return nil, handled
+	}
+	fn := src[fnStart:]
+	swStart := strings.Index(fn, "switch args[0] {")
+	if swStart < 0 {
+		return nil, handled
+	}
+	body := fn[swStart+len("switch args[0] {"):]
+	depth := 1
+	for i := 0; i < len(body); {
+		switch body[i] {
+		case '{':
+			depth++
+			i++
+		case '}':
+			depth--
+			if depth == 0 {
+				if strings.Contains(fn, `args[0] == "--exit-codes"`) {
+					handled["--exit-codes"] = true
+				}
+				return groups, handled
+			}
+			i++
+		default:
+			if depth == 1 && strings.HasPrefix(body[i:], "case ") {
+				if colon := strings.Index(body[i:], ":"); colon >= 0 {
+					var group []string
+					for _, part := range strings.Split(body[i+len("case "):i+colon], ",") {
+						part = strings.Trim(strings.TrimSpace(part), `"`)
+						group = append(group, part)
+						handled[part] = true
+					}
+					groups = append(groups, group)
+					i += colon + 1
+					continue
+				}
+			}
+			i++
+		}
+	}
+	return groups, handled
+}
+
+// TestUsageDocumentsNewCommands pins the usage Commands: block (app.go:21-40)
+// to Run's dispatch switch (app.go:104-149): every documented command must be
+// a handled dispatch key, and every dispatch case must appear in usage — so
+// adding a command without documenting it (or vice versa) fails. Supplements
+// the one-directional hardcoded-list check in TestUsageMentionsAllCommands.
+func TestUsageDocumentsNewCommands(t *testing.T) {
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller failed")
+	}
+	src, err := os.ReadFile(filepath.Join(filepath.Dir(file), "app.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(src)
+
+	documented := parseUsageCommands(s)
+	if len(documented) == 0 {
+		t.Fatal("parsed no documented commands from the usage Commands: block")
+	}
+	groups, handled := runDispatchFrom(s)
+	if len(groups) == 0 {
+		t.Fatal("parsed no dispatch cases from Run")
+	}
+
+	// Every documented command must be a handled dispatch key.
+	for cmd := range documented {
+		if !handled[cmd] {
+			t.Errorf("usage documents %q but Run has no dispatch case for it", cmd)
+		}
+	}
+	// Every dispatch case must appear in usage (at least one label of each
+	// case group is the documented command name; -h/--help are the documented
+	// help command's aliases).
+	for _, group := range groups {
+		covered := false
+		for _, label := range group {
+			if documented[label] {
+				covered = true
+				break
+			}
+		}
+		if !covered {
+			t.Errorf("dispatch case %v is not documented in the usage Commands: block", group)
 		}
 	}
 }

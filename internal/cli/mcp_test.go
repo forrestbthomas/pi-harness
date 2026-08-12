@@ -4,6 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"os"
+	"path/filepath"
+	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -218,6 +222,68 @@ func TestMCPCallProviders(t *testing.T) {
 	}
 	if strings.Contains(strings.ToLower(tc.Content[0].Text), "sk-") {
 		t.Fatalf("providers payload contains a secret-shaped value: %s", tc.Content[0].Text)
+	}
+}
+
+// TestMCPProvidersKeyEnvMatchesPythonMirror pins the MCP providers tool's
+// keyEnv set to eval/conftest.py's SUPPORTED_PROVIDER_KEYS (the hand-maintained
+// mirror of internal/cli/eval.go's supportedProviderKeyEnvs). The Python list is
+// parsed from the file with a regex — no Python subprocess, no network. Closing
+// the mirror loop: a catalog change without a conftest update fails here.
+func TestMCPProvidersKeyEnvMatchesPythonMirror(t *testing.T) {
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller failed")
+	}
+	root := filepath.Dir(filepath.Dir(filepath.Dir(file)))
+	conftest, err := os.ReadFile(filepath.Join(root, "eval", "conftest.py"))
+	if err != nil {
+		t.Fatalf("read eval/conftest.py: %v", err)
+	}
+	tupleRe := regexp.MustCompile(`SUPPORTED_PROVIDER_KEYS\s*=\s*\(([^)]*)\)`)
+	m := tupleRe.FindSubmatch(conftest)
+	if m == nil {
+		t.Fatalf("eval/conftest.py has no SUPPORTED_PROVIDER_KEYS tuple:\n%s", conftest)
+	}
+	pyKeys := map[string]bool{}
+	for _, k := range regexp.MustCompile(`"([A-Z0-9_]+)"`).FindAllSubmatch(m[1], -1) {
+		pyKeys[string(k[1])] = true
+	}
+	if len(pyKeys) == 0 {
+		t.Fatalf("no keys parsed from the SUPPORTED_PROVIDER_KEYS tuple")
+	}
+
+	orig := Providers
+	Providers = defaultProviders
+	defer func() { Providers = orig }()
+
+	tc := callProvidersTool(nil)
+	if tc.IsError {
+		t.Fatalf("providers tool failed: %+v", tc.Content)
+	}
+	var infos []mcpProviderInfo
+	if err := json.Unmarshal([]byte(tc.Content[0].Text), &infos); err != nil {
+		t.Fatalf("providers payload is not a JSON array: %v", err)
+	}
+	toolKeys := map[string]bool{}
+	for _, info := range infos {
+		if info.KeyEnv == "" {
+			t.Fatalf("provider %q has an empty keyEnv", info.Name)
+		}
+		toolKeys[info.KeyEnv] = true
+	}
+	if len(toolKeys) != len(pyKeys) {
+		t.Fatalf("keyEnv count mismatch: MCP tool %d, eval/conftest.py %d", len(toolKeys), len(pyKeys))
+	}
+	for k := range toolKeys {
+		if !pyKeys[k] {
+			t.Errorf("MCP providers keyEnv %q missing from eval/conftest.py SUPPORTED_PROVIDER_KEYS", k)
+		}
+	}
+	for k := range pyKeys {
+		if !toolKeys[k] {
+			t.Errorf("eval/conftest.py SUPPORTED_PROVIDER_KEYS %q missing from the MCP providers tool", k)
+		}
 	}
 }
 

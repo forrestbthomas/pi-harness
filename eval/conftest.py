@@ -316,15 +316,24 @@ def fake_launch_env(tmp_path):
     return FakeLaunchEnv(home=tmp_path, log=tmp_path / "fake-pi.log")
 
 
-class _CollectorHandler(BaseHTTPRequestHandler):
-    """Records every request into the shared FakeCollector; configurable status."""
+class _CollectorServer(ThreadingHTTPServer):
+    """ThreadingHTTPServer that carries the FakeCollector so the handler can
+    reach it per-instance (avoids a shared class attribute, which would
+    cross-route requests if two collectors were ever alive concurrently)."""
 
-    collector = None
+    def __init__(self, addr, handler, collector):
+        super().__init__(addr, handler)
+        self.collector = collector
+
+
+class _CollectorHandler(BaseHTTPRequestHandler):
+    """Records every request into the owning FakeCollector; configurable status."""
 
     def _record(self):
+        collector = self.server.collector
         length = int(self.headers.get("Content-Length") or 0)
         body = self.rfile.read(length) if length else b""
-        self.collector.requests.append(
+        collector.requests.append(
             {
                 "method": self.command,
                 "path": self.path,
@@ -332,7 +341,7 @@ class _CollectorHandler(BaseHTTPRequestHandler):
                 "body": body,
             }
         )
-        self.send_response(self.collector.status)
+        self.send_response(collector.status)
         self.send_header("Content-Length", "0")
         self.end_headers()
 
@@ -349,8 +358,7 @@ class FakeCollector:
     def __init__(self):
         self.requests = []
         self.status = 200
-        _CollectorHandler.collector = self
-        self._httpd = ThreadingHTTPServer(("127.0.0.1", 0), _CollectorHandler)
+        self._httpd = _CollectorServer(("127.0.0.1", 0), _CollectorHandler, self)
         self._thread = threading.Thread(target=self._httpd.serve_forever, daemon=True)
         self._thread.start()
 

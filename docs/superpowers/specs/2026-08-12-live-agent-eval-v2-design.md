@@ -16,7 +16,7 @@ that lane.
 5-sample JSONL dataset that is ~80% trivia/concept Q&A answerable without any
 agent tool use (`eval/datasets/coding_samples.jsonl`), a nightly workflow that
 **silently skips live tests when the provider key is absent**
-(`.github/workflows/nightly-live-eval.yml:8` comment "skips gracefully if
+(`.github/workflows/nightly-live-eval.yml:14` comment "skips gracefully if
 absent") — the exact anti-pattern Autonoma warns about ("an eval job that skips
 itself is indistinguishable from one that passed") — a live E2E test with **no
 timeout** and single-run heuristic assertions
@@ -62,13 +62,13 @@ existing scorecard + ledger.
 |---|---|
 | Live dataset | `eval/datasets/coding_samples.jsonl` — 5 samples: `coding-001` factorial (code-gen), `coding-002` `is` vs `==` (concept), `coding-003` bash `find` (shell), `coding-004` binary-search complexity (concept), `coding-005` JS debounce (code-gen). Fields: `id/input/expected_output/context/tags`. 4 of 5 answerable without agent tool use; **zero negative/edge cases** |
 | Nightly workflow | `.github/workflows/nightly-live-eval.yml` (36 lines) — cron `0 3 * * *`, single `live-eval` job, `OPENAI_API_KEY` from secrets, `eval/.venv/bin/python -m pytest tests/ -v`; **no `timeout-minutes`, no budget cap, no artifacts, no baseline, no build of pi-run** (relies on a preinstalled `pi-run`) |
-| Live E2E test | `eval/tests/test_agent_task_completion.py` — exactly 1 live task (`test_agent_produces_expected_factorial`, skipif-no-key, string heuristics "factorial"/"def "/"for\|recursion\|range"); `run_pi_print` (`eval/conftest.py:63-90`) spawns `pi-run print` with **no timeout** (`pytest-timeout` is in `eval/requirements.txt` but no `@pytest.mark.timeout` is set) |
-| Dead metric seam | `sample_cases` fixture (`eval/conftest.py:38-54`) converts the dataset into `LLMTestCase`s; **no test file consumes it** (no `test_dataset_metrics.py` / `test_live_metrics.py` exist); the only scored metric today is deterministic (`CodeQualityMetric` in `eval/tests/test_code_quality.py:11-69`) |
+| Live E2E test | `eval/tests/test_agent_task_completion.py` — exactly 1 live task (`test_agent_produces_expected_factorial`, skipif-no-key, string heuristics "factorial"/"def "/"for\|recursion\|range"); `run_pi_print` (`eval/conftest.py:55`) spawns `pi-run print` with **no timeout** (`pytest-timeout` is in `eval/requirements.txt` but no `@pytest.mark.timeout` is set) |
+| Dead metric seam | `sample_cases` fixture (`eval/conftest.py:38-54`) converts the dataset into `LLMTestCase`s; **no test file consumes it** (no `test_dataset_metrics.py` / `test_live_metrics.py` exist); today's scored metrics are deterministic `CodeQualityMetric` (`eval/tests/test_code_quality.py:11-69`) AND live LLM-judged `AnswerRelevancyMetric`/`FaithfulnessMetric`/`HallucinationMetric` (`eval/tests/test_coding_correctness.py`, skipif-no-key); the `sample_cases` fixture is consumed by NO test file |
 | Hermetic Python tests (pattern to extend) | `eval/tests/test_harness_config.py` (subprocess `pi-run config-check`), `test_benchmark_format.py` (task.json schema + dry-run), `test_secret_resolution.py` (fake `bw_get`/`op` binaries in `tmp_path`) |
 | CI python-quick | `.github/workflows/ci.yml:30-47` — runs `test_code_quality.py` + one dataset sanity test **without building pi-run** (latent: any binary-dependent test only works if `pi-run` is preinstalled); the build precedent exists in `provider-scorecard.yml:29-32` (`go build -o bin/pi-run ./cmd/pi-run` + `echo "$GITHUB_WORKSPACE/bin" >> "$GITHUB_PATH"`) |
 | Provider scorecard | `.github/workflows/provider-scorecard.yml` — weekly Monday 03:00 + manual; `ci-benchmark --providers openai,deepseek --fail-below 0.8 --max-budget-usd 5.0`; baseline chained via `scorecard-latest.json` (shell `cp` glue at `provider-scorecard.yml:62-64`, untested); artifacts 90-day retention |
 | Scorecard schema | `internal/cli/scorecard.go:52-62` `scorecardProvider{provider, model, passed, total, errors, passRate, costUsd, avgLatencyMs, tokens}`; `buildScorecard` at `scorecard.go:644` calls `time.Now().UTC()` for `Timestamp` (`scorecard.go:648`) and `scorecardRunID` (`scorecard.go:673`) — the determinism blocker, **owned by the hardening lane**, not this spec; `writeScorecard` (`scorecard.go:678`) writes `eval/benchmark-results/scorecard-<run>.json` |
-| Scorecard tests | `internal/cli/scorecard_test.go` — `TestEvaluateScorecardGates` (16 cases), `TestScorecardJSONRoundTrip` (`reflect.DeepEqual`), `TestScorecardJSONOmitEmptyGates`, `TestWriteScorecard` (`t.TempDir`), `TestParseBaselineScorecardShape`, `nearlyEqual` epsilon helper, `captureRunStdout`/`captureRunStderr` helpers |
+| Scorecard tests | `internal/cli/scorecard_test.go` — `TestEvaluateScorecardGates` (15 cases), `TestScorecardJSONRoundTrip` (`reflect.DeepEqual`), `TestScorecardJSONOmitEmptyGates`, `TestWriteScorecard` (`t.TempDir`), `TestParseBaselineScorecardShape`, `nearlyEqual` epsilon helper, `captureRunStdout`/`captureRunStderr` helpers (in `app_test.go`, not `scorecard_test.go`) |
 | Cost plumbing | `internal/cli/cost.go` — `recordRunSpend(root, start, mode, provider, model, pre)` (`cost.go:500`) appends to `.pi/cost-ledger.jsonl` (gitignored); mode comment at `cost.go:84-85` lists `chat|print|resume|backfill`; **`"benchmark"` mode is already written** by `scorecard.go:413` (spec §4.7 of the scorecard design) but not yet documented in the mode comment; `--max-budget-usd` / `PI_MAX_BUDGET_USD` cap with exit 6 (`cost.go:20`, `internal/cli/app.go:48,68`) |
 | Feature surfaces (behavioral content for harness-routing tasks) | `internal/cli/mcp.go` (LOCAL-ONLY READ-ONLY JSON-RPC 2.0 stdio server, protocol `2025-03-26`, tools `providers|cost|benchmark_dry_run`); `internal/cli/otel.go` (env-gated `PI_OTLP_ENDPOINT`, one "invoke_agent" span per launch, best-effort — single warning channel `otelExportWarning`); `internal/cli/providers.go` + `app.go` (`--model-tier fast|balanced|cheap`, strict no-fallback, conflict with `--model` is a usage error exit 2); `internal/cli/project_understand.go` (deterministic `product.md`/`tech.md`/`structure.md`, no network/LLM) |
 | Deps policy | `eval/requirements.txt` — policy comment requires deliberate deps and co-updating the README dependency-policy line; `deepeval~=4.1`, `pytest~=9.1`, `python-dotenv~=1.2`, `pypdf~=6.15`, `pytest-timeout~=2.4`. No `pytest-json-report` today |
@@ -252,7 +252,7 @@ jobs:
     env:
       EVAL_RUNS_PER_CASE: "3"
       PI_MAX_BUDGET_USD: "2"      # nightly spend cap (cheap tier; see below)
-      DEEPEVAL_MODEL: "openai/gpt-5.1-mini"   # cheap judge
+      OPENAI_MODEL_NAME: "gpt-5.1-mini"   # cheap judge — deepeval 4.1.7 reads OPENAI_MODEL_NAME, NOT DEEPEVAL_MODEL (which this repo only prints as info)
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
       - checkout, setup-go, setup-python, Build pi-run (as deterministic)
@@ -266,7 +266,7 @@ jobs:
           fi
       - Run live suite (N runs per case):
           eval/.venv/bin/python -m pytest tests/test_live_suite.py tests/test_live_metrics.py \
-            tests/test_agent_task_completion.py -v --json-report-file=eval/live-results/report.json
+            tests/test_agent_task_completion.py -v --json-report-file=eval/live-results/report.json (create `eval/live-results/` first — `mkdir -p` in the job, gitignored)
         env:
           EVAL_RUNS_PER_CASE: "3"
       - Run baseline gate:
@@ -319,7 +319,7 @@ reviewed in a PR. The nightly never updates its own baseline, so regressions
 cannot self-heal. A new dataset (or a model switch) triggers an explicit
 re-baseline PR.
 
-**Budgeting for cost.** The live job pins `DEEPEVAL_MODEL` to a cheap judge and
+**Budgeting for cost.** The live job pins the judge via `OPENAI_MODEL_NAME` (the knob deepeval 4.1.7 actually reads: `model = model or settings.OPENAI_MODEL_NAME`; a bare `gpt-5.1-mini`, no `openai/` prefix) and
 passes `--model-tier cheap` to the agent runs (`run_pi_print`'s existing
 `extra_args`, `conftest.py:63-90`), with `PI_MAX_BUDGET_USD=2` as the nightly
 cap. 20 tasks × 3 runs × (cheap agent + cheap judge) lands in low single-digit
@@ -353,7 +353,7 @@ Behavior, in order:
 2. **Rebuild per-case aggregates**: `passRate` = mean over runs; cost /
    latency / tokens = median over runs (gate-math §4.3).
 3. **Compute totals**: `overallPassRate`, `totalCostUsd = Σ(agent + judge)`,
-   `costPerTaskUsd = totalCostUsd / nCases`, `costPerSuccessfulTaskUsd =
+   `costPerTaskUsd = totalCostUsd(agent + judge) / nCases` — **all-in** (differs from the Go scorecard's agent-only `costPerTaskUsd`; the two surfaces must not be compared directly; report agent-only as a separate `agentCostPerTaskUsd` field if cross-surface comparison is ever wanted), `costPerSuccessfulTaskUsd =
    totalCostUsd / nPassed` (**guarded: 0.0 when `nPassed == 0`**, never a
    division error), `tokensPerTask`.
 4. **Compare vs baseline**: per-case regression if `passRate < baseline −
@@ -377,7 +377,7 @@ network).
 **Decision:** add cost-per-task metrics to both the scorecard and the nightly
 run JSON; add the `live-eval` ledger mode (and document the already-shipped
 `benchmark` mode); **the judge-cost single source of truth is DeepEval's
-`metric_result.cost_in_dollars`**, summed per case by the metric layer — not a
+`metric.evaluation_cost`** (deepeval 4.1.7: `metrics/base_metric.py:67,109-112`, accrued from the judge model's `GenerationCost`; reset per case), summed per case by the metric layer — not a
 separate ledger.
 
 **Schema additions.** `scorecardProvider` (`internal/cli/scorecard.go:52-62`)
@@ -385,7 +385,7 @@ gains:
 
 | Field | JSON | Type | Semantics |
 |---|---|---|---|
-| `costPerTaskUsd` | `costPerTaskUsd` | float64 | `costUsd / total` |
+| `costPerTaskUsd` | `costPerTaskUsd` | float64 | `costUsd / total` — **agent-only** (Docker grading has no judge; do NOT compare this directly with the nightly's all-in figure) |
 | `costPerSuccessfulTaskUsd` | `costPerSuccessfulTaskUsd` | float64 | `costUsd / passed` — **`0` when `passed == 0` (div-by-zero guard)** |
 | `tokensPerTask` | `tokensPerTask` | int | `tokens / total` |
 | `agentCostUsd` | `agentCostUsd` | float64 | the existing per-provider `costUsd` (ledger real spend; keeps a stable name for the split) |
@@ -414,9 +414,9 @@ session-file ledger that `cost.go` reads (`.pi/sessions/` usage records) — a
 separate ledger entry for judge cost would require new cross-language plumbing
 (Go CLI invocation from pytest or a shared file format) and would create a
 second source of truth to keep in sync with DeepEval's own accounting. DeepEval
-already reports real per-metric cost (`metric_result.cost_in_dollars`,
-`results.total_cost`), priced from the same USD-per-token config the suite is
-pinned to via `DEEPEVAL_MODEL`. **Therefore `metric_result.cost_in_dollars`
+already reports real per-metric cost via `metric.evaluation_cost` on each metric instance,
+priced from the same USD-per-token config the suite is
+pinned to via `OPENAI_MODEL_NAME`. **Therefore `metric.evaluation_cost` is the single source of truth.** Caveat: cost accrues only when the judge model has known pricing or `OPENAI_COST_PER_INPUT_TOKEN`/`OPENAI_COST_PER_OUTPUT_TOKEN` are set (`openai_model.py:80-83`) — otherwise judge cost is silently 0 and must not be trusted; the nightly must assert judge cost > 0 for a judge-graded case or record the config gap.
 (summed per case by `test_live_metrics.py` and attached to the case's JSON via
 `record_property`) is the single source of truth for `judgeCostUsd`.**
 Invariant preserved from the cost spec: **agent spend is real ledger data
@@ -502,7 +502,7 @@ fixture (`conftest.py:38-54`), parametrized over the dataset, three metrics:
 Nightly-only (the whole live job is where key-missing is a hard fail §4.3;
 within-suite `skipif` guards only genuinely optional bits such as a
 non-default provider key). This is the *judged* layer: `judgeCostUsd` is
-collected here from `metric_result.cost_in_dollars` (§4.5).
+collected here from `metric.evaluation_cost` (§4.5).
 
 ## 5. Implementation Plan
 
@@ -545,7 +545,7 @@ already established in `scorecard_test.go` and `test_secret_resolution.py`.
 | `test_score_run.py` | NEW, hermetic | fixture pytest-json-report + baseline JSONs: aggregation math (mean pass rate, median cost/latency/tokens); tolerance boundary (`baseline − 0.05` exact edge); cost >2× baseline regression; `costPerSuccessfulTaskUsd` div-by-zero guard (`passed == 0` → 0.0); incomplete-run detection; `--update-baseline --allow` output shape; exit codes 0/1/2 |
 | `test_benchmark_format.py` | UPDATED | manifest validation: JSONL ↔ `tasks[]` bijection, benchmark ids ↔ `tasks[]` bijection, shared taxonomy, no dupes; benchmark `task.json` now requires `category`/`difficulty`/`grader` |
 | `test_live_suite.py` | NEW, *live* | parametrized over `grader == deterministic` cases; `@pytest.mark.timeout(120)`; runs each case `EVAL_RUNS_PER_CASE` times; records per-case `pass/costUsd/judgeCostUsd/tokens/latencyMs` via `record_property` |
-| `test_live_metrics.py` | NEW, *live* | consumes `sample_cases`; `TaskCompletionMetric` + custom G-Eval rubric (per-category criteria) + deterministic fast lane (`CodeQualityMetric`); sums `metric_result.cost_in_dollars` per case (§4.7) |
+| `test_live_metrics.py` | NEW, *live* | consumes `sample_cases`; `TaskCompletionMetric` + custom G-Eval rubric (per-category criteria) + deterministic fast lane (`CodeQualityMetric`); sums `metric.evaluation_cost` per case (§4.7) |
 
 **Go (internal/cli/):**
 
@@ -562,12 +562,12 @@ must go green without any provider key; the live job must emit
 
 | Risk | Likelihood | Mitigation |
 |---|---|---|
-| Live agent runs are expensive on a nightly schedule | High | Cheap tier pinned (`DEEPEVAL_MODEL` + `--model-tier cheap`), `PI_MAX_BUDGET_USD=2` cap, `timeout-minutes: 30`; 20×3 at cheap prices is low single-digit USD/night |
+| Live agent runs are expensive on a nightly schedule | High | Cheap tier pinned (`OPENAI_MODEL_NAME` judge + `--model-tier cheap` agent), `PI_MAX_BUDGET_USD=2` cap, `timeout-minutes: 30`; 20×3 at cheap prices is low single-digit USD/night |
 | Single-run gating makes the nightly flaky → "disable it" | Medium | `EVAL_RUNS_PER_CASE=3` mean pass-rate + median cost, per-case baseline tolerance 0.05; incomplete runs fail loudly rather than silently skew |
 | Missing key silently skips the eval (current anti-pattern) | High (today) | Job-split + explicit `::error::` hard fail (§4.3); deterministic job independent of key presence |
 | New tasks with broken graders (pass@100 = 0) poison the gate | Medium | Reference-solution rule + `test_dataset_schema.py` proving the reference passes its grader before merge (Terminal-Bench oracle-validation practice) |
 | Dataset drift / category imbalance sneaks in | Medium | Manifest bijection + taxonomy lint in `test_benchmark_format.py`; dataset is a versioned, PR-reviewed asset |
-| Cost attribution muddied (agent vs judge, concurrent runs) | Medium | Agent = ledger real spend (`--cost-mode live-eval`); judge = DeepEval `metric_result.cost_in_dollars` (single source of truth, §4.5); sequential runs keep attribution clean |
+| Cost attribution muddied (agent vs judge, concurrent runs) | Medium | Agent = ledger real spend (`--cost-mode live-eval`); judge = DeepEval `metric.evaluation_cost` (single source of truth, §4.5); sequential runs keep attribution clean |
 | Baseline staleness after model/task changes | Medium | Re-baselining is deliberate (`--update-baseline --allow`, reviewed PR); nightly never self-heals |
 | `pytest-json-report` adds a dep | Low | Small, widely used; goes through the requirements policy comment + README dependency line per repo convention |
 | Hard-fail key gate bricks the nightly on secret rotation | Low-Med | Error message names the secret and the fix; the deterministic job still runs, so CI is never fully red on secret problems |
@@ -620,7 +620,7 @@ A reviewer can verify the implementation against this spec by checking:
       `costPerSuccessfulTaskUsd`, `tokensPerTask`, `agentCostUsd`,
       `judgeCostUsd` (omitempty); `recordRunSpend` documents `benchmark` and
       adds `live-eval`; `--cost-mode` validated (exit 2 on unknown); judge
-      cost's single source of truth is `metric_result.cost_in_dollars` — no
+      cost's single source of truth is `metric.evaluation_cost` — no
       second ledger exists for judge spend.
 - [ ] **Manifest:** `eval/datasets/tasks.json` passes the extended
       `test_benchmark_format.py` (JSONL ↔ tasks[] ↔ benchmark dir bijections,
@@ -635,4 +635,4 @@ A reviewer can verify the implementation against this spec by checking:
       untouched by this lane.
 - [ ] **Hermetic tests pass with no keys and no network** (`go test
       ./internal/cli/`, `pytest eval/tests/test_dataset_schema.py
-      eval/tests/test_score_run.py eval/tests/test_benchmark_format.py`).
+      eval/tests/test_score_run.py eval/tests/test_benchmark_format.py`). `test_score_run.py` is hermetic (fixture JSON only) and MUST be in the deterministic job's pytest list so its unit tests execute in CI, not just in the live job.

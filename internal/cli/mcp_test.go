@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 )
@@ -237,6 +238,11 @@ func TestMCPCallCostEmptyRoot(t *testing.T) {
 	if report.TotalCostUSD != 0 || report.Sessions != 0 || len(report.Rows) != 0 {
 		t.Fatalf("expected zero-cost report, got %+v", report)
 	}
+	// The empty report must marshal as an array ([]), not null, so strict
+	// consumers get a consistent shape.
+	if !strings.Contains(tc.Content[0].Text, `"rows":[]`) {
+		t.Fatalf("empty report must marshal rows as [], got %s", tc.Content[0].Text)
+	}
 }
 
 func TestMCPCallCostWithSessions(t *testing.T) {
@@ -324,6 +330,48 @@ func TestMCPParseErrorThenValidRequest(t *testing.T) {
 		t.Fatalf("ping result must be an empty object, got %s", second.Result)
 	}
 }
+
+// TestMCPInvalidRequest covers the -32600 branch (wrong jsonrpc value or
+// missing method) that parse errors and unknown methods do not.
+func TestMCPInvalidRequest(t *testing.T) {
+	t.Setenv("HARNESS_ROOT", t.TempDir())
+	lines, code := mcpFixture(t, t.TempDir(),
+		`{"jsonrpc":"1.0","id":14,"method":"ping"}`,
+		`{"jsonrpc":"2.0","id":15}`,
+	)
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0", code)
+	}
+	if len(lines) != 2 {
+		t.Fatalf("got %d response lines, want 2: %v", len(lines), lines)
+	}
+	first := mustRPC(t, lines[0])
+	if first.Error == nil || first.Error.Code != -32600 {
+		t.Fatalf("wrong jsonrpc must be -32600, got %s", lines[0])
+	}
+	second := mustRPC(t, lines[1])
+	if second.Error == nil || second.Error.Code != -32600 {
+		t.Fatalf("missing method must be -32600, got %s", lines[1])
+	}
+}
+
+// TestMCPWriteFailureExit covers the fatal-I/O path: a writer that errors must
+// stop the server with exit code 1 (per-request errors never change exit code;
+// I/O failure does).
+func TestMCPWriteFailureExit(t *testing.T) {
+	t.Setenv("HARNESS_ROOT", t.TempDir())
+	var in bytes.Buffer
+	in.WriteString(`{"jsonrpc":"2.0","id":16,"method":"ping"}` + "\n")
+	code := runMCPServerWith(&in, errWriter{}, t.TempDir())
+	if code != 1 {
+		t.Fatalf("exit = %d, want 1 on write failure", code)
+	}
+}
+
+// errWriter fails on every write so the server's I/O error path can be tested.
+type errWriter struct{}
+
+func (errWriter) Write(p []byte) (int, error) { return 0, errors.New("injected write failure") }
 
 func TestMCPPing(t *testing.T) {
 	t.Setenv("HARNESS_ROOT", t.TempDir())

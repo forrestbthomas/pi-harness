@@ -335,6 +335,11 @@ func callCostTool(arguments json.RawMessage, root string) toolResult {
 	if err != nil {
 		return toolError("cost: " + err.Error())
 	}
+	// Marshal [] instead of null for an empty report so strict consumers
+	// (and this tool's sibling benchmark_dry_run) get a consistent array.
+	if report.Rows == nil {
+		report.Rows = []costRow{}
+	}
 	b, err := json.Marshal(report)
 	if err != nil {
 		return toolError("cost: " + err.Error())

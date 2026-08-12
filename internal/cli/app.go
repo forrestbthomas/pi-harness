@@ -46,6 +46,7 @@ chat/print flags:
   --model <id>                             Override the per-provider default model
   --model-tier <fast|balanced|cheap>       Within-provider model tier (env PI_MODEL_TIER; flag wins over env; balanced = provider default model; mutually exclusive with --model; not supported for resume)
   --max-budget-usd <n>                     Refuse to launch when cumulative spend >= <n> USD (env PI_MAX_BUDGET_USD)
+  --cost-mode <mode>                       Tag this run's ledger spend with <mode>: chat|print|resume|backfill|benchmark|live-eval (default: the command name; lets CI mark live-eval runs)
   --permission-mode <mode>                 Permission tier: default|plan|acceptEdits|bypassPermissions (env PI_PERMISSION_MODE). plan = read-only tools (--tools read,grep,find,ls); acceptEdits = Pi defaults (edits allowed); bypassPermissions = --approve (trust project-local files)
   --read-only                              Alias for --permission-mode plan (read-only session)
   PI_OTLP_ENDPOINT                         Optional OTLP/HTTP collector (e.g. http://localhost:4318); exports one GenAI invoke_agent span per launch to <endpoint>/v1/traces (best-effort, never changes the exit code)
@@ -154,7 +155,8 @@ func Run(args []string) int {
 
 // runLaunch handles `chat`, `print`, and `resume`.
 func runLaunch(mode string, args []string) int {
-	providerFlag, modelFlag, budgetFlag, permissionModeFlag, tierFlag, rest := splitLaunchArgs(args)
+	costModeFlag, launchArgs := splitCostModeFlag(args)
+	providerFlag, modelFlag, budgetFlag, permissionModeFlag, tierFlag, rest := splitLaunchArgs(launchArgs)
 
 	// Validate the prompt and permission mode BEFORE touching keys (usage
 	// error wins over key error).
@@ -168,6 +170,18 @@ func runLaunch(mode string, args []string) int {
 	// resume (the env must not silently swap a resumed session's model).
 	if mode == "resume" && tierFlag != "" {
 		fmt.Fprintf(os.Stderr, "pi-run: resume: --model-tier cannot be used with resume (a resumed session continues with its original model)\n")
+		return 2
+	}
+	// --cost-mode tags a launch's ledger spend for CI attribution and is
+	// documented for chat/print only: resume continues an existing session and
+	// is not a taggable launch.
+	if mode == "resume" && costModeFlag != "" {
+		fmt.Fprintf(os.Stderr, "pi-run: resume: --cost-mode cannot be used with resume\n")
+		return 2
+	}
+	costMode, err := resolveCostMode(mode, costModeFlag)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "pi-run: %s: %v\n", mode, err)
 		return 2
 	}
 
@@ -251,8 +265,9 @@ func runLaunch(mode string, args []string) int {
 		return 1
 	}
 
-	// Record this run's spend in the ledger (best-effort; never fatal).
-	postSpend, rerr := recordRunSpend(root, runStart, mode, p.Name, model, preSpend)
+	// Record this run's spend in the ledger (best-effort; never fatal). The
+	// mode is the --cost-mode value when given, else the command name.
+	postSpend, rerr := recordRunSpend(root, runStart, costMode, p.Name, model, preSpend)
 	if rerr != nil {
 		fmt.Fprintf(os.Stderr, "pi-run: %s: warning: could not record spend: %v\n", mode, rerr)
 	} else if capUSD > 0 && postSpend > capUSD {
@@ -320,6 +335,33 @@ func splitLaunchArgs(args []string) (provider, model, budget, permissionMode, ti
 	return
 }
 
+// splitCostModeFlag strips pi-run's --cost-mode flag from the launch args
+// before splitLaunchArgs runs, so the value reaches runLaunch while the flag
+// never leaks into pi's pass-through args. "--" ends flag parsing and its
+// tail is preserved verbatim, matching splitLaunchArgs. An absent flag yields
+// an empty mode (the caller defaults to the command name).
+func splitCostModeFlag(args []string) (mode string, rest []string) {
+	i := 0
+	for i < len(args) {
+		a := args[i]
+		switch {
+		case a == "--":
+			rest = append(rest, args[i:]...)
+			return
+		case a == "--cost-mode" && i+1 < len(args):
+			mode = args[i+1]
+			i += 2
+		case strings.HasPrefix(a, "--cost-mode="):
+			mode = strings.TrimPrefix(a, "--cost-mode=")
+			i++
+		default:
+			rest = append(rest, a)
+			i++
+		}
+	}
+	return
+}
+
 // permissionModes is the validated set of harness-level permission tiers. It
 // mirrors the common Claude Code permission-mode set. The value is NOT passed
 // to pi unchanged: piArgs maps each tier to Pi's real flags (plan ->
@@ -330,6 +372,34 @@ var permissionModes = map[string]bool{
 	"plan":              true,
 	"acceptEdits":       true,
 	"bypassPermissions": true,
+}
+
+// costModes is the validated set of ledger spend modes accepted by
+// --cost-mode. It mirrors the ledgerEntry mode values: the chat/print/resume
+// launch commands, "backfill" (pre-ledger spend), "benchmark" (ci-benchmark
+// runs), and "live-eval" (CI-tagged live agent-eval runs).
+var costModes = map[string]bool{
+	"chat":      true,
+	"print":     true,
+	"resume":    true,
+	"backfill":  true,
+	"benchmark": true,
+	"live-eval": true,
+}
+
+// resolveCostMode returns the effective ledger spend mode for a launch: the
+// --cost-mode flag wins; when absent the launch command's own name is used,
+// which is today's behavior unchanged. The flag is inert except for the mode
+// string passed to recordRunSpend. Unknown values are usage errors.
+func resolveCostMode(command, flagVal string) (string, error) {
+	v := flagVal
+	if v == "" {
+		return command, nil
+	}
+	if !costModes[v] {
+		return "", fmt.Errorf("unknown cost mode %q (valid: chat, print, resume, backfill, benchmark, live-eval)", v)
+	}
+	return v, nil
 }
 
 // resolvePermissionMode returns the effective permission tier: the

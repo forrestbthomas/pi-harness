@@ -58,6 +58,21 @@ func TestScorecardProviderFromRunAggregation(t *testing.T) {
 	if row.CostUSD != 0.5 || row.Tokens != 1000 {
 		t.Fatalf("cost/tokens = %v/%d, want 0.5/1000", row.CostUSD, row.Tokens)
 	}
+	// §4.5 per-task metrics: costPerTaskUsd = costUsd/total, tokensPerTask =
+	// tokens/total, costPerSuccessfulTaskUsd = costUsd/passed (agent-only),
+	// agentCostUsd = costUsd, judgeCostUsd = 0 (deterministic grading).
+	if !nearlyEqual(row.CostPerTaskUsd, 0.5/3.0, 1e-9) {
+		t.Fatalf("costPerTaskUsd = %v, want %v", row.CostPerTaskUsd, 0.5/3.0)
+	}
+	if !nearlyEqual(row.CostPerSuccessfulTaskUsd, 0.5, 1e-9) {
+		t.Fatalf("costPerSuccessfulTaskUsd = %v, want 0.5", row.CostPerSuccessfulTaskUsd)
+	}
+	if row.TokensPerTask != 333 { // 1000/3, int division
+		t.Fatalf("tokensPerTask = %d, want 333", row.TokensPerTask)
+	}
+	if row.AgentCostUsd != 0.5 || row.JudgeCostUsd != 0 {
+		t.Fatalf("agent/judge cost = %v/%v, want 0.5/0", row.AgentCostUsd, row.JudgeCostUsd)
+	}
 }
 
 func TestScorecardProviderFromRunEmptyTasks(t *testing.T) {
@@ -65,6 +80,33 @@ func TestScorecardProviderFromRunEmptyTasks(t *testing.T) {
 	row := scorecardProviderFromRun(res, 0, 0)
 	if row.Total != 0 || row.PassRate != 0 || row.AvgLatencyMs != 0 {
 		t.Fatalf("empty run row = %+v, want all zeros", row)
+	}
+	// total == 0 → costPerTaskUsd/tokensPerTask guard to 0; passed == 0 →
+	// costPerSuccessfulTaskUsd guards to 0.
+	if row.CostPerTaskUsd != 0 || row.CostPerSuccessfulTaskUsd != 0 || row.TokensPerTask != 0 || row.AgentCostUsd != 0 || row.JudgeCostUsd != 0 {
+		t.Fatalf("empty run per-task metrics = %+v, want all zeros", row)
+	}
+}
+
+func TestScorecardProviderPerTaskDivByZeroGuards(t *testing.T) {
+	// passed == 0, total > 0: costPerSuccessfulTaskUsd must be 0 (guard), while
+	// the per-total metrics still compute from total.
+	res := scorecardFixtureRun("openai", "openai/gpt-5.6-terra", []benchmarkTaskResult{
+		{ID: "a", Status: "fail", Duration: 10},
+		{ID: "b", Status: "fail", Duration: 10},
+	})
+	row := scorecardProviderFromRun(res, 0.3, 600)
+	if row.Passed != 0 || row.Total != 2 {
+		t.Fatalf("row counts = %+v, want passed=0 total=2", row)
+	}
+	if row.CostPerSuccessfulTaskUsd != 0 {
+		t.Fatalf("costPerSuccessfulTaskUsd = %v, want 0 (passed==0 guard)", row.CostPerSuccessfulTaskUsd)
+	}
+	if !nearlyEqual(row.CostPerTaskUsd, 0.15, 1e-9) || row.TokensPerTask != 300 {
+		t.Fatalf("per-total metrics = %v/%d, want 0.15/300", row.CostPerTaskUsd, row.TokensPerTask)
+	}
+	if row.AgentCostUsd != 0.3 || row.JudgeCostUsd != 0 {
+		t.Fatalf("agent/judge cost = %v/%v, want 0.3/0", row.AgentCostUsd, row.JudgeCostUsd)
 	}
 }
 
@@ -102,6 +144,17 @@ func TestCollapseScorecardRuns(t *testing.T) {
 	}
 	if !nearlyEqual(out.CostUSD, 0.15, 1e-9) || !nearlyEqual(out.AvgLatencyMs, 150, 1e-9) || out.Tokens != 1500 {
 		t.Fatalf("medians = cost %v lat %v tokens %d, want 0.15/150/1500", out.CostUSD, out.AvgLatencyMs, out.Tokens)
+	}
+	// The derived per-task metrics are recomputed from the collapsed medians:
+	// passed=4 (representative repeat), total=5, cost=0.15, tokens=1500.
+	if !nearlyEqual(out.CostPerTaskUsd, 0.15/5.0, 1e-9) {
+		t.Fatalf("costPerTaskUsd = %v, want 0.03", out.CostPerTaskUsd)
+	}
+	if !nearlyEqual(out.CostPerSuccessfulTaskUsd, 0.15/4.0, 1e-9) {
+		t.Fatalf("costPerSuccessfulTaskUsd = %v, want 0.0375", out.CostPerSuccessfulTaskUsd)
+	}
+	if out.TokensPerTask != 300 || !nearlyEqual(out.AgentCostUsd, 0.15, 1e-9) || out.JudgeCostUsd != 0 {
+		t.Fatalf("derived metrics = %+v, want tokensPerTask 300, agent 0.15, judge 0", out)
 	}
 }
 
@@ -417,8 +470,10 @@ func TestScorecardJSONRoundTrip(t *testing.T) {
 		Gates:         scorecardGates{FailBelow: &fb, MaxBudgetUsd: 5.0, BaselineTolerance: 0.05},
 		BaselinePath:  "eval/benchmark-results/scorecard-old.json",
 		Providers: []scorecardProvider{
-			{Provider: "openai", Model: "openai/gpt-5.6-terra", Passed: 5, Total: 5, Errors: 0, PassRate: 1.0, CostUSD: 0.0412, AvgLatencyMs: 18734.5, Tokens: 128430},
-			{Provider: "deepseek", Model: "deepseek/deepseek-v4-flash", Passed: 4, Total: 5, Errors: 1, PassRate: 0.8, CostUSD: 0.0021, AvgLatencyMs: 9430.2, Tokens: 45210},
+			{Provider: "openai", Model: "openai/gpt-5.6-terra", Passed: 5, Total: 5, Errors: 0, PassRate: 1.0, CostUSD: 0.0412, AvgLatencyMs: 18734.5, Tokens: 128430,
+				CostPerTaskUsd: 0.00824, CostPerSuccessfulTaskUsd: 0.00824, TokensPerTask: 25686, AgentCostUsd: 0.0412},
+			{Provider: "deepseek", Model: "deepseek/deepseek-v4-flash", Passed: 4, Total: 5, Errors: 1, PassRate: 0.8, CostUSD: 0.0021, AvgLatencyMs: 9430.2, Tokens: 45210,
+				CostPerTaskUsd: 0.00042, CostPerSuccessfulTaskUsd: 0.000525, TokensPerTask: 9042, AgentCostUsd: 0.0021},
 		},
 		Baseline: &scorecardBaseline{
 			Path: "eval/benchmark-results/scorecard-old.json",
@@ -457,6 +512,9 @@ func TestScorecardJSONOmitEmptyGates(t *testing.T) {
 	if strings.Contains(s, "maxBudgetUsd") {
 		t.Fatalf("unconfigured budget cap must be omitted:\n%s", s)
 	}
+	if strings.Contains(s, "judgeCostUsd") {
+		t.Fatalf("judgeCostUsd must be omitted when 0 (deterministic grading has no judge):\n%s", s)
+	}
 	if strings.Contains(s, "baselinePath") || strings.Contains(s, "\"baseline\"") {
 		t.Fatalf("no-baseline run must omit baseline fields:\n%s", s)
 	}
@@ -481,8 +539,10 @@ func scorecardGoldenFixture(t *testing.T) scorecard {
 	t.Cleanup(func() { scorecardNow = orig })
 
 	rows := []scorecardProvider{
-		{Provider: "openai", Model: "openai/gpt-5.6-terra", Passed: 5, Total: 5, Errors: 0, PassRate: 1.0, CostUSD: 0.0412, AvgLatencyMs: 18734.5, Tokens: 128430},
-		{Provider: "deepseek", Model: "deepseek/deepseek-v4-flash", Passed: 4, Total: 5, Errors: 1, PassRate: 0.8, CostUSD: 0.0021, AvgLatencyMs: 9430.2, Tokens: 45210},
+		{Provider: "openai", Model: "openai/gpt-5.6-terra", Passed: 5, Total: 5, Errors: 0, PassRate: 1.0, CostUSD: 0.0412, AvgLatencyMs: 18734.5, Tokens: 128430,
+			CostPerTaskUsd: 0.00824, CostPerSuccessfulTaskUsd: 0.00824, TokensPerTask: 25686, AgentCostUsd: 0.0412},
+		{Provider: "deepseek", Model: "deepseek/deepseek-v4-flash", Passed: 4, Total: 5, Errors: 1, PassRate: 0.8, CostUSD: 0.0021, AvgLatencyMs: 9430.2, Tokens: 45210,
+			CostPerTaskUsd: 0.00042, CostPerSuccessfulTaskUsd: 0.000525, TokensPerTask: 9042, AgentCostUsd: 0.0021},
 	}
 	failBelow := 0.8
 	baseline := map[string]float64{"deepseek": 1.0}

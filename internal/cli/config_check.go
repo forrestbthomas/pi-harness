@@ -44,9 +44,18 @@ func runConfigCheck() int {
 	}
 	check("no literal API keys in .pi/settings.json", !hasLiteralSecret(readFile(project)))
 
-	// 2. Global settings.
+	// 2. Global settings (personal-machine check unless PI_RUN_PERSONAL=1).
+	// A missing global ~/.pi/agent/settings.json is normal on a fresh machine
+	// or CI runner — it is NOT a harness defect, so it must not fail
+	// config-check; only a present-but-invalid file is a real failure.
 	global := filepath.Join(home, ".pi", "agent", "settings.json")
-	if s, err := loadJSON(global); err == nil {
+	if _, err := os.Stat(global); err != nil {
+		if personalMode() {
+			fmt.Println("  [info] ~/.pi/agent/settings.json not found (personal install check; set PI_RUN_PERSONAL=1 to require)")
+		} else {
+			fmt.Println("  [info] ~/.pi/agent/settings.json not found (not a failure on a fresh machine/CI)")
+		}
+	} else if s, err := loadJSON(global); err == nil {
 		check("~/.pi/agent/settings.json valid JSON", true)
 		model, _ := s["defaultModel"].(string)
 		check("global defaultProvider is openai", s["defaultProvider"] == "openai")

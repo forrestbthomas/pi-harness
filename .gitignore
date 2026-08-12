@@ -6,6 +6,8 @@ eval/.pytest_cache/
 eval/outputs/
 # Benchmark run reports (JSON)
 eval/benchmark-results/
+# Nightly live eval results (pytest-json-report + score_run.py summaries)
+eval/live-results/
 .env
 *.pyc
 .DS_Store

@@ -2,7 +2,10 @@
 
 import json
 import os
+import shutil
 import subprocess
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
@@ -145,3 +148,225 @@ def pi_available() -> bool:
 # will use as the judge (set DEEPEVAL_MODEL to override the OpenAI default).
 if has_api_key():
     print(f"  [eval] judge provider: {judge_provider()} (set DEEPEVAL_MODEL to override)")
+
+
+# ---------------------------------------------------------------------------
+# Deterministic contract-test fixtures (spec §4.5): pi_run_bin / hermetic_env /
+# fake_launch_env / fake_collector. These exercise the REAL pi-run binary over
+# subprocess stdio, hermetically (fake keys, fake node/pi, fake collector, tmp
+# roots). Stdlib-only — eval/requirements.txt is unchanged by this suite.
+# ---------------------------------------------------------------------------
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+# Env vars beyond SUPPORTED_PROVIDER_KEYS that hermetic_env clears so child
+# pi-run processes never see ambient harness configuration. The extra
+# PI_PROVIDER / PI_PERMISSION_MODE / PI_MAX_BUDGET_USD clears are defensive:
+# ambient values would otherwise change provider/permission/budget resolution.
+_HERMETIC_ENV_VARS = (
+    "PI_SECRET_BACKEND",
+    "BW_GET",
+    "PI_OTLP_ENDPOINT",
+    "PI_MODEL_TIER",
+    "PI_RUN_PROVIDERS_FILE",
+    "PI_NODE_VERSION",
+    "PI_PROVIDER",
+    "PI_PERMISSION_MODE",
+    "PI_MAX_BUDGET_USD",
+)
+
+_UNSET = object()
+
+
+@pytest.fixture(scope="session")
+def pi_run_bin(tmp_path_factory):
+    """Resolve the real pi-run binary under test and probe it loudly.
+
+    Resolution order: PI_RUN_BIN env override, then pi-run on PATH, then a
+    one-time `go build` into the session tmp dir. After resolution the binary
+    is PROBED: `--exit-codes` must exit 0 and print the '8  scorecard gate
+    failed' row, and usage must document mcp-server. A stale/mismatched binary
+    FAILS here (never skips, unlike test_benchmark_format.py's skip probe): a
+    stale binary is a broken contract, and the CI python-contract job always
+    builds fresh.
+    """
+    override = os.environ.get("PI_RUN_BIN")
+    if override:
+        binary = os.path.abspath(override)
+    else:
+        found = shutil.which("pi-run")
+        if found:
+            binary = os.path.abspath(found)
+        else:
+            build_dir = tmp_path_factory.mktemp("pi-run-build")
+            binary = os.path.join(str(build_dir), "pi-run")
+            subprocess.run(
+                ["go", "build", "-o", binary, "./cmd/pi-run"],
+                cwd=REPO_ROOT,
+                check=True,
+                timeout=600,
+            )
+
+    rebuild_hint = (
+        "the pi-run binary under test is stale or does not match the shipped "
+        "contract surface. Rebuild it from the repo root with "
+        "`go build -o bin/pi-run ./cmd/pi-run` and set PI_RUN_BIN to that "
+        "binary (CI builds it fresh in the python-contract job)."
+    )
+    codes = subprocess.run([binary, "--exit-codes"], capture_output=True, text=True, timeout=60)
+    assert codes.returncode == 0, (
+        f"probe `pi-run --exit-codes` exited {codes.returncode} — {rebuild_hint}\n"
+        f"stdout:\n{codes.stdout}\nstderr:\n{codes.stderr}"
+    )
+    assert "8  scorecard gate failed" in codes.stdout, (
+        f"--exit-codes output is missing the '8  scorecard gate failed' row — "
+        f"{rebuild_hint}\n{codes.stdout}"
+    )
+    usage = subprocess.run([binary, "help"], capture_output=True, text=True, timeout=60)
+    assert usage.returncode == 0 and "mcp-server" in usage.stdout, (
+        f"usage text does not document mcp-server — {rebuild_hint}\n{usage.stdout}"
+    )
+    return binary
+
+
+@pytest.fixture
+def hermetic_env(tmp_path):
+    """Build hermetic env dicts for contract subprocess tests.
+
+    Returns make_env(harness_root=..., **extra): every provider key env is
+    cleared, PI_SECRET_BACKEND=env-only, HOME=<tmp>. HARNESS_ROOT defaults to a
+    fresh tmp dir; pass harness_root=None (plus cwd=<repo>) to exercise the
+    real checkout, e.g. the providers.json data-driven test.
+    """
+
+    def make_env(harness_root=_UNSET, home_dir=None, **extra):
+        env = dict(os.environ)
+        for key in SUPPORTED_PROVIDER_KEYS:
+            env[key] = ""
+        for key in _HERMETIC_ENV_VARS:
+            env[key] = ""
+        env["PI_SECRET_BACKEND"] = "env-only"
+        env["HOME"] = str(home_dir) if home_dir is not None else str(tmp_path)
+        if harness_root is _UNSET:
+            harness_root = tmp_path / "root"
+            harness_root.mkdir(exist_ok=True)
+        env["HARNESS_ROOT"] = "" if harness_root is None else str(harness_root)
+        for key, value in extra.items():
+            env[key] = "" if value is None else str(value)
+        return env
+
+    return make_env
+
+
+# Fake pi executed by `pi-run print/chat`: logs its argv and the key it
+# received via the ENVIRONMENT (never argv), then exits with FAKE_PI_EXIT.
+FAKE_PI_SCRIPT = """#!/bin/sh
+echo "ARGS:$*" >> "$FAKE_PI_LOG"
+echo "KEY_OPENAI=${OPENAI_API_KEY:-}" >> "$FAKE_PI_LOG"
+exit "${FAKE_PI_EXIT:-0}"
+"""
+
+
+class FakeLaunchEnv:
+    """Fake nvm node + fake pi install under a tmp HOME.
+
+    Mirrors internal/cli/pi.go exactly: nodeBinDir only stats
+    <HOME>/.nvm/versions/node/v22.19.0/bin/node (never executes it) and
+    execPiDir runs the absolute <binDir>/pi path.
+    """
+
+    NODE_VERSION = "v22.19.0"
+
+    def __init__(self, home: Path, log: Path):
+        self.home = home
+        self.log = log
+
+    @property
+    def node_bin_dir(self) -> Path:
+        return self.home / ".nvm" / "versions" / "node" / self.NODE_VERSION / "bin"
+
+    @property
+    def log_text(self) -> str:
+        return self.log.read_text(encoding="utf-8") if self.log.exists() else ""
+
+    def env(self, base, *, fake_pi_exit=None, **extra):
+        """Return base env pointed at this fake toolchain (HOME + PI_NODE_VERSION)."""
+        env = dict(base)
+        env["HOME"] = str(self.home)
+        env["PI_NODE_VERSION"] = self.NODE_VERSION
+        env["FAKE_PI_LOG"] = str(self.log)
+        if fake_pi_exit is not None:
+            env["FAKE_PI_EXIT"] = str(fake_pi_exit)
+        for key, value in extra.items():
+            env[key] = "" if value is None else str(value)
+        return env
+
+
+@pytest.fixture
+def fake_launch_env(tmp_path):
+    """tmp HOME with .nvm/versions/node/v22.19.0/bin/{node,pi} (pi.go layout)."""
+    node_dir = tmp_path / ".nvm" / "versions" / "node" / FakeLaunchEnv.NODE_VERSION / "bin"
+    node_dir.mkdir(parents=True)
+    node = node_dir / "node"
+    node.write_bytes(b"")
+    node.chmod(0o755)
+    pi = node_dir / "pi"
+    pi.write_text(FAKE_PI_SCRIPT, encoding="utf-8")
+    pi.chmod(0o755)
+    return FakeLaunchEnv(home=tmp_path, log=tmp_path / "fake-pi.log")
+
+
+class _CollectorHandler(BaseHTTPRequestHandler):
+    """Records every request into the shared FakeCollector; configurable status."""
+
+    collector = None
+
+    def _record(self):
+        length = int(self.headers.get("Content-Length") or 0)
+        body = self.rfile.read(length) if length else b""
+        self.collector.requests.append(
+            {
+                "method": self.command,
+                "path": self.path,
+                "headers": {key: value for key, value in self.headers.items()},
+                "body": body,
+            }
+        )
+        self.send_response(self.collector.status)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
+    do_GET = _record
+    do_POST = _record
+
+    def log_message(self, *args):
+        pass  # keep the fake collector off stderr
+
+
+class FakeCollector:
+    """ThreadingHTTPServer on an ephemeral 127.0.0.1 port, recording requests."""
+
+    def __init__(self):
+        self.requests = []
+        self.status = 200
+        _CollectorHandler.collector = self
+        self._httpd = ThreadingHTTPServer(("127.0.0.1", 0), _CollectorHandler)
+        self._thread = threading.Thread(target=self._httpd.serve_forever, daemon=True)
+        self._thread.start()
+
+    @property
+    def url(self) -> str:
+        host, port = self._httpd.server_address[:2]
+        return f"http://{host}:{port}"
+
+    def close(self):
+        self._httpd.shutdown()
+        self._httpd.server_close()
+        self._thread.join(timeout=5)
+
+
+@pytest.fixture
+def fake_collector():
+    collector = FakeCollector()
+    yield collector
+    collector.close()

@@ -22,7 +22,7 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
 
 > `@zigai/pi-ui-tweaks` was removed because its bundled settings schema is currently incompatible with this Pi version.
 - **Project context files**: `AGENTS.md`, `.pi/SYSTEM.md`, `.pi/APPEND_SYSTEM.md`.
-- **DeepEval environment** in `eval/.venv` with sample tests and datasets. Python deps live in `eval/requirements.txt` (DeepEval + pytest stack, `~=`-bounded). Add new dependencies deliberately; `pi-run setup` installs them.
+- **DeepEval environment** in `eval/.venv` with sample tests and datasets. Python deps live in `eval/requirements.txt` (DeepEval + pytest stack, `~=`-bounded; `pytest-json-report` is a deliberate addition for the nightly live-eval gate). Add new dependencies deliberately; `pi-run setup` installs them.
 - **Automation** via the `pi-run` CLI (no Makefile, no shell functions).
 
 ## Prerequisites
@@ -219,6 +219,27 @@ pi-run eval
 
 `pi-run eval --quick` and the config tests run without any key.
 
+### Nightly live eval
+
+The nightly workflow (`.github/workflows/nightly-live-eval.yml`) evaluates the
+agent against a **20-task dataset** (`eval/datasets/coding_samples.jsonl`)
+with a two-job split:
+
+- **Deterministic job** — runs the hermetic suite (config checks, contract
+  tests against a fresh `pi-run` binary, dataset schema lint, scorer unit
+  tests); no provider key needed.
+- **Live job** — runs each deterministic task 3× via `pi-run print
+  --model-tier cheap` plus LLM-judged metrics (`TaskCompletionMetric`,
+  G-Eval rubric), then gates per-case pass rates and cost-per-task against
+  `eval/baselines/live-baseline.json` (0.05 tolerance; cost regression >2×
+  baseline fails) with `eval/scripts/score_run.py`. **Missing provider key is
+  a hard failure, never a silent skip.** Budget-capped via
+  `PI_MAX_BUDGET_USD` (default $2/night); results artifact-retained 90 days.
+
+Judge model is pinned via `OPENAI_MODEL_NAME` (deepeval reads that knob, not
+`DEEPEVAL_MODEL`). Re-baselining is deliberate: run the suite green locally,
+then commit a new baseline via `score_run.py --update-baseline --allow`.
+
 ## Benchmarks
 
 `pi-run eval --benchmark` runs the same coding tasks in Docker-isolated
@@ -351,6 +372,12 @@ PI_MAX_BUDGET_USD=5.00 pi-run chat   # or the env var
 Before launching, `pi-run` computes cumulative spend (session files + the
 append-only ledger `.pi/cost-ledger.jsonl`) and exits with **code 6** if it is
 already at/above the cap:
+
+**Cost attribution** — `chat`/`print` accept `--cost-mode <mode>` to tag a
+run's ledger entry explicitly (modes: `chat`, `print`, `resume`, `backfill`,
+`benchmark`, `live-eval`; default is the command name). CI-tagged runs (the
+nightly live eval uses `--cost-mode live-eval`) make per-surface spend
+attribution unambiguous in `.pi/cost-ledger.jsonl`.
 
 ```
 pi-run: print: budget exceeded: $5.001234 already spent (cap $5.000000) — raise --max-budget-usd, or start a fresh period with `pi-run cost --reset`

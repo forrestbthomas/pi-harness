@@ -6,6 +6,56 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-08-12
+
+### Added
+- **Deterministic eval hardening** (#40-#44): scorecard artifact is now
+  byte-deterministic and fully CLI-owned — a `scorecardNow` time seam,
+  `writeScorecardLatest` (the CI `cp` shell glue is gone), a golden JSON
+  fixture with `-update`, and a strict `DisallowUnknownFields` round-trip
+  (renamed fields fail loudly). Two drift guards: usage text ↔ command
+  dispatch, and the MCP `providers` keyEnv list ↔ the Python mirror.
+- **Python contract tests** against the real binary (37 hermetic tests):
+  MCP JSON-RPC handshake over stdio (initialize → silent notification →
+  tools/list → tools/call, stdout-is-sacred, EOF exits 0), `--model-tier`
+  exit-code/argv contracts via a fake node+pi, OTel fake-collector
+  (unset/one-POST/exit-attr/500/unreachable), `project-understand`
+  determinism, and the `--exit-codes` table + ordering (usage 2 > missing
+  key 3 > node 4). CI builds `pi-run` before running them (new
+  `python-contract` job; nightly too) (#42-#44).
+- **Live agent evaluation v2** (#45-#48): dataset grown 5 → 20 tasks with a
+  schema-v2 JSONL (category, difficulty, grader, reference, regression tags)
+  and a balanced category budget — code-gen, bug-fix, shell/ops, concept,
+  **negative/edge (was zero)**, and harness-routing. Every task ships a
+  reference that provably passes its deterministic grader (oracle rule,
+  enforced by `test_dataset_schema.py`).
+- **Nightly live-eval gate** (#47-#48): `nightly-live-eval.yml` is now a
+  two-job split — a deterministic job (no key needed) plus a live job that
+  **hard-fails with an explicit `::error::` when the provider key is
+  missing** (a skipped eval is indistinguishable from a passed one), runs
+  each case 3× (`EVAL_RUNS_PER_CASE`), and gates on per-case baselines
+  (`eval/baselines/live-baseline.json`, 0.05 tolerance) via
+  `eval/scripts/score_run.py` with cost-per-task regression (>2× baseline
+  fails). `pytest-json-report~=1.5` added for the report JSON.
+- **Cost-per-task metrics** (#45): the scorecard and nightly run JSON now
+  carry `costPerTaskUsd`, `costPerSuccessfulTaskUsd` (div-by-zero guarded),
+  `tokensPerTask`, `agentCostUsd`, `judgeCostUsd`. `chat`/`print` gain
+  `--cost-mode <mode>` (chat|print|resume|backfill|benchmark|live-eval) so
+  CI-tagged runs attribute spend explicitly; the ledger documents the
+  `benchmark` and `live-eval` modes.
+- **Unified task governance** (#47): `eval/datasets/tasks.json` manifest
+  references both the live JSONL and the Docker benchmark seeds with a shared
+  taxonomy; benchmark `task.json` files now carry
+  `category`/`difficulty`/`grader` (validated by the Go parser and the
+  manifest bijection tests).
+- **Live metrics layer** (#48): `test_live_metrics.py` consumes the
+  previously-dead `sample_cases` fixture — TaskCompletionMetric, a custom
+  G-Eval rubric per category, and a deterministic `CodeQualityMetric` fast
+  lane; judge cost via deepeval's `metric.evaluation_cost` (nightly-only).
+
+### Changed
+- The full hermetic pytest surface grew from ~28 to **100 tests**; CI runs a
+  `python-contract` job that builds `pi-run` fresh before subprocess tests.
 ## [0.8.0] - 2026-08-12
 
 ### Added

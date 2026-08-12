@@ -76,7 +76,12 @@ def _grade(sample: dict, output: str) -> tuple[bool, str]:
 
 
 def _run_agent_once(sample: dict) -> dict:
-    """Run `pi-run print --model-tier cheap` once and attribute real spend.
+    """Run `pi-run print --model-tier cheap --cost-mode live-eval` once and
+    attribute real spend.
+
+    --cost-mode live-eval (spec §4.5) tags this run's ledger entry so the
+    nightly's agent spend is attributable to the live-eval surface, not the
+    default "print" mode. --model-tier cheap keeps the nightly budget low.
 
     Returns one per-run stats dict (pass/costUsd/judgeCostUsd/tokens/
     latencyMs) for record_property. judgeCostUsd is 0.0 here: deterministic
@@ -84,7 +89,9 @@ def _run_agent_once(sample: dict) -> dict:
     """
     before = len(_ledger_entries())
     start = time.monotonic()
-    output = run_pi_print(sample["input"], extra_args=["--model-tier", "cheap"])
+    output = run_pi_print(
+        sample["input"], extra_args=["--model-tier", "cheap", "--cost-mode", "live-eval"]
+    )
     latency_ms = (time.monotonic() - start) * 1000.0
 
     added = _ledger_entries()[before:]

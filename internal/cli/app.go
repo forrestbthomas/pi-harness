@@ -47,6 +47,7 @@ chat/print flags:
   --max-budget-usd <n>                     Refuse to launch when cumulative spend >= <n> USD (env PI_MAX_BUDGET_USD)
   --permission-mode <mode>                 Permission tier: default|plan|acceptEdits|bypassPermissions (env PI_PERMISSION_MODE). plan = read-only tools (--tools read,grep,find,ls); acceptEdits = Pi defaults (edits allowed); bypassPermissions = --approve (trust project-local files)
   --read-only                              Alias for --permission-mode plan (read-only session)
+  PI_OTLP_ENDPOINT                         Optional OTLP/HTTP collector (e.g. http://localhost:4318); exports one GenAI invoke_agent span per launch to <endpoint>/v1/traces (best-effort, never changes the exit code)
 
 cost flags:
   --json                                   Machine-readable JSON output
@@ -233,6 +234,9 @@ func runLaunch(mode string, args []string) int {
 			"pi-run: %s: warning: cumulative spend $%.6f now exceeds --max-budget-usd $%.6f\n",
 			mode, postSpend, capUSD)
 	}
+
+	// Best-effort OTel GenAI telemetry (env-gated; never affects the exit code).
+	maybeExportOTLPSpan(p, model, mode, runStart, time.Now(), code)
 	return code
 }
 

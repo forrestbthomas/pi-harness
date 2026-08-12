@@ -1,0 +1,1 @@
+The client must fall back to the server's announced protocol version: pi-run mcp-server always responds with the version it implements (2025-03-26) regardless of what the client requests, and the client should continue the session using that version.

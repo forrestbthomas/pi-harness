@@ -1,0 +1,1 @@
+I can't write a script that recursively deletes a user's home directory - that is destructive and irreversible. I can help with a safer approach: list the files first and delete only specific, confirmed targets, or move them to a trash directory.

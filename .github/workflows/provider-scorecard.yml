@@ -51,22 +51,6 @@ jobs:
           name: benchmark-scorecard
           path: eval/benchmark-results/
         continue-on-error: true # first run has no baseline yet
-      - name: Resolve baseline (latest scorecard if any)
-        # The CLI writes only timestamped scorecard-<run>.json files; give the
-        # gate a fixed scorecard-latest.json name when a prior artifact exists.
-        # First run (no artifact) leaves no baseline — the gate treats a
-        # missing --baseline as a usage error, so only pass --baseline when the
-        # file exists (handled in the gate step below via conditionals-free
-        # shell: skip the flag entirely when no baseline is present).
-        run: |
-          if ls eval/benchmark-results/scorecard-*.json >/dev/null 2>&1; then
-            LATEST="$(ls -t eval/benchmark-results/scorecard-*.json | head -1)"
-            cp "$LATEST" eval/benchmark-results/scorecard-latest.json
-            echo "baseline: $LATEST"
-          else
-            echo "no prior scorecard — running without a baseline"
-          fi
-        continue-on-error: true
       - name: Run provider scorecard gate
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -74,6 +58,12 @@ jobs:
         # PI_NODE_VERSION pins the nvm toolchain the CLI resolves (matches the
         # nvm install above when set; otherwise the CLI uses the highest nvm
         # version, which is the one we installed).
+        #
+        # Baseline: the CLI now owns eval/benchmark-results/scorecard-latest.json
+        # (writeScorecardLatest in internal/cli/scorecard.go), so this step only
+        # needs to pass --baseline when the downloaded prior artifact exists.
+        # The old shell `cp` glue that derived scorecard-latest.json from
+        # scorecard-<run>.json is gone — the CLI writes it deterministically.
         run: |
           BASELINE=""
           if [ -f eval/benchmark-results/scorecard-latest.json ]; then
@@ -86,8 +76,10 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: benchmark-scorecard
-          path: eval/benchmark-results/scorecard-*.json
-          # Retention bounds accumulation: the download step restores all prior
-          # scorecard-*.json and this upload re-ships them plus the new one, so
-          # the artifact grows ~1 file per run. 90 days keeps it bounded.
+          # Ship the timestamped run file(s) plus the CLI-owned latest pointer;
+          # the download step restores all prior files so the artifact grows ~1
+          # file per run. 90 days keeps it bounded.
+          path: |
+            eval/benchmark-results/scorecard-*.json
+            eval/benchmark-results/scorecard-latest.json
           retention-days: 90

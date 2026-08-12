@@ -26,6 +26,8 @@ Commands:
   eval          Run the DeepEval pytest suite (--quick for smoke subset) or the Docker benchmark runner
   ci-benchmark  Run the benchmark suite against 2+ providers and gate on a scorecard
   config-check  Run deterministic harness checks (no keys, no network)
+  project-understand
+                Generate deterministic project-understanding docs (product.md, tech.md, structure.md)
   doctor        Report harness health (node, pi, keys, models)
   setup         Create eval/.venv, install deps, refresh model catalogs
   install       Build the binary into bin/ and symlink pi-run onto your PATH
@@ -65,6 +67,9 @@ ci-benchmark flags:
                                            Diff pass rates against a prior scorecard/run (default tolerance 0.05)
   --runs <n>                               Repeat each provider suite n times; gate on median pass rate
   --quick-profile                          Cap per-task agent timeout at 60s (cheap smoke run)
+
+project-understand flags:
+  --out <dir>   Write docs into <dir> (default <root>/docs/understand)
 
 Everything else is passed through to pi unchanged (use -- to escape a message
 that starts with a dash, e.g. pi-run print -- "-weird prompt").
@@ -109,6 +114,8 @@ func Run(args []string) int {
 		return runScorecard(args[1:])
 	case "config-check":
 		return runConfigCheck()
+	case "project-understand":
+		return runProjectUnderstand(args[1:])
 	case "doctor":
 		return runDoctor()
 	case "setup":

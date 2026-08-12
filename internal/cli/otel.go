@@ -70,8 +70,8 @@ func otelExportWarning(err error) {
 //   - gen_ai.agent.name      name of the agent (GenAI agent attributes)
 //   - gen_ai.provider.name   name of the LLM provider (gen_ai.provider.name)
 //   - gen_ai.agent.model     agent model identifier (gen_ai.agent.* model)
-//   - pi_harness.run.mode    pi-harness-specific run telemetry (custom,
-//   - pi_harness.run.exit_code  namespaced under pi_harness)
+//   - pi_harness.run.mode    pi-harness-specific run telemetry (custom
+//   - pi_harness.run.exit_code  attributes namespaced under pi_harness)
 //
 // The span name "invoke_agent" with kind CLIENT follows the GenAI agent span
 // conventions; status.code uses the OTLP status enum (1 = OK, 2 = ERROR).

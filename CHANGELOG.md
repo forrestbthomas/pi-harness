@@ -6,7 +6,44 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
-## [0.7.0] - 2026-08-12
+## [0.8.0] - 2026-08-12
+
+### Added
+- `pi-run project-understand [--out <dir>]`: deterministic Kiro-style
+  project-understanding docs (product.md / tech.md / structure.md) generated
+  from a repo checkout with stdlib Go only (no LLM). Language census with
+  non-blank LOC, framework markers (go.mod, package.json, pyproject.toml,
+  Dockerfile, GitHub Actions), 2-level pruned structure tree. Skips
+  .git/node_modules/.venv/.pi/worktrees/bin/dist/build; deterministic output
+  with no timestamps or absolute paths (#33).
+- `pi-run mcp-server`: local READ-ONLY MCP server over stdio (spec 2025-03-26,
+  line-delimited JSON-RPC 2.0). Three tools — `providers` (env-var NAMES only,
+  never values), `cost` (aggregate spend, optional `since`), `benchmark_dry_run`
+  (format validation, no Docker/keys). Tool failures are `isError` results, not
+  JSON-RPC errors; -32700/-32601/-32600 handled; id echoed; notifications
+  silent; exit 0 at clean EOF. Local-only and read-only by design (#34).
+- OTel GenAI agent telemetry export: when `PI_OTLP_ENDPOINT` is set (e.g.
+  http://localhost:4318), each `chat`/`print`/`resume` run emits one GenAI
+  `invoke_agent` span to `<endpoint>/v1/traces` as OTLP/HTTP JSON (stdlib only,
+  no protobuf). Best-effort: 2s timeout, one warning line, never changes the
+  exit code; unset env is a complete no-op. Pins the Development-status GenAI
+  semantic conventions; 16-byte trace id + 8-byte span id (#35).
+- `pi-run chat|print --model-tier fast|balanced|cheap` (+ `PI_MODEL_TIER`
+  env): cost-aware model routing. Design law: tier selection NEVER changes the
+  provider and NEVER silently falls back — unknown or unmapped tiers are exit-2
+  usage errors listing valid/available tiers; `--model-tier` + `--model` flags
+  are mutually exclusive (exit 2); env tier + explicit `--model` → `--model`
+  wins; `resume` rejects the flag and ignores the env. `pi-run providers` shows
+  a TIERS column; `config-check` validates providers.json `modelTiers`;
+  malformed tiers warn and fall back to built-in defaults (#36, #38).
+- Docs: Agent Plugins 1.0 positioning (`docs/plugins.md`) + example manifest
+  (`examples/plugins/manifest.example.json`) — Working Draft, no runtime
+  support yet (#37). Cost-aware routing design spec
+  (`docs/superpowers/specs/2026-08-12-cost-aware-routing-design.md`) (#36).
+- `pi-run setup` fix: venv + requirements now resolve absolute from the repo
+  root, and a missing `eval/requirements.txt` fails fast with a clear message
+  instead of a confusing pip error (works from any cwd, incl. brew installs)
+  (#31).
 
 ### Added
 - `pi-run chat|print --permission-mode default|plan|acceptEdits|bypassPermissions`

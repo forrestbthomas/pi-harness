@@ -10,7 +10,7 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
 
 ## What You Get
 
-- **`pi-run` CLI** — a compiled Go binary (repo `bin/pi-run`) that owns the harness runtime: `chat`, `print`, `resume`, `cost`, `ci-benchmark`, `eval`, `config-check`, `doctor`, `setup`, `install`, `clean`, `version`.
+- **`pi-run` CLI** — a compiled Go binary (repo `bin/pi-run`) that owns the harness runtime: `chat`, `print`, `resume`, `cost`, `ci-benchmark`, `eval`, `config-check`, `doctor`, `setup`, `install`, `clean`, `project-understand`, `mcp-server`, `providers`, `hooks`, `version`.
 - **Pi CLI** installed globally (via nvm) and configured for this project.
 - **Curated Pi packages** installed project-locally:
   - `pi-mcp-adapter` — token-efficient MCP adapter.
@@ -190,6 +190,8 @@ no DEEPSEEK_API_KEY available: export it, or check your secret manager
 | `HARNESS_ROOT` | Override repository-root detection |
 | `PI_MAX_BUDGET_USD` | Default spend cap for `chat`/`print` when `--max-budget-usd` is omitted |
 | `PI_PERMISSION_MODE` | Default permission tier for `chat`/`print` when `--permission-mode` is omitted |
+| `PI_MODEL_TIER` | Default model tier (`fast`/`balanced`/`cheap`) for `chat`/`print` when `--model-tier` is omitted; ignored by `resume` |
+| `PI_OTLP_ENDPOINT` | Optional OTLP/HTTP collector (e.g. `http://localhost:4318`); exports one GenAI `invoke_agent` span per launch to `<endpoint>/v1/traces` (best-effort, never changes the exit code) |
 | `DEEPEVAL_MODEL` | Select a non-OpenAI DeepEval judge model |
 
 ## Running Evaluations
@@ -262,6 +264,30 @@ ops (version check, changelog, catalog refresh) never hang on the flaky pi.dev
 endpoint — the stored model catalogs are used instead; `pi-run setup` is the
 explicit online path. Everything else on the command line is passed through to
 `pi` unchanged.
+
+### Cost-aware model tiers (`--model-tier`)
+
+`pi-run chat|print --model-tier fast|balanced|cheap` (env `PI_MODEL_TIER`)
+picks a model *within the explicitly selected provider*. Design law: tier
+selection **never changes the provider** and **never silently falls back** —
+an unknown or unmapped tier is an exit-2 usage error that lists the valid or
+available tiers.
+
+- `--model-tier balanced` (default when omitted) = the provider's
+  `defaultModel`.
+- `--model-tier` and `--model` as flags are mutually exclusive (exit 2).
+- Env `PI_MODEL_TIER` + explicit `--model` → `--model` wins (flag beats env
+  default; an exported env never breaks existing `--model` invocations).
+- `resume` rejects the flag and ignores the env (a resumed session keeps its
+  model).
+- `pi-run providers` shows the available tiers per provider, and
+  `pi-run config-check` validates `modelTiers` in providers.json.
+
+Example:
+```
+pi-run print --provider openai --model-tier cheap "summarize this repo"
+PI_MODEL_TIER=fast pi-run print "quick pass"
+```
 
 - `/model` — pick a model interactively in-session (OpenAI GPT models are listed
   first via the `enabledModels` order in `.pi/settings.json`).
@@ -448,7 +474,9 @@ tasks.
 | `pi-run resume [flags] [prompt...]` | Continue the most recent Pi session (`pi --continue`) |
 | `pi-run cost [--json] [--since <date>] [--reset]` | Aggregate real spend from Pi session files (`usage.cost`), per provider/model, with total |
 | `pi-run ci-benchmark --providers <a,b> [flags]` | Provider scorecard in CI: run the benchmark suite against 2+ providers, gate on pass rate / budget / baseline |
-| `pi-run providers` | List configured providers and default models |
+| `pi-run providers` | List configured providers, default models, and available model tiers |
+| `pi-run project-understand [--out <dir>]` | Generate deterministic project-understanding docs (product.md / tech.md / structure.md) from the checkout |
+| `pi-run mcp-server` | Serve a read-only MCP server over stdio (tools: providers, cost, benchmark_dry_run) |
 | `pi-run hooks list` / `hooks run <event>` | List or run `.pi/hooks.json` hook commands |
 | `pi-run config-check` | Deterministic harness checks (no keys, no network) |
 | `pi-run doctor` | Health report: node, pi, vault, per-provider keys, models, venv |
@@ -459,6 +487,38 @@ tasks.
 | `pi-run version` / `help` | Version / usage |
 
 Exit codes: `0` ok · `1` generic · `2` usage · `3` missing API key · `4` node/pi not found · `5` eval venv missing · `6` budget exceeded · `7` docker unavailable (benchmarks) · `8` scorecard gate failed (ci-benchmark).
+
+## Telemetry (OTLP)
+
+Set `PI_OTLP_ENDPOINT` (e.g. `http://localhost:4318`) to export one GenAI
+`invoke_agent` span per `chat`/`print`/`resume` run to `<endpoint>/v1/traces`
+as OTLP/HTTP JSON (stdlib only, no protobuf). The export is best-effort: a 2s
+HTTP timeout, a single stderr warning on failure, and it **never changes the
+pi-run exit code**. With the env unset the feature is a complete no-op. The
+attribute names pin the OTel GenAI semantic conventions (Development status,
+see the code comments in `internal/cli/otel.go` for the pinned URLs).
+
+## MCP server
+
+`pi-run mcp-server` exposes pi-harness as a local, **read-only** MCP server
+(spec 2025-03-26) over stdio — wire it up in Claude Code, Codex, or any MCP
+client:
+
+```
+{
+  "mcpServers": {
+    "pi-run": {
+      "command": "pi-run",
+      "args": ["mcp-server"]
+    }
+  }
+}
+```
+
+Three tools are available: `providers` (provider table — env-var NAMES only,
+never values), `cost` (aggregate spend, optional `since`), and
+`benchmark_dry_run` (format validation, no Docker/keys). The server never
+launches agents, never resolves secrets, and never accepts remote connections.
 
 ## Skills
 

@@ -326,6 +326,17 @@ cap. 20 tasks × 3 runs × (cheap agent + cheap judge) lands in low single-digit
 USD/night (cf. ttxs69's 20×3 ≈ $50–100 at frontier prices — the cheap tier is
 what makes nightly affordable).
 
+**Persistence coupling (required for agent-cost attribution).** `pi-run print`
+only persists a session (and thus only lets `recordRunSpend` see real
+`usage.cost.total`) when a budget cap is set — `runLaunch` calls
+`piArgs(..., capUSD > 0, ...)` and `pi.go:66-71` appends `--no-session` when
+`!persist`. So EVERY agent-run invocation in the nightly AND every manual
+re-baseline run MUST set `PI_MAX_BUDGET_USD` (the nightly env block already
+does), or the ledger delta is ~0 and agent cost silently vanishes from the
+baseline — the exact failure documented for benchmark's `--no-session` path
+(`scorecard.go:397-401`). If a future `run_pi_print` gains an explicit persist
+control, this coupling can be relaxed; until then it is a hard requirement.
+
 **Artifacts.** `eval/live-results/` (gitignored, new ignore rule) holds the
 pytest-json-report, the `score_run.py` summary JSON, and the
 `$GITHUB_STEP_SUMMARY` markdown; uploaded with 90-day retention (mirrors

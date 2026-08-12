@@ -10,21 +10,21 @@ import (
 )
 
 func TestSplitLaunchArgsProvider(t *testing.T) {
-	p, _, _, _, rest := splitLaunchArgs([]string{"--provider", "deepseek", "hello"})
+	p, _, _, _, _, rest := splitLaunchArgs([]string{"--provider", "deepseek", "hello"})
 	if p != "deepseek" || len(rest) != 1 || rest[0] != "hello" {
 		t.Fatalf("got provider=%q rest=%v", p, rest)
 	}
 }
 
 func TestSplitLaunchArgsModelEquals(t *testing.T) {
-	p, m, _, _, _ := splitLaunchArgs([]string{"--provider=openrouter", "--model=deepseek/deepseek-chat"})
+	p, m, _, _, _, _ := splitLaunchArgs([]string{"--provider=openrouter", "--model=deepseek/deepseek-chat"})
 	if p != "openrouter" || m != "deepseek/deepseek-chat" {
 		t.Fatalf("got provider=%q model=%q", p, m)
 	}
 }
 
 func TestSplitLaunchArgsKeepsEverythingElse(t *testing.T) {
-	_, _, _, _, rest := splitLaunchArgs([]string{"--tools", "read", "--thinking", "high", "hi there"})
+	_, _, _, _, _, rest := splitLaunchArgs([]string{"--tools", "read", "--thinking", "high", "hi there"})
 	want := []string{"--tools", "read", "--thinking", "high", "hi there"}
 	if len(rest) != len(want) {
 		t.Fatalf("got %v, want %v", rest, want)
@@ -37,7 +37,7 @@ func TestSplitLaunchArgsKeepsEverythingElse(t *testing.T) {
 }
 
 func TestSplitLaunchArgsDoubleDashEscapesTail(t *testing.T) {
-	_, _, _, _, rest := splitLaunchArgs([]string{"--", "--provider", "x"})
+	_, _, _, _, _, rest := splitLaunchArgs([]string{"--", "--provider", "x"})
 	if len(rest) != 2 || rest[0] != "--provider" {
 		t.Fatalf("got %v", rest)
 	}
@@ -255,14 +255,14 @@ func TestUsageMentionsExitCodes(t *testing.T) {
 }
 
 func TestSplitLaunchArgsProviderEqualsForm(t *testing.T) {
-	p, _, _, _, _ := splitLaunchArgs([]string{"--provider=anthropic", "hi"})
+	p, _, _, _, _, _ := splitLaunchArgs([]string{"--provider=anthropic", "hi"})
 	if p != "anthropic" {
 		t.Fatalf("got provider=%q", p)
 	}
 }
 
 func TestSplitLaunchArgsModelSeparate(t *testing.T) {
-	_, m, _, _, _ := splitLaunchArgs([]string{"--model", "deepseek/deepseek-v4-pro", "hi"})
+	_, m, _, _, _, _ := splitLaunchArgs([]string{"--model", "deepseek/deepseek-v4-pro", "hi"})
 	if m != "deepseek/deepseek-v4-pro" {
 		t.Fatalf("got model=%q", m)
 	}
@@ -678,5 +678,115 @@ func TestRunCleanPrintsRemovedAndMissingPaths(t *testing.T) {
 	}
 	if _, err := os.Stat(existing); !os.IsNotExist(err) {
 		t.Fatalf("existing clean path still exists or stat failed: %v", err)
+	}
+}
+
+func TestSplitLaunchArgsModelTier(t *testing.T) {
+	_, _, _, _, tier, rest := splitLaunchArgs([]string{"--model-tier", "fast", "hi"})
+	if tier != "fast" || len(rest) != 1 || rest[0] != "hi" {
+		t.Fatalf("got tier=%q rest=%v", tier, rest)
+	}
+	_, _, _, _, tier, _ = splitLaunchArgs([]string{"--model-tier=cheap", "hi"})
+	if tier != "cheap" {
+		t.Fatalf("got tier=%q, want cheap", tier)
+	}
+	// The tier flag must not leak into pass-through args.
+	_, _, _, _, tier, rest = splitLaunchArgs([]string{"--model-tier", "fast", "--tools", "read", "x"})
+	if tier != "fast" || len(rest) != 3 || rest[0] != "--tools" {
+		t.Fatalf("got tier=%q rest=%v", tier, rest)
+	}
+}
+
+func TestLaunchModelTierConflictExit2(t *testing.T) {
+	hermeticLaunchEnv(t)
+	code, out := captureRunStderr(t, []string{"chat", "--model-tier", "fast", "--model", "x"})
+	if code != 2 {
+		t.Fatalf("chat --model-tier fast --model x exit = %d, want 2; stderr: %s", code, out)
+	}
+	if !strings.Contains(out, "mutually exclusive") {
+		t.Fatalf("stderr must mention mutual exclusion, got %q", out)
+	}
+}
+
+func TestLaunchUnknownTierExit2(t *testing.T) {
+	hermeticLaunchEnv(t)
+	code, out := captureRunStderr(t, []string{"chat", "--model-tier", "turbo"})
+	if code != 2 {
+		t.Fatalf("chat --model-tier turbo exit = %d, want 2; stderr: %s", code, out)
+	}
+	if !strings.Contains(out, "unknown model tier") || !strings.Contains(out, "valid: fast, balanced, cheap") {
+		t.Fatalf("stderr must list valid tiers, got %q", out)
+	}
+}
+
+func TestLaunchUnavailableTierExit2(t *testing.T) {
+	hermeticLaunchEnv(t)
+	code, out := captureRunStderr(t, []string{"print", "--provider", "deepseek", "--model-tier", "cheap", "hello"})
+	if code != 2 {
+		t.Fatalf("print --provider deepseek --model-tier cheap exit = %d, want 2; stderr: %s", code, out)
+	}
+	if !strings.Contains(out, "has no model for tier") || !strings.Contains(out, "available: balanced, fast") {
+		t.Fatalf("stderr must list the provider's available tiers, got %q", out)
+	}
+}
+
+func TestLaunchModelTierEnvWithModelFlagModelWins(t *testing.T) {
+	hermeticLaunchEnv(t)
+	// (c'): an explicit --model overrides an env-set tier. PI_MODEL_TIER=turbo
+	// would be a usage error if the env were applied; with --model winning, the
+	// launch proceeds to key resolution (exit 3 in hermetic env) — no error.
+	t.Setenv("PI_MODEL_TIER", "turbo")
+	if code := Run([]string{"chat", "--model", "openai/gpt-5.6-terra"}); code != 3 {
+		t.Fatalf("chat --model with PI_MODEL_TIER=turbo exit = %d, want 3 (missing key; --model must win, env tier ignored)", code)
+	}
+}
+
+func TestLaunchModelTierNoProviderDefaultsToOpenAI(t *testing.T) {
+	hermeticLaunchEnv(t)
+	// (d): no --provider given; the tier resolves against the default openai
+	// table (which has a fast entry), so the launch reaches key resolution.
+	if code := Run([]string{"chat", "--model-tier", "fast"}); code != 3 {
+		t.Fatalf("chat --model-tier fast (no provider) exit = %d, want 3 (missing key; tier resolved against default provider)", code)
+	}
+}
+
+func TestLaunchModelTierResumeRejected(t *testing.T) {
+	hermeticLaunchEnv(t)
+	code, out := captureRunStderr(t, []string{"resume", "--model-tier", "fast"})
+	if code != 2 {
+		t.Fatalf("resume --model-tier fast exit = %d, want 2; stderr: %s", code, out)
+	}
+	if !strings.Contains(out, "resume") || !strings.Contains(out, "--model-tier") {
+		t.Fatalf("stderr must name resume and --model-tier, got %q", out)
+	}
+}
+
+func TestResumeIgnoresModelTierEnv(t *testing.T) {
+	hermeticLaunchEnv(t)
+	// resume must never read PI_MODEL_TIER: turbo would be a usage error if the
+	// env were applied, so exit 3 (missing key) proves it was ignored.
+	t.Setenv("PI_MODEL_TIER", "turbo")
+	if code := Run([]string{"resume"}); code != 3 {
+		t.Fatalf("resume with PI_MODEL_TIER=turbo exit = %d, want 3 (missing key; resume must ignore the env)", code)
+	}
+}
+
+func TestRunProvidersShowsTiers(t *testing.T) {
+	orig := Providers
+	defer func() { Providers = orig }()
+	Providers = []Provider{
+		{Name: "openai", KeyEnv: "OPENAI_API_KEY", PiProvider: "openai", DefaultModel: "openai/gpt-5.6-terra",
+			ModelTiers: map[string]string{"fast": "openai/gpt-5.6-mini", "cheap": "openai/gpt-5.1-mini"}},
+		{Name: "groq", KeyEnv: "GROQ_API_KEY", PiProvider: "groq", DefaultModel: "groq/llama-3.3-70b-versatile"},
+	}
+	code, out := captureRunStdout(t, []string{"providers"})
+	if code != 0 {
+		t.Fatalf("providers exit = %d, want 0", code)
+	}
+	if !strings.Contains(out, "openai/gpt-5.6-terra\tbalanced,cheap,fast\tOPENAI_API_KEY") {
+		t.Fatalf("providers output missing openai tiers column: %q", out)
+	}
+	if !strings.Contains(out, "groq/llama-3.3-70b-versatile\tbalanced\tGROQ_API_KEY") {
+		t.Fatalf("providers output missing groq balanced-only tiers column: %q", out)
 	}
 }

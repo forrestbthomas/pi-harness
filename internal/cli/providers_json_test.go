@@ -12,7 +12,7 @@ import (
 
 const sampleProvidersJSON = `{
   "providers": [
-    {"name": "openai", "keyEnv": "OPENAI_API_KEY", "piProvider": "openai", "defaultModel": "openai/gpt-5.6-terra"},
+    {"name": "openai", "keyEnv": "OPENAI_API_KEY", "piProvider": "openai", "defaultModel": "openai/gpt-5.6-terra", "modelTiers": {"fast": "openai/gpt-5.6-mini", "cheap": "openai/gpt-5.1-mini"}},
     {"name": "local", "keyEnv": "LOCAL_API_KEY", "piProvider": "openai", "defaultModel": "local/model", "baseURL": "http://localhost:11434/v1"}
   ]
 }`
@@ -27,6 +27,12 @@ func TestProvidersFromJSON(t *testing.T) {
 	}
 	if ps[0].Name != "openai" || ps[0].KeyEnv != "OPENAI_API_KEY" {
 		t.Fatalf("unexpected provider: %+v", ps[0])
+	}
+	if ps[0].ModelTiers["fast"] != "openai/gpt-5.6-mini" || ps[0].ModelTiers["cheap"] != "openai/gpt-5.1-mini" {
+		t.Fatalf("openai modelTiers not parsed: %+v", ps[0].ModelTiers)
+	}
+	if ps[1].ModelTiers != nil {
+		t.Fatalf("local provider must have no tier map, got %+v", ps[1].ModelTiers)
 	}
 	if ps[1].BaseURL != "http://localhost:11434/v1" {
 		t.Fatalf("local provider should carry baseURL, got %+v", ps[1])
@@ -105,7 +111,7 @@ func TestDefaultProvidersMatchRepoProvidersJSON(t *testing.T) {
 		if !ok {
 			t.Fatalf("providers.json missing provider %q present in embedded table", p.Name)
 		}
-		if jp != p {
+		if !reflect.DeepEqual(jp, p) {
 			t.Fatalf("providers.json entry %q (%+v) differs from embedded entry (%+v)", p.Name, jp, p)
 		}
 	}
@@ -240,5 +246,80 @@ func TestLoadActiveProvidersDefaultMissingSilent(t *testing.T) {
 	}
 	if output != "" {
 		t.Fatalf("default missing provider file must be silent, got %q", output)
+	}
+}
+
+func TestProvidersFromJSONInvalidTiers(t *testing.T) {
+	tests := []struct {
+		name string
+		json string
+	}{
+		{"type malformed", `{"providers": [{"name": "openai", "keyEnv": "K", "piProvider": "openai", "defaultModel": "m", "modelTiers": "nope"}]}`},
+		{"empty value", `{"providers": [{"name": "openai", "keyEnv": "K", "piProvider": "openai", "defaultModel": "m", "modelTiers": {"fast": ""}}]}`},
+		{"reserved balanced key", `{"providers": [{"name": "openai", "keyEnv": "K", "piProvider": "openai", "defaultModel": "m", "modelTiers": {"balanced": "m"}}]}`},
+		{"unknown key", `{"providers": [{"name": "openai", "keyEnv": "K", "piProvider": "openai", "defaultModel": "m", "modelTiers": {"fasst": "m"}}]}`},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := ProvidersFromJSON([]byte(tc.json)); err == nil {
+				t.Fatalf("ProvidersFromJSON must reject %s table", tc.name)
+			}
+		})
+	}
+}
+
+func TestLoadActiveProvidersMalformedTiersWarns(t *testing.T) {
+	override := filepath.Join(t.TempDir(), "bad-tiers-providers.json")
+	bad := `{"providers": [{"name": "openai", "keyEnv": "OPENAI_API_KEY", "piProvider": "openai", "defaultModel": "openai/gpt-5.6-terra", "modelTiers": {"fasst": "openai/gpt-5.6-mini"}}]}`
+	if err := os.WriteFile(override, []byte(bad), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PI_RUN_PROVIDERS_FILE", override)
+	providers, output := captureProvidersStderr(t, func() []Provider {
+		return loadActiveProviders(t.TempDir())
+	})
+	if !reflect.DeepEqual(providers, defaultProviders) {
+		t.Fatalf("fallback providers = %v, want defaultProviders", providers)
+	}
+	for _, want := range []string{"warning", override, "model tier"} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("warning %q must contain %q", output, want)
+		}
+	}
+}
+
+// TestConfigCheckModelTiersValid proves the config-check providers.json tier
+// check: a valid repo table prints [ok], a corrupted fixture (via HARNESS_ROOT)
+// prints [FAIL]. Other personal-machine checks may fail on a bare temp HOME;
+// only the tier check line is asserted.
+func TestConfigCheckModelTiersValid(t *testing.T) {
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller failed")
+	}
+	repoRootDir := filepath.Dir(filepath.Dir(filepath.Dir(file)))
+
+	// Valid table: the real repo providers.json copied into a temp root.
+	valid := t.TempDir()
+	if err := os.WriteFile(filepath.Join(valid, "providers.json"), readFile(filepath.Join(repoRootDir, "providers.json")), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HARNESS_ROOT", valid)
+	t.Setenv("HOME", t.TempDir())
+	_, out := captureRunStdout(t, []string{"config-check"})
+	if !strings.Contains(out, "[ok]   providers.json modelTiers valid") {
+		t.Fatalf("config-check with valid providers.json must print [ok] tier check:\n%s", out)
+	}
+
+	// Corrupted tier map in a temp fixture root.
+	bad := t.TempDir()
+	badJSON := `{"providers": [{"name": "openai", "keyEnv": "OPENAI_API_KEY", "piProvider": "openai", "defaultModel": "openai/gpt-5.6-terra", "modelTiers": {"fasst": "openai/gpt-5.6-mini"}}]}`
+	if err := os.WriteFile(filepath.Join(bad, "providers.json"), []byte(badJSON), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HARNESS_ROOT", bad)
+	_, out = captureRunStdout(t, []string{"config-check"})
+	if !strings.Contains(out, "[FAIL] providers.json modelTiers valid") {
+		t.Fatalf("config-check with corrupted providers.json must print [FAIL] tier check:\n%s", out)
 	}
 }

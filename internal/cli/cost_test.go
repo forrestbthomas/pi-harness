@@ -353,20 +353,20 @@ func TestBudgetInvalidFlag(t *testing.T) {
 }
 
 func TestSplitLaunchArgsBudget(t *testing.T) {
-	p, m, b, _, rest := splitLaunchArgs([]string{"--max-budget-usd", "5.5", "hello"})
+	p, m, b, _, _, rest := splitLaunchArgs([]string{"--max-budget-usd", "5.5", "hello"})
 	if b != "5.5" || len(rest) != 1 || rest[0] != "hello" || p != "" || m != "" {
 		t.Fatalf("got provider=%q model=%q budget=%q rest=%v", p, m, b, rest)
 	}
-	_, _, b, _, _ = splitLaunchArgs([]string{"--max-budget-usd=2", "hi"})
+	_, _, b, _, _, _ = splitLaunchArgs([]string{"--max-budget-usd=2", "hi"})
 	if b != "2" {
 		t.Fatalf("got budget=%q, want 2", b)
 	}
-	_, _, b, _, _ = splitLaunchArgs([]string{"hello"})
+	_, _, b, _, _, _ = splitLaunchArgs([]string{"hello"})
 	if b != "" {
 		t.Fatalf("no budget flag must leave budget empty, got %q", b)
 	}
 	// Budget flag must not leak into pass-through args.
-	_, _, _, _, rest = splitLaunchArgs([]string{"--max-budget-usd", "1", "--tools", "read", "x"})
+	_, _, _, _, _, rest = splitLaunchArgs([]string{"--max-budget-usd", "1", "--tools", "read", "x"})
 	if len(rest) != 3 || rest[0] != "--tools" || rest[1] != "read" {
 		t.Fatalf("rest = %v, want pass-through preserved", rest)
 	}

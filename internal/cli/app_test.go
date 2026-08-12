@@ -905,7 +905,7 @@ func TestRunProvidersShowsTiers(t *testing.T) {
 	defer func() { Providers = orig }()
 	Providers = []Provider{
 		{Name: "openai", KeyEnv: "OPENAI_API_KEY", PiProvider: "openai", DefaultModel: "openai/gpt-5.6-terra",
-			ModelTiers: map[string]string{"fast": "openai/gpt-5.6-mini", "cheap": "openai/gpt-5.1-mini"}},
+			ModelTiers: map[string]string{"fast": "openai/gpt-5.4-mini", "cheap": "openai/gpt-5-mini"}},
 		{Name: "groq", KeyEnv: "GROQ_API_KEY", PiProvider: "groq", DefaultModel: "groq/llama-3.3-70b-versatile"},
 	}
 	code, out := captureRunStdout(t, []string{"providers"})

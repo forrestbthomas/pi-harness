@@ -35,7 +35,7 @@ from test_code_quality import CodeQualityMetric
 # ambient settings.OPENAI_MODEL_NAME read at construction time. The nightly
 # workflow sets OPENAI_MODEL_NAME (bare id, no "openai/" prefix — deepeval's
 # documented format); a sane local default keeps no-env runs deterministic.
-_JUDGE_MODEL = os.environ.get("OPENAI_MODEL_NAME") or "gpt-5.1-mini"
+_JUDGE_MODEL = os.environ.get("OPENAI_MODEL_NAME") or "gpt-4.1-mini"
 
 # Per-category G-Eval rubric criteria (spec §4.7: code-gen correctness +
 # idiomatic; bug-fix root-cause + no regression; shell/ops behaves per prompt).

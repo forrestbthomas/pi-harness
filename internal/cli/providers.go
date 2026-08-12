@@ -38,15 +38,26 @@ type providerFile struct {
 // (rule (b)) rather than silent fallback.
 var defaultProviders = []Provider{
 	{Name: "openai", KeyEnv: "OPENAI_API_KEY", PiProvider: "openai", DefaultModel: "openai/gpt-5.6-terra",
-		ModelTiers: map[string]string{"fast": "openai/gpt-5.6-mini", "cheap": "openai/gpt-5.1-mini"}}, // fast/cheap ⚠
+		// fast/cheap verified against the pi model catalog (2026-08-12):
+		// gpt-5.4-mini and gpt-5-mini are real OpenAI model ids (the earlier
+		// gpt-5.6-mini / gpt-5.1-mini placeholders do not exist — 400
+		// model_not_found). balanced is the defaultModel alias, never stored.
+		ModelTiers: map[string]string{"fast": "openai/gpt-5.4-mini", "cheap": "openai/gpt-5-mini"}},
 	{Name: "openrouter", KeyEnv: "OPENROUTER_API_KEY", PiProvider: "openrouter", DefaultModel: "openai/gpt-5.6-terra",
-		ModelTiers: map[string]string{"fast": "openai/gpt-5.6-mini", "cheap": "deepseek/deepseek-v4-flash"}}, // fast/cheap ⚠ (served via openrouter)
+		// fast served via openrouter (anthropic/claude-haiku-4.5 is in the
+		// openrouter catalog); cheap keeps the deepseek flash line.
+		ModelTiers: map[string]string{"fast": "anthropic/claude-haiku-4.5", "cheap": "deepseek/deepseek-v4-flash"}},
 	{Name: "deepseek", KeyEnv: "DEEPSEEK_API_KEY", PiProvider: "deepseek", DefaultModel: "deepseek/deepseek-v4-flash",
 		ModelTiers: map[string]string{"fast": "deepseek/deepseek-v4-pro"}}, // real catalog value; cheap omitted (the -flash default is already the cheapest line)
 	{Name: "anthropic", KeyEnv: "ANTHROPIC_API_KEY", PiProvider: "anthropic", DefaultModel: "anthropic/claude-sonnet-4",
-		ModelTiers: map[string]string{"fast": "anthropic/claude-haiku-4"}}, // fast ⚠; cheap omitted (haiku is the single fast/cheap line)
+		// claude-haiku-4.5 is the real haiku line (the earlier
+		// anthropic/claude-haiku-4 does not exist); cheap omitted (haiku is the
+		// single fast/cheap line).
+		ModelTiers: map[string]string{"fast": "anthropic/claude-haiku-4.5"}},
 	{Name: "gemini", KeyEnv: "GEMINI_API_KEY", PiProvider: "gemini", DefaultModel: "gemini/gemini-2.5-pro",
-		ModelTiers: map[string]string{"fast": "gemini/gemini-2.5-flash", "cheap": "gemini/gemini-2.5-flash-lite"}}, // fast/cheap ⚠
+		// gemini-2.5-flash / -lite are real Gemini model ids (verified in the
+		// openrouter catalog as google/gemini-2.5-flash*).
+		ModelTiers: map[string]string{"fast": "gemini/gemini-2.5-flash", "cheap": "gemini/gemini-2.5-flash-lite"}},
 	{Name: "groq", KeyEnv: "GROQ_API_KEY", PiProvider: "groq", DefaultModel: "groq/llama-3.3-70b-versatile"},
 	{Name: "local", KeyEnv: "LOCAL_API_KEY", PiProvider: "openai", DefaultModel: "local/model", BaseURL: "http://localhost:11434/v1"},
 	// OpenAI-compatible cloud + local endpoints routed through pi's openai provider.

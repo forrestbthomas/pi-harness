@@ -4,10 +4,10 @@
 The answer must explain the tier MECHANISM: --model-tier selects a model
 WITHIN the explicit provider, and an unavailable/unknown tier is a hard usage
 error with no fallback. We deliberately do NOT assert the exact cheap-tier
-model id (currently openai/gpt-5.1-mini): the tier table is still flagged as a
-placeholder pending catalog verification (providers.go), so pinning the id
-here would break on a legitimate catalog update. The reference answer may name
-the current id, but the grader checks the mechanism only.
+model id (currently openai/gpt-5-mini): the tier table may change (verified
+against the pi catalog when shipped), so pinning the id here would break on a
+legitimate catalog update. The reference answer may name the current id, but
+the grader checks the mechanism only.
 Exit 0 = pass, exit 1 = fail.
 """
 

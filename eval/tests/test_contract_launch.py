@@ -63,13 +63,13 @@ def test_launch_model_tier_flag(pi_run_bin, hermetic_env, fake_launch_env):
         pi_run_bin, hermetic_env, fake_launch_env, ["print", "--model-tier", "fast", "hello"]
     )
     assert result.returncode == 0, result.stderr
-    assert "--model openai/gpt-5.6-mini" in _args_line(fake_launch_env)
+    assert "--model openai/gpt-5.4-mini" in _args_line(fake_launch_env)
 
 
 def test_launch_model_tier_env(pi_run_bin, hermetic_env, fake_launch_env):
     result = _launch(pi_run_bin, hermetic_env, fake_launch_env, ["print", "hello"], tier_env="cheap")
     assert result.returncode == 0, result.stderr
-    assert "--model openai/gpt-5.1-mini" in _args_line(fake_launch_env)
+    assert "--model openai/gpt-5-mini" in _args_line(fake_launch_env)
 
 
 def test_launch_model_flag_wins_over_tier_env(pi_run_bin, hermetic_env, fake_launch_env):
@@ -83,7 +83,7 @@ def test_launch_model_flag_wins_over_tier_env(pi_run_bin, hermetic_env, fake_lau
     assert result.returncode == 0, result.stderr
     args = _args_line(fake_launch_env)
     assert "--model openai/gpt-5.6-terra" in args
-    assert "--model openai/gpt-5.1-mini" not in args
+    assert "--model openai/gpt-5-mini" not in args
 
 
 def test_launch_usage_errors_do_not_launch(pi_run_bin, hermetic_env, fake_launch_env):

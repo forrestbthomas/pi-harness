@@ -1,1 +1,1 @@
---model-tier selects a within-provider model tier: for openai, "cheap" resolves to the provider's cheap-tier model openai/gpt-5.1-mini (the default balanced tier is the provider's default model openai/gpt-5.6-terra). There is no fallback: an unknown tier is a usage error.
+--model-tier selects a within-provider model tier: for openai, "cheap" resolves to the provider's cheap-tier model openai/gpt-5-mini (the default balanced tier is the provider's default model openai/gpt-5.6-terra). There is no fallback: an unknown tier is a usage error.

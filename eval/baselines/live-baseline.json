@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generated": "2026-08-12T00:00:00Z",
   "runsPerCase": 3,
-  "agentModel": "openai/gpt-5.6-mini",
-  "judgeModel": "openai/gpt-5.1-mini",
+  "agentModel": "openai/gpt-5.4-mini",
+  "judgeModel": "openai/gpt-4.1-mini",
   "cases": {}
 }

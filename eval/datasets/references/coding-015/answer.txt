@@ -1,0 +1,1 @@
+'ultra' is not a valid model tier: pi-run accepts fast, balanced, and cheap. Unknown tiers are rejected with a usage error (exit 2) and no model is selected - there is no 'ultra' model to resolve.

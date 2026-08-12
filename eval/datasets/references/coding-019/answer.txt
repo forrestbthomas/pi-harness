@@ -1,0 +1,1 @@
+pi-run's telemetry export is best-effort: when the collector is unreachable it prints exactly one warning line to stderr and the run still exits with its normal exit code - a failed export never changes the exit code or fails the run.

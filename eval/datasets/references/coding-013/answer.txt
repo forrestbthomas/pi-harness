@@ -1,0 +1,1 @@
+A list is mutable (elements can be added, removed, or changed) and is written with square brackets []; a tuple is immutable (its elements cannot change after creation) and is written with parentheses (). Use a list for collections that change over time; use a tuple for fixed sequences (coordinates, function return values, dictionary keys) where immutability is a guarantee.

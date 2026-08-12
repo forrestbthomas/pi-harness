@@ -1,0 +1,1 @@
+`==` checks value equality (calls __eq__), while `is` checks identity (same object in memory). Use `==` for comparing values and `is` for singletons like None.

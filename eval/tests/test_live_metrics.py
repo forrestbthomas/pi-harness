@@ -22,12 +22,20 @@ gate is the hard fail; the skipif here only keeps a no-key local checkout
 collectable.
 """
 
+import os
 import time
 
 import pytest
 from conftest import has_api_key, load_dataset, run_pi_print
 from deepeval.metrics import GEval, TaskCompletionMetric
 from test_code_quality import CodeQualityMetric
+
+# Judge model, pinned EXPLICITLY (spec review MINOR-1): passing model= to the
+# metric makes the pin visible in the code and independent of deepeval's
+# ambient settings.OPENAI_MODEL_NAME read at construction time. The nightly
+# workflow sets OPENAI_MODEL_NAME (bare id, no "openai/" prefix — deepeval's
+# documented format); a sane local default keeps no-env runs deterministic.
+_JUDGE_MODEL = os.environ.get("OPENAI_MODEL_NAME") or "gpt-5.1-mini"
 
 # Per-category G-Eval rubric criteria (spec §4.7: code-gen correctness +
 # idiomatic; bug-fix root-cause + no regression; shell/ops behaves per prompt).
@@ -81,6 +89,7 @@ def _rubric_for(sample: dict) -> GEval:
         name=f"code-task-rubric-{category}",
         criteria=_CATEGORY_CRITERIA.get(category, _DEFAULT_CRITERIA),
         evaluation_steps=_EVALUATION_STEPS,
+        model=_JUDGE_MODEL,  # pinned explicitly (spec review MINOR-1)
         async_mode=False,
     )
 
@@ -108,10 +117,14 @@ if _DATASET:
 
         start = time.monotonic()
         case.actual_output = run_pi_print(
-            sample["input"], extra_args=["--model-tier", "cheap"]
+            sample["input"],
+            extra_args=["--model-tier", "cheap", "--cost-mode", "live-eval"],
         )
 
-        metrics = [TaskCompletionMetric(async_mode=False), _rubric_for(sample)]
+        metrics = [
+            TaskCompletionMetric(async_mode=False, model=_JUDGE_MODEL),  # pinned explicitly
+            _rubric_for(sample),
+        ]
         for metric in metrics:
             metric.measure(case)
 

@@ -157,8 +157,8 @@ func TestResolveModelTier(t *testing.T) {
 	}{
 		{"empty defaults to default model", openai, "", "openai/gpt-5.6-terra", false, ""},
 		{"balanced aliases default model", openai, "balanced", "openai/gpt-5.6-terra", false, ""},
-		{"openai fast maps", openai, "fast", "openai/gpt-5.6-mini", false, ""},
-		{"openai cheap maps", openai, "cheap", "openai/gpt-5.1-mini", false, ""},
+		{"openai fast maps", openai, "fast", "openai/gpt-5.4-mini", false, ""},
+		{"openai cheap maps", openai, "cheap", "openai/gpt-5-mini", false, ""},
 		{"gemini cheap maps", gemini, "cheap", "gemini/gemini-2.5-flash-lite", false, ""},
 		{"deepseek fast maps", deepseek, "fast", "deepseek/deepseek-v4-pro", false, ""},
 		{"unknown tier errors listing valid tiers", openai, "turbo", "", true, "valid: fast, balanced, cheap"},
@@ -272,7 +272,7 @@ func TestResolveLaunchModel(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		{"tier only", "fast", "", "openai/gpt-5.6-mini", false},
+		{"tier only", "fast", "", "openai/gpt-5.4-mini", false},
 		{"model only", "", explicit, explicit, false},
 		{"neither uses default", "", "", "openai/gpt-5.6-terra", false},
 		{"flag conflict errors", "fast", explicit, "", true},

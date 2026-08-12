@@ -55,12 +55,17 @@ def sample_cases(dataset) -> list[LLMTestCase]:
     return cases
 
 
-def run_pi_print(prompt: str, cwd: Path | None = None, extra_args: list[str] | None = None) -> str:
+def run_pi_print(prompt: str, cwd: Path | None = None, extra_args: list[str] | None = None, timeout: float = 180.0) -> str:
     """Run Pi in print mode and return the text output.
 
     Requires a provider API key to be set in the environment. The harness
     directory is used as the working directory so AGENTS.md and .pi/SYSTEM.md
     are loaded.
+
+    Failure detection: pi exits 0 even when the model call fails (API/model
+    errors go to stderr and stdout is empty), so a run is treated as failed
+    when the exit code is non-zero OR stdout is empty. This keeps eval runs
+    honest — a silent model failure must never look like a pass.
     """
     cwd = cwd or Path(__file__).parent.parent
     cmd = ["pi-run", "print"]
@@ -68,16 +73,23 @@ def run_pi_print(prompt: str, cwd: Path | None = None, extra_args: list[str] | N
         cmd.extend(extra_args)
     cmd.append(prompt)
 
-    result = subprocess.run(
-        cmd,
-        cwd=cwd,
-        text=True,
-        capture_output=True,
-        env=os.environ.copy(),
-    )
-    if result.returncode != 0:
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=cwd,
+            text=True,
+            capture_output=True,
+            env=os.environ.copy(),
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as exc:
         raise RuntimeError(
-            f"pi print failed (exit {result.returncode}):\n{result.stderr}"
+            f"pi print timed out after {timeout:.0f}s: {' '.join(cmd)}"
+        ) from exc
+    if result.returncode != 0 or not result.stdout.strip():
+        raise RuntimeError(
+            f"pi print failed (exit {result.returncode}, empty stdout? "
+            f"{not result.stdout.strip()}):\n{result.stderr}"
         )
     return result.stdout
 

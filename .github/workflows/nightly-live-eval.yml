@@ -68,7 +68,7 @@ jobs:
     env:
       EVAL_RUNS_PER_CASE: '3'
       PI_MAX_BUDGET_USD: '2'               # nightly spend cap (cheap agent tier)
-      OPENAI_MODEL_NAME: 'gpt-5.1-mini'    # cheap judge — deepeval 4.1.7 reads OPENAI_MODEL_NAME, not DEEPEVAL_MODEL
+      OPENAI_MODEL_NAME: 'gpt-4.1-mini'    # cheap judge — real catalog model (deepeval 4.1.7 reads OPENAI_MODEL_NAME, not DEEPEVAL_MODEL)
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
       # actions/checkout@v7

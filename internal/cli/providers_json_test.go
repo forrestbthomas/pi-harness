@@ -12,7 +12,7 @@ import (
 
 const sampleProvidersJSON = `{
   "providers": [
-    {"name": "openai", "keyEnv": "OPENAI_API_KEY", "piProvider": "openai", "defaultModel": "openai/gpt-5.6-terra", "modelTiers": {"fast": "openai/gpt-5.6-mini", "cheap": "openai/gpt-5.1-mini"}},
+    {"name": "openai", "keyEnv": "OPENAI_API_KEY", "piProvider": "openai", "defaultModel": "openai/gpt-5.6-terra", "modelTiers": {"fast": "openai/gpt-5.4-mini", "cheap": "openai/gpt-5-mini"}},
     {"name": "local", "keyEnv": "LOCAL_API_KEY", "piProvider": "openai", "defaultModel": "local/model", "baseURL": "http://localhost:11434/v1"}
   ]
 }`
@@ -28,7 +28,7 @@ func TestProvidersFromJSON(t *testing.T) {
 	if ps[0].Name != "openai" || ps[0].KeyEnv != "OPENAI_API_KEY" {
 		t.Fatalf("unexpected provider: %+v", ps[0])
 	}
-	if ps[0].ModelTiers["fast"] != "openai/gpt-5.6-mini" || ps[0].ModelTiers["cheap"] != "openai/gpt-5.1-mini" {
+	if ps[0].ModelTiers["fast"] != "openai/gpt-5.4-mini" || ps[0].ModelTiers["cheap"] != "openai/gpt-5-mini" {
 		t.Fatalf("openai modelTiers not parsed: %+v", ps[0].ModelTiers)
 	}
 	if ps[1].ModelTiers != nil {
@@ -270,7 +270,7 @@ func TestProvidersFromJSONInvalidTiers(t *testing.T) {
 
 func TestLoadActiveProvidersMalformedTiersWarns(t *testing.T) {
 	override := filepath.Join(t.TempDir(), "bad-tiers-providers.json")
-	bad := `{"providers": [{"name": "openai", "keyEnv": "OPENAI_API_KEY", "piProvider": "openai", "defaultModel": "openai/gpt-5.6-terra", "modelTiers": {"fasst": "openai/gpt-5.6-mini"}}]}`
+	bad := `{"providers": [{"name": "openai", "keyEnv": "OPENAI_API_KEY", "piProvider": "openai", "defaultModel": "openai/gpt-5.6-terra", "modelTiers": {"fasst": "openai/gpt-5.4-mini"}}]}`
 	if err := os.WriteFile(override, []byte(bad), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -313,7 +313,7 @@ func TestConfigCheckModelTiersValid(t *testing.T) {
 
 	// Corrupted tier map in a temp fixture root.
 	bad := t.TempDir()
-	badJSON := `{"providers": [{"name": "openai", "keyEnv": "OPENAI_API_KEY", "piProvider": "openai", "defaultModel": "openai/gpt-5.6-terra", "modelTiers": {"fasst": "openai/gpt-5.6-mini"}}]}`
+	badJSON := `{"providers": [{"name": "openai", "keyEnv": "OPENAI_API_KEY", "piProvider": "openai", "defaultModel": "openai/gpt-5.6-terra", "modelTiers": {"fasst": "openai/gpt-5.4-mini"}}]}`
 	if err := os.WriteFile(filepath.Join(bad, "providers.json"), []byte(badJSON), 0o600); err != nil {
 		t.Fatal(err)
 	}

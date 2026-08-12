@@ -78,25 +78,45 @@ func runCmd(cmd string, args []string, dir string) (int, error) {
 	return 0, nil
 }
 
+// setupInstallDeps creates eval/.venv and installs eval/requirements.txt under
+// root. It uses absolute paths so a Homebrew-installed binary (whose repoRoot
+// may differ from the caller's cwd) never resolves the requirements file or the
+// venv relative to cwd. Returns a process exit code (0 = ok) and an error for
+// hard failures; callers print the error and return the code.
+func setupInstallDeps(root string) (int, error) {
+	venv := filepath.Join(root, "eval", ".venv")
+	venvPython := filepath.Join(venv, "bin", "python")
+	reqFile := filepath.Join(root, "eval", "requirements.txt")
+	if _, err := os.Stat(reqFile); err != nil {
+		return 1, fmt.Errorf("pi-run: setup: %s not found — run setup from the pi-harness checkout (current root: %s)", reqFile, root)
+	}
+	if _, err := os.Stat(venvPython); err != nil {
+		fmt.Println("creating eval/.venv ...")
+		// Absolute venv path: never create relative to the caller's cwd.
+		if code, err := runCmd("python3", []string{"-m", "venv", venv}, root); err != nil || code != 0 {
+			return code, err
+		}
+		if code, err := runCmd(venvPython, []string{"-m", "pip", "install", "--upgrade", "pip"}, root); err != nil || code != 0 {
+			return code, err
+		}
+	}
+	fmt.Println("installing eval/requirements.txt ...")
+	if code, err := runCmd(venvPython, []string{"-m", "pip", "install", "-r", reqFile}, root); err != nil || code != 0 {
+		if code != 0 {
+			fmt.Fprintf(os.Stderr, "pi-run: setup: pip install failed (exit %d) — see output above\n", code)
+		}
+		return code, err
+	}
+	return 0, nil
+}
+
 // runSetup creates eval/.venv, installs Python deps, and refreshes model
 // catalogs (fetches the deepseek catalog). Idempotent.
 func runSetup() int {
 	root := repoRoot()
-	venv := filepath.Join(root, "eval", ".venv")
-	venvPython := filepath.Join(venv, "bin", "python")
-	if _, err := os.Stat(venvPython); err != nil {
-		fmt.Println("creating eval/.venv ...")
-		if code, err := runCmd("python3", []string{"-m", "venv", "eval/.venv"}, root); err != nil || code != 0 {
-			return code
-		}
-		if code, err := runCmd(venvPython, []string{"-m", "pip", "install", "--upgrade", "pip"}, root); err != nil || code != 0 {
-			return code
-		}
-	}
-	fmt.Println("installing eval/requirements.txt ...")
-	if code, err := runCmd(venvPython, []string{"-m", "pip", "install", "-r", "eval/requirements.txt"}, root); err != nil || code != 0 {
-		if code != 0 {
-			fmt.Fprintf(os.Stderr, "pi-run: setup: pip install failed (exit %d) — see output above\n", code)
+	if code, err := setupInstallDeps(root); err != nil || code != 0 {
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
 		}
 		return code
 	}

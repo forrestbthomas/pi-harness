@@ -3,6 +3,7 @@ package cli
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -150,4 +151,66 @@ func TestRepoRootFallsBackToCWD(t *testing.T) {
 		t.Fatal("repoRoot() returned empty string")
 	}
 	_ = oldWD
+}
+
+// TestRunSetupMissingRequirementsFailsCleanly verifies that `pi-run setup` in a
+// directory that is not a pi-harness checkout fails fast with a clear message
+// (and does NOT attempt pip install with a cwd-relative requirements path).
+func TestRunSetupMissingRequirementsFailsCleanly(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("HARNESS_ROOT", root)
+	// No eval/requirements.txt anywhere under root (not a checkout).
+	code, out := captureRunStderr(t, []string{"setup"})
+	if code != 1 {
+		t.Fatalf("setup outside checkout exit = %d, want 1; stderr:\n%s", code, out)
+	}
+	if !strings.Contains(out, "eval/requirements.txt") || !strings.Contains(out, "not found") {
+		t.Fatalf("stderr must name the missing requirements file clearly, got:\n%s", out)
+	}
+}
+
+// TestSetupInstallDepsMissingRequirementsFailsCleanly verifies the venv+dep
+// installer fails fast with a clear message when the checkout markers are
+// absent (regression: previously pip failed confusingly on a cwd-relative
+// requirements path).
+func TestSetupInstallDepsMissingRequirementsFailsCleanly(t *testing.T) {
+	root := t.TempDir()
+	code, err := setupInstallDeps(root)
+	if code != 1 || err == nil {
+		t.Fatalf("setupInstallDeps outside checkout = code %d, err %v; want code 1 + error", code, err)
+	}
+	if !strings.Contains(err.Error(), "eval/requirements.txt") || !strings.Contains(err.Error(), "not found") {
+		t.Fatalf("error must name the missing requirements file clearly, got: %v", err)
+	}
+}
+
+// TestSetupInstallDepsUsesAbsolutePaths verifies requirements.txt and the venv
+// python are resolved from root (not the caller's cwd) — regression for brew
+// installs where repoRoot != cwd.
+func TestSetupInstallDepsUsesAbsolutePaths(t *testing.T) {
+	root := t.TempDir()
+	evalDir := filepath.Join(root, "eval")
+	if err := os.MkdirAll(filepath.Join(evalDir, ".venv", "bin"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(evalDir, "requirements.txt"), []byte("deepeval~=4.1\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	argsFile := filepath.Join(root, "pip-args.txt")
+	script := "#!/bin/sh\nprintf '%s\\n' \"$@\" > " + argsFile + "\nexit 0\n"
+	if err := os.WriteFile(filepath.Join(evalDir, ".venv", "bin", "python"), []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	code, err := setupInstallDeps(root)
+	if code != 0 || err != nil {
+		t.Fatalf("setupInstallDeps = code %d, err %v; want 0, nil", code, err)
+	}
+	args, err := os.ReadFile(argsFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := filepath.Join(root, "eval", "requirements.txt")
+	if !strings.Contains(string(args), want) {
+		t.Fatalf("pip args %q must contain absolute requirements path %q", args, want)
+	}
 }

@@ -1,14 +1,24 @@
 package cli
 
 import (
+	"bytes"
 	"encoding/json"
+	"flag"
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
 )
+
+// goldenUpdate is a hand-rolled -update helper for the scorecard golden
+// fixture: go test ./internal/cli/ -run TestScorecardGoldenJSON -update
+// rewrites internal/cli/testdata/scorecard-golden.json. Registered at package
+// scope so `go test` parses it before the testing framework's flag.Parse.
+var goldenUpdate = flag.Bool("update", false, "update golden fixture")
 
 // scorecardFixtureRun builds a graded run result with the given task statuses
 // and durations, aggregating the summary exactly like the live runner.
@@ -456,6 +466,214 @@ func TestScorecardJSONOmitEmptyGates(t *testing.T) {
 	}
 	if got.Gates.MaxBudgetUsd != 0 || got.BaselinePath != "" || got.Baseline != nil {
 		t.Fatalf("round trip of omitted fields = %+v", got)
+	}
+}
+
+// scorecardGoldenFixture assembles the fixture scorecard used by the golden
+// and strict round-trip tests: the SAME values as TestScorecardJSONRoundTrip
+// (two provider rows openai/deepseek, failBelow/budget/baseline configured,
+// one regression), but built through buildScorecard with the scorecardNow seam
+// pinned to 2026-08-11T15:04:05Z UTC so the artifact is fully deterministic.
+func scorecardGoldenFixture(t *testing.T) scorecard {
+	t.Helper()
+	orig := scorecardNow
+	scorecardNow = func() time.Time { return time.Date(2026, 8, 11, 15, 4, 5, 0, time.UTC) }
+	t.Cleanup(func() { scorecardNow = orig })
+
+	rows := []scorecardProvider{
+		{Provider: "openai", Model: "openai/gpt-5.6-terra", Passed: 5, Total: 5, Errors: 0, PassRate: 1.0, CostUSD: 0.0412, AvgLatencyMs: 18734.5, Tokens: 128430},
+		{Provider: "deepseek", Model: "deepseek/deepseek-v4-flash", Passed: 4, Total: 5, Errors: 1, PassRate: 0.8, CostUSD: 0.0021, AvgLatencyMs: 9430.2, Tokens: 45210},
+	}
+	failBelow := 0.8
+	baseline := map[string]float64{"deepseek": 1.0}
+	budgetCap := 5.0
+	st := evaluateScorecardGates(rows, rows, failBelow, baseline, 0.05, budgetCap)
+	opts := scorecardOptions{
+		providers:         []string{"openai", "deepseek"},
+		models:            []string{"openai/gpt-5.6-terra", "deepseek/deepseek-v4-flash"},
+		failBelow:         failBelow,
+		budgetFlag:        "5",
+		baselinePath:      "eval/benchmark-results/scorecard-old.json",
+		baselineTolerance: 0.05,
+		runs:              1,
+	}
+	return buildScorecard(opts, rows, make([]benchmarkTask, 5), baseline, budgetCap, st, scorecardExitCode(st))
+}
+
+func TestBuildScorecardDeterministicWithSeam(t *testing.T) {
+	sc := scorecardGoldenFixture(t)
+	if sc.RunID != "20260811T150405-openai-deepseek" {
+		t.Fatalf("runId = %q, want 20260811T150405-openai-deepseek", sc.RunID)
+	}
+	if sc.Timestamp != "2026-08-11T15:04:05Z" {
+		t.Fatalf("timestamp = %q, want 2026-08-11T15:04:05Z", sc.Timestamp)
+	}
+	// Two consecutive builds with the pinned seam must be identical.
+	again := scorecardGoldenFixture(t)
+	if !reflect.DeepEqual(sc, again) {
+		t.Fatalf("two builds with the pinned seam differ:\n got %+v\nwant %+v", again, sc)
+	}
+}
+
+func TestScorecardRunIDDeterministic(t *testing.T) {
+	orig := scorecardNow
+	scorecardNow = func() time.Time { return time.Date(2026, 8, 11, 15, 4, 5, 0, time.UTC) }
+	t.Cleanup(func() { scorecardNow = orig })
+
+	if got := scorecardRunID([]string{"openai", "deepseek"}); got != "20260811T150405-openai-deepseek" {
+		t.Fatalf("pinned run id = %q, want 20260811T150405-openai-deepseek", got)
+	}
+
+	// Restored seam → live clock, same shape.
+	scorecardNow = time.Now
+	if got := scorecardRunID([]string{"openai", "deepseek"}); !regexp.MustCompile(`^\d{8}T\d{6}-openai-deepseek$`).MatchString(got) {
+		t.Fatalf("live run id = %q, want ^\\d{8}T\\d{6}-openai-deepseek$", got)
+	}
+}
+
+func TestScorecardGoldenJSON(t *testing.T) {
+	sc := scorecardGoldenFixture(t)
+	b, err := json.MarshalIndent(sc, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	b = append(b, '\n')
+
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller failed")
+	}
+	fixture := filepath.Join(filepath.Dir(file), "testdata", "scorecard-golden.json")
+
+	if *goldenUpdate {
+		if err := os.MkdirAll(filepath.Dir(fixture), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(fixture, b, 0o644); err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("updated golden fixture %s", fixture)
+		return
+	}
+
+	want, err := os.ReadFile(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(want, b) {
+		t.Fatalf("scorecard JSON drifted from golden fixture %s:\n--- fixture ---\n%s\n--- generated ---\n%s", fixture, want, b)
+	}
+}
+
+func TestScorecardRoundTripRejectsUnknownFields(t *testing.T) {
+	sc := scorecardGoldenFixture(t)
+	b, err := json.MarshalIndent(sc, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Every field the marshaler emits must be known to the scorecard struct:
+	// a renamed/removed field surfaces here as a strict-decode error instead
+	// of being silently dropped by the parser.
+	var got scorecard
+	dec := json.NewDecoder(bytes.NewReader(b))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&got); err != nil {
+		t.Fatalf("strict decode of emitted JSON failed: %v\n%s", err, b)
+	}
+	if !reflect.DeepEqual(got, sc) {
+		t.Fatalf("strict round trip mismatch:\n got %+v\nwant %+v", got, sc)
+	}
+
+	// A renamed field must fail loudly rather than being ignored.
+	renamed := strings.Replace(string(b), `"runId":`, `"runIdentifier":`, 1)
+	if renamed == string(b) {
+		t.Fatalf("fixture JSON does not contain runId to rename:\n%s", b)
+	}
+	var strict scorecard
+	dec = json.NewDecoder(strings.NewReader(renamed))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&strict); err == nil {
+		t.Fatalf("strict decode accepted unknown field runIdentifier:\n%s", renamed)
+	}
+}
+
+func TestScorecardNowRestored(t *testing.T) {
+	orig := scorecardNow
+	scorecardNow = func() time.Time { return time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC) }
+	// t.Cleanup runs LIFO, so the restore cleanup (registered last) runs first
+	// and the check cleanup (registered first) then verifies the original clock
+	// is back — a pinned test can never leak a frozen scorecardNow into later
+	// tests.
+	t.Cleanup(func() {
+		if scorecardNow == nil || reflect.ValueOf(scorecardNow).Pointer() != reflect.ValueOf(orig).Pointer() {
+			t.Fatalf("scorecardNow was not restored to the original clock")
+		}
+	})
+	t.Cleanup(func() { scorecardNow = orig })
+
+	if got := scorecardRunID([]string{"openai"}); got != "20200101T000000-openai" {
+		t.Fatalf("pinned seam not in effect: got %q", got)
+	}
+}
+
+func TestWriteScorecardLatest(t *testing.T) {
+	root := t.TempDir()
+	sc := scorecard{
+		SchemaVersion: 1,
+		RunID:         "20260811T150405-openai-deepseek",
+		Suite:         "eval/benchmarks (1 tasks)",
+		Gates:         scorecardGates{BaselineTolerance: 0.05},
+		Providers:     []scorecardProvider{{Provider: "openai", PassRate: 1.0}},
+		Passed:        true,
+	}
+	latestPath, err := writeScorecardLatest(root, sc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if filepath.Base(latestPath) != "scorecard-latest.json" || !strings.Contains(latestPath, filepath.Join("eval", "benchmark-results")) {
+		t.Fatalf("latest path = %q, want eval/benchmark-results/scorecard-latest.json", latestPath)
+	}
+	latest, err := os.ReadFile(latestPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	runPath, err := writeScorecard(root, sc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	run, err := os.ReadFile(runPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(latest, run) {
+		t.Fatalf("latest must be byte-identical to the run file:\n--- latest ---\n%s\n--- run ---\n%s", latest, run)
+	}
+
+	// A second write overwrites: latest stays byte-identical to the NEW run
+	// file, proving pointer semantics.
+	sc2 := sc
+	sc2.RunID = "20260812T000000-openai-deepseek"
+	sc2.Passed = false
+	if _, err := writeScorecardLatest(root, sc2); err != nil {
+		t.Fatal(err)
+	}
+	latest2, err := os.ReadFile(latestPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	run2Path, err := writeScorecard(root, sc2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	run2, err := os.ReadFile(run2Path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(latest2, run2) {
+		t.Fatalf("overwritten latest must be byte-identical to the new run file:\n--- latest ---\n%s\n--- run ---\n%s", latest2, run2)
+	}
+	if bytes.Equal(latest, latest2) {
+		t.Fatal("second write must overwrite scorecard-latest.json")
 	}
 }
 

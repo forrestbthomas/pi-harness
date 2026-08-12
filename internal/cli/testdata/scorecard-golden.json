@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260811T150405-openai-deepseek",
+  "timestamp": "2026-08-11T15:04:05Z",
+  "suite": "eval/benchmarks (5 tasks)",
+  "quickProfile": false,
+  "runs": 1,
+  "gates": {
+    "failBelow": 0.8,
+    "maxBudgetUsd": 5,
+    "baselineTolerance": 0.05
+  },
+  "baselinePath": "eval/benchmark-results/scorecard-old.json",
+  "providers": [
+    {
+      "provider": "openai",
+      "model": "openai/gpt-5.6-terra",
+      "passed": 5,
+      "total": 5,
+      "errors": 0,
+      "passRate": 1,
+      "costUsd": 0.0412,
+      "avgLatencyMs": 18734.5,
+      "tokens": 128430
+    },
+    {
+      "provider": "deepseek",
+      "model": "deepseek/deepseek-v4-flash",
+      "passed": 4,
+      "total": 5,
+      "errors": 1,
+      "passRate": 0.8,
+      "costUsd": 0.0021,
+      "avgLatencyMs": 9430.2,
+      "tokens": 45210
+    }
+  ],
+  "baseline": {
+    "path": "eval/benchmark-results/scorecard-old.json",
+    "regressions": [
+      {
+        "provider": "deepseek",
+        "baseline": 1,
+        "current": 0.8,
+        "tolerance": 0.05
+      }
+    ]
+  },
+  "passed": false
+}

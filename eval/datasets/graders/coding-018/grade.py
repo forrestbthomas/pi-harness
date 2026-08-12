@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """Deterministic grader for coding-018 (harness-routing: --model-tier cheap).
 
-The answer must explain that the cheap tier selects the provider's
-cheap-tier model, which for openai is openai/gpt-5.1-mini.
+The answer must explain the tier MECHANISM: --model-tier selects a model
+WITHIN the explicit provider, and an unavailable/unknown tier is a hard usage
+error with no fallback. We deliberately do NOT assert the exact cheap-tier
+model id (currently openai/gpt-5.1-mini): the tier table is still flagged as a
+placeholder pending catalog verification (providers.go), so pinning the id
+here would break on a legitimate catalog update. The reference answer may name
+the current id, but the grader checks the mechanism only.
 Exit 0 = pass, exit 1 = fail.
 """
 
@@ -14,10 +19,13 @@ def main():
     if "cheap" not in out:
         print("answer does not mention the cheap tier", file=sys.stderr)
         return 1
-    if "gpt-5.1-mini" not in out:
-        print("answer does not name the openai cheap-tier model (gpt-5.1-mini)", file=sys.stderr)
+    if "no fallback" not in out and "without fallback" not in out:
+        print("answer must state that tier selection never falls back", file=sys.stderr)
         return 1
-    print("answer identifies the cheap-tier model for openai")
+    if "usage error" not in out and "exit 2" not in out and "exit code 2" not in out:
+        print("answer must state an unknown tier is a usage error", file=sys.stderr)
+        return 1
+    print("answer explains the within-provider tier mechanism with no fallback")
     return 0
 
 

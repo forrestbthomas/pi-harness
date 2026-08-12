@@ -10,21 +10,21 @@ import (
 )
 
 func TestSplitLaunchArgsProvider(t *testing.T) {
-	p, _, _, rest := splitLaunchArgs([]string{"--provider", "deepseek", "hello"})
+	p, _, _, _, rest := splitLaunchArgs([]string{"--provider", "deepseek", "hello"})
 	if p != "deepseek" || len(rest) != 1 || rest[0] != "hello" {
 		t.Fatalf("got provider=%q rest=%v", p, rest)
 	}
 }
 
 func TestSplitLaunchArgsModelEquals(t *testing.T) {
-	p, m, _, _ := splitLaunchArgs([]string{"--provider=openrouter", "--model=deepseek/deepseek-chat"})
+	p, m, _, _, _ := splitLaunchArgs([]string{"--provider=openrouter", "--model=deepseek/deepseek-chat"})
 	if p != "openrouter" || m != "deepseek/deepseek-chat" {
 		t.Fatalf("got provider=%q model=%q", p, m)
 	}
 }
 
 func TestSplitLaunchArgsKeepsEverythingElse(t *testing.T) {
-	_, _, _, rest := splitLaunchArgs([]string{"--tools", "read", "--thinking", "high", "hi there"})
+	_, _, _, _, rest := splitLaunchArgs([]string{"--tools", "read", "--thinking", "high", "hi there"})
 	want := []string{"--tools", "read", "--thinking", "high", "hi there"}
 	if len(rest) != len(want) {
 		t.Fatalf("got %v, want %v", rest, want)
@@ -37,7 +37,7 @@ func TestSplitLaunchArgsKeepsEverythingElse(t *testing.T) {
 }
 
 func TestSplitLaunchArgsDoubleDashEscapesTail(t *testing.T) {
-	_, _, _, rest := splitLaunchArgs([]string{"--", "--provider", "x"})
+	_, _, _, _, rest := splitLaunchArgs([]string{"--", "--provider", "x"})
 	if len(rest) != 2 || rest[0] != "--provider" {
 		t.Fatalf("got %v", rest)
 	}
@@ -52,6 +52,8 @@ func TestRunResumeDispatches(t *testing.T) {
 	// otherwise let it launch pi and return 0 instead of 3).
 	t.Setenv("OPENAI_API_KEY", "")
 	t.Setenv("BW_GET", filepath.Join(t.TempDir(), "nonexistent-bw-get"))
+	t.Setenv("PI_PERMISSION_MODE", "")
+	t.Setenv("PI_MAX_BUDGET_USD", "")
 	// No key: resume should fail with exit 3 (missing key), proving dispatch
 	// reached runLaunch (not "unknown command").
 	if code := Run([]string{"resume"}); code != 3 {
@@ -253,14 +255,14 @@ func TestUsageMentionsExitCodes(t *testing.T) {
 }
 
 func TestSplitLaunchArgsProviderEqualsForm(t *testing.T) {
-	p, _, _, _ := splitLaunchArgs([]string{"--provider=anthropic", "hi"})
+	p, _, _, _, _ := splitLaunchArgs([]string{"--provider=anthropic", "hi"})
 	if p != "anthropic" {
 		t.Fatalf("got provider=%q", p)
 	}
 }
 
 func TestSplitLaunchArgsModelSeparate(t *testing.T) {
-	_, m, _, _ := splitLaunchArgs([]string{"--model", "deepseek/deepseek-v4-pro", "hi"})
+	_, m, _, _, _ := splitLaunchArgs([]string{"--model", "deepseek/deepseek-v4-pro", "hi"})
 	if m != "deepseek/deepseek-v4-pro" {
 		t.Fatalf("got model=%q", m)
 	}
@@ -271,6 +273,8 @@ func TestRunPrintMissingKeyExits3(t *testing.T) {
 	t.Setenv("PI_PROVIDER", "openai")
 	t.Setenv("OPENAI_API_KEY", "")
 	t.Setenv("BW_GET", filepath.Join(t.TempDir(), "nonexistent-bw-get")) // hermetic: no vault
+	t.Setenv("PI_PERMISSION_MODE", "")
+	t.Setenv("PI_MAX_BUDGET_USD", "")
 	// print with a prompt but no key → exit 3.
 	if code := Run([]string{"print", "hello"}); code != 3 {
 		t.Fatalf("print no key exit = %d, want 3", code)

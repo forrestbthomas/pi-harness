@@ -14,7 +14,7 @@ type Provider struct {
 	KeyEnv       string `json:"keyEnv"`            // env var / Bitwarden item holding the API key
 	PiProvider   string `json:"piProvider"`        // value passed to `pi --provider`
 	DefaultModel string `json:"defaultModel"`      // default `pi --model` value
-	BaseURL      string `json:"baseURL,omitempty"` // optional provider base URL (e.g. local OpenAI-compatible)
+	BaseURL      string `json:"baseURL,omitempty"` // optional provider base URL (OpenAI- or Anthropic-compatible)
 }
 
 // providerFile is the on-disk shape of providers.json.
@@ -33,6 +33,19 @@ var defaultProviders = []Provider{
 	{Name: "gemini", KeyEnv: "GEMINI_API_KEY", PiProvider: "gemini", DefaultModel: "gemini/gemini-2.5-pro"},
 	{Name: "groq", KeyEnv: "GROQ_API_KEY", PiProvider: "groq", DefaultModel: "groq/llama-3.3-70b-versatile"},
 	{Name: "local", KeyEnv: "LOCAL_API_KEY", PiProvider: "openai", DefaultModel: "local/model", BaseURL: "http://localhost:11434/v1"},
+	// OpenAI-compatible cloud + local endpoints routed through pi's openai provider.
+	{Name: "azure", KeyEnv: "AZURE_OPENAI_API_KEY", PiProvider: "openai", DefaultModel: "azure/gpt-5.6-terra", BaseURL: "https://<your-resource>.openai.azure.com/openai/v1"},
+	{Name: "ollama", KeyEnv: "OLLAMA_API_KEY", PiProvider: "openai", DefaultModel: "ollama/llama3.1", BaseURL: "http://localhost:11434/v1"},
+	{Name: "mistral", KeyEnv: "MISTRAL_API_KEY", PiProvider: "openai", DefaultModel: "mistral/mistral-large-latest", BaseURL: "https://api.mistral.ai/v1"},
+	{Name: "cohere", KeyEnv: "COHERE_API_KEY", PiProvider: "openai", DefaultModel: "cohere/command-r-plus", BaseURL: "https://api.cohere.com/compatibility/v1"},
+	{Name: "together", KeyEnv: "TOGETHER_API_KEY", PiProvider: "openai", DefaultModel: "together/llama-3.3-70b-instruct", BaseURL: "https://api.together.xyz/v1"},
+	{Name: "perplexity", KeyEnv: "PERPLEXITY_API_KEY", PiProvider: "openai", DefaultModel: "perplexity/sonar-pro", BaseURL: "https://api.perplexity.ai"},
+	{Name: "fireworks", KeyEnv: "FIREWORKS_API_KEY", PiProvider: "openai", DefaultModel: "fireworks/llama-3.3-70b-instruct", BaseURL: "https://api.fireworks.ai/inference/v1"},
+	{Name: "moonshot", KeyEnv: "MOONSHOT_API_KEY", PiProvider: "openai", DefaultModel: "moonshot/kimi-k2", BaseURL: "https://api.moonshot.cn/v1"},
+	{Name: "xai", KeyEnv: "XAI_API_KEY", PiProvider: "openai", DefaultModel: "xai/grok-4", BaseURL: "https://api.x.ai/v1"},
+	// AWS Bedrock speaks the Anthropic messages format; pi's anthropic provider
+	// receives the key and base URL via ANTHROPIC_API_KEY / ANTHROPIC_BASE_URL.
+	{Name: "bedrock", KeyEnv: "BEDROCK_API_KEY", PiProvider: "anthropic", DefaultModel: "bedrock/claude-sonnet-4", BaseURL: "https://bedrock-runtime.<region>.amazonaws.com/anthropic/v1"},
 }
 
 // Providers is the active routing table, loaded from a configured JSON file

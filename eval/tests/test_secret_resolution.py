@@ -138,7 +138,7 @@ def test_get_secret_unknown_backend_does_not_fallback(monkeypatch, tmp_path):
 def test_any_provider_key_env_includes_local(monkeypatch):
     for key in SUPPORTED_PROVIDER_KEYS:
         monkeypatch.delenv(key, raising=False)
-    monkeypatch.setenv("LOCAL_API_KEY", "test-key")
+    monkeypatch.setenv("LOCAL_API_KEY", "testvalue")
     from conftest import any_provider_key_env
 
     assert any_provider_key_env() is True

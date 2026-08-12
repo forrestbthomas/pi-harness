@@ -32,27 +32,43 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
 - Go 1.26+ (only to build/update `pi-run`).
 - An API key. The harness is **provider-agnostic**: it ships with a data-driven
   provider table (`providers.json`) covering OpenAI (default), OpenRouter,
-  DeepSeek, Anthropic, Gemini, Groq, and a local OpenAI-compatible endpoint
-  (Ollama/vLLM). Keys are resolved **env-first**, then from an optional secret
-  store (`BW_GET` override; Bitwarden is a documented example). See
-  [API Key Resolution](#api-key-resolution) and `pi-run providers`.
+  DeepSeek, Anthropic, Gemini, Groq, local OpenAI-compatible endpoints
+  (Ollama/vLLM), Azure OpenAI, and 9 more OpenAI-/Anthropic-compatible cloud
+  providers (Mistral, Cohere, Together, Perplexity, Fireworks, Moonshot, xAI,
+  AWS Bedrock) — 17 providers in total. Keys are resolved **env-first**, then
+  from an optional secret store (`BW_GET` override; Bitwarden is a documented
+  example). See [API Key Resolution](#api-key-resolution) and `pi-run
+  providers`.
 
-| provider | key (env var / secret-manager item) | `pi-run --provider` | default model |
-|---|---|---|---|
-| OpenAI (default) | `OPENAI_API_KEY` | `openai` | `openai/gpt-5.6-terra` |
-| OpenRouter | `OPENROUTER_API_KEY` | `openrouter` | `openai/gpt-5.6-terra` |
-| DeepSeek (direct) | `DEEPSEEK_API_KEY` | `deepseek` | `deepseek/deepseek-v4-flash` |
-| Anthropic | `ANTHROPIC_API_KEY` | `anthropic` | `anthropic/claude-sonnet-4` |
-| Gemini | `GEMINI_API_KEY` | `gemini` | `gemini/gemini-2.5-pro` |
-| Groq | `GROQ_API_KEY` | `groq` | `groq/llama-3.3-70b-versatile` |
-| Local (Ollama/vLLM) | `LOCAL_API_KEY` | `local` | `local/model` (baseURL `http://localhost:11434/v1`) |
+| provider | key (env var / secret-manager item) | `pi-run --provider` | default model | baseURL (OpenAI- or Anthropic-compatible) |
+|---|---|---|---|---|
+| OpenAI (default) | `OPENAI_API_KEY` | `openai` | `openai/gpt-5.6-terra` | — |
+| OpenRouter | `OPENROUTER_API_KEY` | `openrouter` | `openai/gpt-5.6-terra` | — |
+| DeepSeek (direct) | `DEEPSEEK_API_KEY` | `deepseek` | `deepseek/deepseek-v4-flash` | — |
+| Anthropic | `ANTHROPIC_API_KEY` | `anthropic` | `anthropic/claude-sonnet-4` | — |
+| Gemini | `GEMINI_API_KEY` | `gemini` | `gemini/gemini-2.5-pro` | — |
+| Groq | `GROQ_API_KEY` | `groq` | `groq/llama-3.3-70b-versatile` | — |
+| Local (Ollama/vLLM) | `LOCAL_API_KEY` | `local` | `local/model` | `http://localhost:11434/v1` |
+| Azure OpenAI | `AZURE_OPENAI_API_KEY` | `azure` | `azure/gpt-5.6-terra` | `https://<your-resource>.openai.azure.com/openai/v1` |
+| Ollama (local) | `OLLAMA_API_KEY` | `ollama` | `ollama/llama3.1` | `http://localhost:11434/v1` |
+| Mistral | `MISTRAL_API_KEY` | `mistral` | `mistral/mistral-large-latest` | `https://api.mistral.ai/v1` |
+| Cohere | `COHERE_API_KEY` | `cohere` | `cohere/command-r-plus` | `https://api.cohere.com/compatibility/v1` |
+| Together | `TOGETHER_API_KEY` | `together` | `together/llama-3.3-70b-instruct` | `https://api.together.xyz/v1` |
+| Perplexity | `PERPLEXITY_API_KEY` | `perplexity` | `perplexity/sonar-pro` | `https://api.perplexity.ai` |
+| Fireworks | `FIREWORKS_API_KEY` | `fireworks` | `fireworks/llama-3.3-70b-instruct` | `https://api.fireworks.ai/inference/v1` |
+| Moonshot (Kimi) | `MOONSHOT_API_KEY` | `moonshot` | `moonshot/kimi-k2` | `https://api.moonshot.cn/v1` |
+| xAI (Grok) | `XAI_API_KEY` | `xai` | `xai/grok-4` | `https://api.x.ai/v1` |
+| AWS Bedrock | `BEDROCK_API_KEY` | `bedrock` | `bedrock/claude-sonnet-4` | `https://bedrock-runtime.<region>.amazonaws.com/anthropic/v1` |
 
 > **Add a provider without recompiling:** edit `providers.json` (add a row:
 > name, key env var, pi provider, default model, optional `baseURL`), then run
 > `pi-run providers` to verify it lists. Installed binaries use the embedded
-> seven-provider table; set `PI_RUN_PROVIDERS_FILE` to load a provider table
-> from another path. There is **no automatic cross-provider fallback** — the
-> provider is explicit (`--provider` / `PI_PROVIDER`).
+> 17-provider table; set `PI_RUN_PROVIDERS_FILE` to load a provider table
+> from another path. Providers with a `baseURL` are routed through pi's
+> OpenAI-compatible (`openai`) or Anthropic-compatible (`anthropic`) provider;
+> entries like `azure` and `bedrock` need your resource/region filled in. There
+> is **no automatic cross-provider fallback** — the provider is explicit
+> (`--provider` / `PI_PROVIDER`).
 
 ## Quick Start
 
@@ -173,6 +189,7 @@ no DEEPSEEK_API_KEY available: export it, or check your secret manager
 | `PI_RUN_PERSONAL` | Opt into personal-machine checks such as the `~/bin/pi-run` symlink |
 | `HARNESS_ROOT` | Override repository-root detection |
 | `PI_MAX_BUDGET_USD` | Default spend cap for `chat`/`print` when `--max-budget-usd` is omitted |
+| `PI_PERMISSION_MODE` | Default permission tier for `chat`/`print` when `--permission-mode` is omitted |
 | `DEEPEVAL_MODEL` | Select a non-OpenAI DeepEval judge model |
 
 ## Running Evaluations
@@ -255,6 +272,26 @@ explicit online path. Everything else on the command line is passed through to
 - `openrouter/auto` — let OpenRouter pick the best model for the task
   (`pi-run chat --provider openrouter --model openrouter/auto`).
 
+### Permissions
+
+`chat`/`print` accept a harness-level permission tier (`--permission-mode`,
+env `PI_PERMISSION_MODE`). Pi has no native permission-mode flag, so each tier
+maps to Pi's real tool-control surface:
+
+```bash
+pi-run chat --permission-mode plan           # read-only: --tools read,grep,find,ls
+pi-run chat --read-only                      # alias for --permission-mode plan
+pi-run chat --permission-mode acceptEdits    # Pi defaults (file edits allowed)
+pi-run chat --permission-mode bypassPermissions  # --approve (trust project-local files)
+PI_PERMISSION_MODE=plan pi-run chat          # or the env var
+```
+
+Valid modes mirror the Claude Code set — `default`, `plan`, `acceptEdits`,
+`bypassPermissions` (unknown modes are usage errors, exit 2). Policy: the
+`worker` agent runs under `default`/`acceptEdits` for implementation; the
+`reviewer` and `scout` agents run under `plan`/`--read-only` (see
+`.pi/agents/`).
+
 The default model (`openai/gpt-5.6-terra`) is pinned in `.pi/settings.json`;
 change it there or with `/model` and the session persists the choice. To
 refresh model catalogs (new models / pricing, including the deepseek catalog),
@@ -307,6 +344,47 @@ last, and runs launched outside `pi-run` are counted from their session files.
 Plain `pi-run print` runs stay one-shot (`--no-session`, no session file); when
 `--max-budget-usd` is set, the print session is persisted so its spend can be
 recorded in the ledger.
+
+## Hooks
+
+`pi-run` can run shell commands around its own invocations via `.pi/hooks.json`
+— the harness-level counterpart to agent-internal hooks (Claude Code pre/post-
+tool hooks, Copilot's `errorOccurred`). Useful for CI: notify a chat room when
+an eval starts or finishes, upload artifacts, or gate commands on external
+checks.
+
+Supported events:
+
+| Event | Fires |
+|---|---|
+| `pre-eval` | before the DeepEval pytest suite runs |
+| `post-eval` | after the suite finishes — **always**, even when pytest fails |
+| `pre-chat` | before `pi` is launched (`chat`/`print`/`resume`) |
+
+Schema (`.pi/hooks.json`):
+
+```json
+{
+  "hooks": {
+    "pre-eval":  [{"cmd": "./scripts/ci/notify.sh start", "timeoutSecs": 60}],
+    "post-eval": [{"cmd": "./scripts/ci/notify.sh done", "continueOnError": true}],
+    "pre-chat":  [{"cmd": "git status --porcelain"}]
+  }
+}
+```
+
+Per hook: `cmd` (required; runs via `sh -c` from the harness root),
+`timeoutSecs` (default 30; a hung hook is killed and counts as a failure with
+exit code 124), and `continueOnError` (default false — a failed hook aborts the
+`pi-run` invocation with the command's exit code unless this is true).
+
+Hooks are entirely optional: a missing `.pi/hooks.json` is a no-op. Inspect or
+trigger them manually:
+
+```bash
+pi-run hooks list          # show configured hooks
+pi-run hooks run pre-eval  # run an event's hooks now
+```
 
 ## Provider Scorecard in CI
 
@@ -371,6 +449,7 @@ tasks.
 | `pi-run cost [--json] [--since <date>] [--reset]` | Aggregate real spend from Pi session files (`usage.cost`), per provider/model, with total |
 | `pi-run ci-benchmark --providers <a,b> [flags]` | Provider scorecard in CI: run the benchmark suite against 2+ providers, gate on pass rate / budget / baseline |
 | `pi-run providers` | List configured providers and default models |
+| `pi-run hooks list` / `hooks run <event>` | List or run `.pi/hooks.json` hook commands |
 | `pi-run config-check` | Deterministic harness checks (no keys, no network) |
 | `pi-run doctor` | Health report: node, pi, vault, per-provider keys, models, venv |
 | `pi-run setup` | Create `eval/.venv`, install deps, refresh model catalogs |

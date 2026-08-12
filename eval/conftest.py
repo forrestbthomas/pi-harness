@@ -79,6 +79,9 @@ def run_pi_print(prompt: str, cwd: Path | None = None, extra_args: list[str] | N
     return result.stdout
 
 
+# Mirrors internal/cli/eval.go's supportedProviderKeyEnvs and must cover every
+# keyEnv in the provider catalog (providers.json / embedded defaultProviders).
+# Keep both lists in sync when adding providers.
 SUPPORTED_PROVIDER_KEYS = (
     "OPENROUTER_API_KEY",
     "OPENAI_API_KEY",
@@ -87,6 +90,16 @@ SUPPORTED_PROVIDER_KEYS = (
     "GROQ_API_KEY",
     "DEEPSEEK_API_KEY",
     "LOCAL_API_KEY",
+    "AZURE_OPENAI_API_KEY",
+    "OLLAMA_API_KEY",
+    "MISTRAL_API_KEY",
+    "COHERE_API_KEY",
+    "TOGETHER_API_KEY",
+    "PERPLEXITY_API_KEY",
+    "FIREWORKS_API_KEY",
+    "MOONSHOT_API_KEY",
+    "XAI_API_KEY",
+    "BEDROCK_API_KEY",
 )
 
 

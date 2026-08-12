@@ -42,6 +42,76 @@
       "piProvider": "openai",
       "defaultModel": "local/model",
       "baseURL": "http://localhost:11434/v1"
+    },
+    {
+      "name": "azure",
+      "keyEnv": "AZURE_OPENAI_API_KEY",
+      "piProvider": "openai",
+      "defaultModel": "azure/gpt-5.6-terra",
+      "baseURL": "https://<your-resource>.openai.azure.com/openai/v1"
+    },
+    {
+      "name": "ollama",
+      "keyEnv": "OLLAMA_API_KEY",
+      "piProvider": "openai",
+      "defaultModel": "ollama/llama3.1",
+      "baseURL": "http://localhost:11434/v1"
+    },
+    {
+      "name": "mistral",
+      "keyEnv": "MISTRAL_API_KEY",
+      "piProvider": "openai",
+      "defaultModel": "mistral/mistral-large-latest",
+      "baseURL": "https://api.mistral.ai/v1"
+    },
+    {
+      "name": "cohere",
+      "keyEnv": "COHERE_API_KEY",
+      "piProvider": "openai",
+      "defaultModel": "cohere/command-r-plus",
+      "baseURL": "https://api.cohere.com/compatibility/v1"
+    },
+    {
+      "name": "together",
+      "keyEnv": "TOGETHER_API_KEY",
+      "piProvider": "openai",
+      "defaultModel": "together/llama-3.3-70b-instruct",
+      "baseURL": "https://api.together.xyz/v1"
+    },
+    {
+      "name": "perplexity",
+      "keyEnv": "PERPLEXITY_API_KEY",
+      "piProvider": "openai",
+      "defaultModel": "perplexity/sonar-pro",
+      "baseURL": "https://api.perplexity.ai"
+    },
+    {
+      "name": "fireworks",
+      "keyEnv": "FIREWORKS_API_KEY",
+      "piProvider": "openai",
+      "defaultModel": "fireworks/llama-3.3-70b-instruct",
+      "baseURL": "https://api.fireworks.ai/inference/v1"
+    },
+    {
+      "name": "moonshot",
+      "keyEnv": "MOONSHOT_API_KEY",
+      "piProvider": "openai",
+      "defaultModel": "moonshot/kimi-k2",
+      "baseURL": "https://api.moonshot.cn/v1"
+    },
+    {
+      "name": "xai",
+      "keyEnv": "XAI_API_KEY",
+      "piProvider": "openai",
+      "defaultModel": "xai/grok-4",
+      "baseURL": "https://api.x.ai/v1"
+    },
+    {
+      "name": "bedrock",
+      "keyEnv": "BEDROCK_API_KEY",
+      "piProvider": "anthropic",
+      "defaultModel": "bedrock/claude-sonnet-4",
+      "baseURL": "https://bedrock-runtime.<region>.amazonaws.com/anthropic/v1"
     }
   ]
 }

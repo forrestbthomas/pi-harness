@@ -58,3 +58,12 @@ Changed files: Y.
 Validation: Z.
 Open risks/questions: R.
 Recommended next step: N.
+
+## Permissions
+
+Run under the harness `default` permission mode, or `acceptEdits` when
+executing a fully pre-approved plan: this agent is the single writer thread
+making narrow, approved edits, so per-action approval prompts add no safety
+and only stall the run. Never use `bypassPermissions` outside trusted,
+scripted contexts. Launch with `pi-run chat --permission-mode default` (or the
+`PI_PERMISSION_MODE` env var).

@@ -1,5 +1,8 @@
 {
   "id": "fix-divide-by-zero",
+  "category": "bug-fix",
+  "difficulty": "easy",
+  "grader": "deterministic",
   "prompt": "Fix the divide-by-zero crash in src/calc.py so safe_divide(1, 0) returns 0.0 instead of raising ZeroDivisionError. Keep the existing behavior for non-zero divisors. The verification script tests/run.sh must exit 0.",
   "timeoutSecs": 300,
   "testScript": "tests/run.sh",

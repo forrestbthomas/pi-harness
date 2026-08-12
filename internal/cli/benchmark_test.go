@@ -45,6 +45,48 @@ func TestLoadBenchmarkTasksValid(t *testing.T) {
 	}
 }
 
+func TestLoadBenchmarkTasksSchemaExtensionFields(t *testing.T) {
+	// Spec §4.6: task.json gains category/difficulty/grader (shared taxonomy).
+	root := t.TempDir()
+	writeBenchmarkTask(t, root, "demo",
+		`{"id": "demo", "prompt": "Fix it.", "category": "bug-fix", "difficulty": "easy", "grader": "deterministic"}`)
+	tasks, errs := loadBenchmarkTasks(root, "")
+	if len(errs) != 0 {
+		t.Fatalf("unexpected errors: %v", errs)
+	}
+	if len(tasks) != 1 {
+		t.Fatalf("tasks = %d, want 1", len(tasks))
+	}
+	if tasks[0].Category != "bug-fix" || tasks[0].Difficulty != "easy" || tasks[0].Grader != "deterministic" {
+		t.Fatalf("schema-extension fields not parsed: %+v", tasks[0])
+	}
+}
+
+func TestLoadBenchmarkTasksSchemaExtensionInvalidValues(t *testing.T) {
+	cases := []struct {
+		name     string
+		taskJSON string
+		wantErr  string
+	}{
+		{"bad category", `{"id": "demo", "prompt": "x", "category": "bogus"}`, "category"},
+		{"bad difficulty", `{"id": "demo", "prompt": "x", "difficulty": "impossible"}`, "difficulty"},
+		{"bad grader", `{"id": "demo", "prompt": "x", "grader": "judge"}`, "grader"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			writeBenchmarkTask(t, root, "demo", tc.taskJSON)
+			_, errs := loadBenchmarkTasks(root, "")
+			if len(errs) != 1 {
+				t.Fatalf("errs = %v, want 1", errs)
+			}
+			if !strings.Contains(errs[0].Error(), tc.wantErr) {
+				t.Fatalf("error %q should mention %q", errs[0], tc.wantErr)
+			}
+		})
+	}
+}
+
 func TestLoadBenchmarkTasksDefaultTimeout(t *testing.T) {
 	root := t.TempDir()
 	writeBenchmarkTask(t, root, "demo", `{"id": "demo", "prompt": "Fix it."}`)

@@ -66,13 +66,13 @@ evals, no dataset growth, no new Python dependencies** in this spec.
   only exists in CI; it is untested, and the workflow's own comment calls it
   fragile (`ls -t | head -1` ordering).
 - **CI precedent for building the binary** —
-  `.github/workflows/provider-scorecard.yml:42-46`: `go build -o bin/pi-run
+  `.github/workflows/provider-scorecard.yml:29-32`: `go build -o bin/pi-run
   ./cmd/pi-run` then `echo "$GITHUB_WORKSPACE/bin" >> "$GITHUB_PATH"`.
   `ci.yml:30-48` (`python-quick`) and `nightly-live-eval.yml` (live-eval job)
   run pytest **without** this step.
 - **Hermetic Python precedents** — `eval/tests/test_harness_config.py`
   (subprocess `pi-run config-check`), `test_benchmark_format.py` (stale-binary
-  skip probe, `:31-40`), `test_secret_resolution.py` (fake `bw_get`/`op` on a
+  skip probe, `:79-86`), `test_secret_resolution.py` (fake `bw_get`/`op` on a
   tmp PATH). `eval/conftest.py` carries `run_pi_print`, `sample_cases`, and
   `SUPPORTED_PROVIDER_KEYS` (17 keys) — a hand-maintained mirror of
   `internal/cli/eval.go:10-14` `supportedProviderKeyEnvs`. `eval/pytest.ini`
@@ -394,7 +394,7 @@ non-budgeted print run).
 ### 4.10 OTel fake-collector assertions
 
 `fake_collector` (§4.5) is the Python counterpart of Go's
-`captureOTLPRequest` (`otel_test.go:20-31`). Assertions, all under
+`captureOTLPRequest` (`otel_test.go:23`). Assertions, all under
 `fake_launch_env` + `hermetic_env`:
 
 1. **`PI_OTLP_ENDPOINT` unset → zero requests** (collector request count 0) —
@@ -477,7 +477,7 @@ gemini):
 
 ## 5. Implementation Plan
 
-1. **`internal/cli/scorecard.go` (prod, ~25 lines):** add `scorecardNow` var;
+1. **`internal/cli/scorecard.go` (prod, ~20 lines):** add `scorecardNow` var;
    swap call sites at `:648`/`:673`; add `writeScorecardLatest(root, sc)`
    (mirrors `writeScorecard` `:678`); call it from `runScorecard` after
    `writeScorecard`.
@@ -508,6 +508,7 @@ gemini):
 | `TestBuildScorecardDeterministicWithSeam` (scorecard_test.go) | With `scorecardNow` pinned to `2026-08-11T15:04:05Z` UTC: `buildScorecard` yields `RunID == "20260811T150405-openai-deepseek"` and `Timestamp == "2026-08-11T15:04:05Z"` exactly; two consecutive builds are `reflect.DeepEqual` |
 | `TestScorecardRunIDDeterministic` (scorecard_test.go, extends `:508`) | Seam pinned → exact run-ID string; seam restored → `^\d{8}T\d{6}-providers$` shape |
 | `TestScorecardGoldenJSON` (scorecard_test.go) | Full JSON shape byte-identical to `testdata/scorecard-golden.json`; `-update` flag rewrites the fixture (hand-rolled helper, ~30 lines) |
+| `TestScorecardRoundTripRejectsUnknownFields` (scorecard_test.go) | Extend `TestScorecardJSONRoundTrip` (`:398`) with a `json.Decoder{DisallowUnknownFields: true}` decode so a renamed/removed scorecard field fails loudly instead of being silently ignored; every field the marshaler emits is known, so existing fixtures pass unchanged (precedent: `benchmark.go:81`). This also hardens the `parseBaseline` decode path, which would otherwise stay drift-blind |
 | `TestWriteScorecardLatest` (scorecard_test.go) | `writeScorecardLatest(t.TempDir(), sc)` writes `eval/benchmark-results/scorecard-latest.json`; bytes equal `writeScorecard`'s output for the same struct; a second write overwrites (pointer semantics) |
 | `TestScorecardNowRestored` (scorecard_test.go) | `t.Cleanup` restores `scorecardNow` — no cross-test pollution after a pinned test |
 | `TestUsageDocumentsNewCommands` (app_test.go) | Usage `Commands:` block ↔ `Run` dispatch: no undocumented command, no undispatchable command (§4.13) |
@@ -519,6 +520,15 @@ Existing tests continue to guard the seams this spec relies on:
 (`:462`), `TestParseBaselineScorecardShape` (`:239`), the MCP handshake tests
 (`mcp_test.go:82/:398`), and `TestMaybeExportOTLPSpanDisabledWhenUnset`
 (`otel_test.go:202`).
+
+The baseline-regression boundary matrix is deliberately pinned by the existing
+15-case `TestEvaluateScorecardGates` rather than duplicated in a new table:
+`baselineRegressions` uses a strict inequality (`r.PassRate < b-tolerance`, see
+`scorecard.go:577-598`), and float64 subtraction of decimal literals is
+per-literal (e.g. `0.85-0.05 = 0.7999999999999999`, so a boundary row at
+`0.8 < 0.7999999999999999` is *false*; `0.8-0.05 = 0.75` exactly, so `0.8` vs
+`0.75` *does* pass). Any future editor adding a boundary row must compute
+`b-tolerance` for the specific literals rather than assuming decimal exactness.
 
 ### 6.2 Python contract tests (real binary, hermetic; file → what each asserts)
 
@@ -600,7 +610,7 @@ using `select`-bounded reads):
 | MCP stdio tests hang on notification silence or EOF edge cases | Medium | `select`-bounded reads in the client; existing pytest-timeout 120 s global bound (`eval/pytest.ini`); every process killed in fixture teardown |
 | Fake collector/server ports flake under CI load | Low | `127.0.0.1:0` ephemeral port (no fixed-port collisions); daemon threads + explicit `shutdown()` |
 | `conftest.py`/`providers.json`/usage text drift past the guards | Low | Two-sided drift guards (§4.13) fail on either side; catalog growth already has the `TestSupportedProviderKeyEnvsCoverCatalog` precedent |
-| contract suite slows push CI | Low | Dedicated job isolates the ~30-60 s Go build from `python-quick`; ~25 new tests are subprocess-fast and hermetic |
+| contract suite slows push CI | Low | Dedicated job isolates the ~30-60 s Go build from `python-quick`; the ~40 new tests (8 Go + ~36 Python) are subprocess-fast and hermetic |
 | `scorecard-latest.json` write failure breaks the artifact chain | Low | `runScorecard` treats a latest-write error as a run failure (same class as `writeScorecard`); unit test pins path/overwrite semantics |
 
 ## 8. Decision
@@ -612,7 +622,8 @@ all hermetic-tested), and the shipped CLI surface (`mcp-server`,
 `--model-tier`, OTel, `project-understand`, exit codes) gets an end-to-end
 hermetic Python suite running against the **real binary**, with CI jobs that
 build that binary first and a workflow that loses its shell glue. Cost: ~30
-lines of production Go, ~25 hermetic tests, one committed fixture, five Python
+lines of production Go, ~8 new Go tests + ~36 new Python tests (43 total),
+one committed fixture, five Python
 test files, one CI job. Constraints honored: stdlib-only Go, no new Python
 deps, no live evals, no dataset growth — the deferred items (pytest-json-report
 and friends) belong to the live-eval v2 spec.

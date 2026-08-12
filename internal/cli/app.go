@@ -33,6 +33,7 @@ Commands:
   install       Build the binary into bin/ and symlink pi-run onto your PATH
   clean         Remove eval/.venv and pytest caches
   providers     List configured providers and default models
+  mcp-server    Serve a read-only MCP server over stdio (providers, cost, benchmark_dry_run)
   hooks         List or run .pi/hooks.json hooks (pre-eval, post-eval, pre-chat)
   version       Print version
   help          Show this help
@@ -139,6 +140,8 @@ func Run(args []string) int {
 		return runClean()
 	case "providers":
 		return runProviders()
+	case "mcp-server":
+		return runMCPServer()
 	case "hooks":
 		return runHooksCmd(args[1:])
 	default:

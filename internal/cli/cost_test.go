@@ -372,6 +372,53 @@ func TestSplitLaunchArgsBudget(t *testing.T) {
 	}
 }
 
+func TestSplitCostModeFlag(t *testing.T) {
+	mode, rest := splitCostModeFlag([]string{"--cost-mode", "live-eval", "hello"})
+	if mode != "live-eval" || len(rest) != 1 || rest[0] != "hello" {
+		t.Fatalf("got mode=%q rest=%v, want live-eval + [hello]", mode, rest)
+	}
+	mode, rest = splitCostModeFlag([]string{"--cost-mode=benchmark", "hi"})
+	if mode != "benchmark" || len(rest) != 1 || rest[0] != "hi" {
+		t.Fatalf("got mode=%q rest=%v, want benchmark + [hi]", mode, rest)
+	}
+	// Absent flag → empty mode, args untouched.
+	mode, rest = splitCostModeFlag([]string{"--tools", "read", "x"})
+	if mode != "" || len(rest) != 3 || rest[0] != "--tools" {
+		t.Fatalf("absent flag: got mode=%q rest=%v, want empty + pass-through preserved", mode, rest)
+	}
+	// --cost-mode must not leak into pass-through args.
+	mode, rest = splitCostModeFlag([]string{"--cost-mode", "live-eval", "--tools", "read", "x"})
+	if mode != "live-eval" || len(rest) != 3 || rest[0] != "--tools" || rest[1] != "read" || rest[2] != "x" {
+		t.Fatalf("got mode=%q rest=%v, want live-eval + [--tools read x]", mode, rest)
+	}
+	// "--" ends flag parsing: the tail is preserved verbatim.
+	mode, rest = splitCostModeFlag([]string{"--", "--cost-mode", "x"})
+	if mode != "" || len(rest) != 3 || rest[1] != "--cost-mode" {
+		t.Fatalf("-- must end flag parsing: got mode=%q rest=%v", mode, rest)
+	}
+}
+
+func TestResolveCostMode(t *testing.T) {
+	// Default when the flag is absent = the command name (today's behavior).
+	for cmd, want := range map[string]string{"chat": "chat", "print": "print", "resume": "resume"} {
+		got, err := resolveCostMode(cmd, "")
+		if err != nil || got != want {
+			t.Fatalf("resolveCostMode(%q, \"\") = %q, %v; want %q", cmd, got, err, want)
+		}
+	}
+	// Every documented mode is accepted.
+	for _, m := range []string{"chat", "print", "resume", "backfill", "benchmark", "live-eval"} {
+		got, err := resolveCostMode("print", m)
+		if err != nil || got != m {
+			t.Fatalf("resolveCostMode(print, %q) = %q, %v; want %q", m, got, err, m)
+		}
+	}
+	// Unknown mode is a usage error naming the valid set.
+	if _, err := resolveCostMode("print", "bogus"); err == nil || !strings.Contains(err.Error(), "unknown cost mode") {
+		t.Fatalf("unknown cost mode error = %v, want 'unknown cost mode'", err)
+	}
+}
+
 func TestPiArgsPrintPersistSessionWhenBudgeted(t *testing.T) {
 	p, _ := LookupProvider("deepseek")
 	got := piArgs(p, p.DefaultModel, "print", []string{"hello"}, true, "")
@@ -522,6 +569,29 @@ func TestRecordRunSpendNoDeltaWritesNothing(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(root, ".pi", "cost-ledger.jsonl")); !os.IsNotExist(err) {
 		t.Fatalf("no-delta run must not create a ledger, stat err = %v", err)
+	}
+}
+
+func TestRecordRunSpendLiveEvalMode(t *testing.T) {
+	root := costFixtureRoot(t, map[string]string{"run.jsonl": fixtureSessionB})
+	start := time.Now().Add(-time.Minute)
+	post, err := recordRunSpend(root, start, "live-eval", "deepseek", "deepseek-v4-flash", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !nearlyEqual(post, 0.0005, 1e-12) {
+		t.Fatalf("post spend = %v, want 0.0005", post)
+	}
+	entries, err := ledgerEntries(root)
+	if err != nil || len(entries) != 1 {
+		t.Fatalf("got %d ledger entries (err %v), want 1", len(entries), err)
+	}
+	e := entries[0]
+	if e.Mode != "live-eval" {
+		t.Fatalf("ledger mode = %q, want live-eval; entry %+v", e.Mode, e)
+	}
+	if e.Provider != "deepseek" || e.Model != "deepseek-v4-flash" || !nearlyEqual(e.CostUSD, 0.0005, 1e-12) {
+		t.Fatalf("entry = %+v, want deepseek/deepseek-v4-flash cost 0.0005", e)
 	}
 }
 

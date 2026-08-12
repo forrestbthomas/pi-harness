@@ -59,6 +59,15 @@ type scorecardProvider struct {
 	CostUSD      float64 `json:"costUsd"`
 	AvgLatencyMs float64 `json:"avgLatencyMs"`
 	Tokens       int     `json:"tokens"`
+	// Cost-per-task metrics (spec §4.5), derived from the base fields by
+	// derivePerTaskMetrics. The cost fields are agent-only: the Docker
+	// benchmark grades deterministically, so there is no judge here and
+	// judgeCostUsd is always 0 (and thus omitted from JSON).
+	CostPerTaskUsd           float64 `json:"costPerTaskUsd"`
+	CostPerSuccessfulTaskUsd float64 `json:"costPerSuccessfulTaskUsd"`
+	TokensPerTask            int     `json:"tokensPerTask"`
+	AgentCostUsd             float64 `json:"agentCostUsd"`
+	JudgeCostUsd             float64 `json:"judgeCostUsd,omitempty"`
 }
 
 // scorecardGates captures the gate configuration in effect for the run.
@@ -459,7 +468,30 @@ func scorecardProviderFromRun(res benchmarkRunResult, costUSD float64, tokens in
 	if len(res.Tasks) > 0 {
 		row.AvgLatencyMs = durSum / float64(len(res.Tasks)) * 1000
 	}
+	row.derivePerTaskMetrics()
 	return row
+}
+
+// derivePerTaskMetrics populates the §4.5 cost-per-task fields from the row's
+// base fields: costPerTaskUsd = costUsd / total, tokensPerTask = tokens /
+// total, costPerSuccessfulTaskUsd = costUsd / passed, agentCostUsd = the
+// existing costUsd (stable name for the agent/judge split). Division by zero
+// is guarded: any zero denominator yields 0. judgeCostUsd stays 0 — the Go
+// scorecard grades with deterministic Docker tests, so there is no judge and
+// the field is omitted from JSON via omitempty.
+func (r *scorecardProvider) derivePerTaskMetrics() {
+	r.AgentCostUsd = r.CostUSD
+	r.JudgeCostUsd = 0
+	r.CostPerTaskUsd = 0
+	r.TokensPerTask = 0
+	r.CostPerSuccessfulTaskUsd = 0
+	if r.Total > 0 {
+		r.CostPerTaskUsd = r.CostUSD / float64(r.Total)
+		r.TokensPerTask = r.Tokens / r.Total
+	}
+	if r.Passed > 0 {
+		r.CostPerSuccessfulTaskUsd = r.CostUSD / float64(r.Passed)
+	}
 }
 
 // ledgerEntryCounts indexes ledger entries by value so scorecardRunTokens can
@@ -564,6 +596,10 @@ func collapseScorecardRuns(rows []scorecardProvider) scorecardProvider {
 	out.CostUSD = medianFloats(costs)
 	out.AvgLatencyMs = medianFloats(lats)
 	out.Tokens = medianInts(tokens)
+	// The median collapse replaced the base fields, so the derived per-task
+	// metrics must be recomputed from them (a stale representative repeat's
+	// values would otherwise survive the collapse).
+	out.derivePerTaskMetrics()
 	return out
 }
 

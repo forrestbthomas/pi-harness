@@ -919,3 +919,52 @@ func TestRunProvidersShowsTiers(t *testing.T) {
 		t.Fatalf("providers output missing groq balanced-only tiers column: %q", out)
 	}
 }
+
+func TestUsageMentionsCostMode(t *testing.T) {
+	if !strings.Contains(usage, "--cost-mode") {
+		t.Fatal("usage must document the --cost-mode flag")
+	}
+	if !strings.Contains(usage, "live-eval") {
+		t.Fatal("usage must document the live-eval cost mode")
+	}
+}
+
+func TestRunCostModeUnknownExit2(t *testing.T) {
+	hermeticLaunchEnv(t)
+	code, out := captureRunStderr(t, []string{"print", "--cost-mode", "bogus", "hello"})
+	if code != 2 {
+		t.Fatalf("print --cost-mode bogus exit = %d, want 2; stderr: %s", code, out)
+	}
+	if !strings.Contains(out, "unknown cost mode") || !strings.Contains(out, "live-eval") {
+		t.Fatalf("stderr must name the error and the valid modes, got %q", out)
+	}
+	// chat form too (no prompt required; validation must fire before any key
+	// resolution).
+	code, out = captureRunStderr(t, []string{"chat", "--cost-mode", "bogus"})
+	if code != 2 || !strings.Contains(out, "unknown cost mode") {
+		t.Fatalf("chat --cost-mode bogus exit = %d, want 2; stderr: %s", code, out)
+	}
+}
+
+func TestRunCostModeAccepted(t *testing.T) {
+	hermeticLaunchEnv(t)
+	// A valid --cost-mode is inert apart from the ledger mode: the launch
+	// proceeds to key resolution (exit 3 in hermetic env).
+	if code := Run([]string{"print", "--cost-mode", "live-eval", "hello"}); code != 3 {
+		t.Fatalf("print --cost-mode live-eval exit = %d, want 3 (missing key; flag accepted)", code)
+	}
+	// Absent flag → default mode (the command name), behavior unchanged.
+	if code := Run([]string{"chat"}); code != 3 {
+		t.Fatalf("chat without --cost-mode exit = %d, want 3 (missing key; default mode unchanged)", code)
+	}
+}
+
+func TestRunCostModeResumeRejected(t *testing.T) {
+	hermeticLaunchEnv(t)
+	// --cost-mode is documented for chat/print only; resume rejects it as a
+	// usage error (mirroring --model-tier on resume).
+	code, out := captureRunStderr(t, []string{"resume", "--cost-mode", "live-eval"})
+	if code != 2 || !strings.Contains(out, "--cost-mode") {
+		t.Fatalf("resume --cost-mode exit = %d, want 2; stderr: %s", code, out)
+	}
+}

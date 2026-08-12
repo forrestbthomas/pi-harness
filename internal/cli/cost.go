@@ -82,8 +82,10 @@ type costReport struct {
 }
 
 // ledgerEntry is one append-only spend record. Mode is one of "chat", "print",
-// "resume" (the pi-run command that produced the spend) or "backfill" (spend
-// predating the ledger, captured on first use).
+// "resume" (the pi-run command that produced the spend), "backfill" (spend
+// predating the ledger, captured on first use), "benchmark" (written by
+// ci-benchmark, scorecard.go recordRunSpend calls), or "live-eval" (CI-tagged
+// live agent-eval runs via --cost-mode).
 type ledgerEntry struct {
 	TS           string  `json:"ts"` // RFC3339
 	Provider     string  `json:"provider"`

@@ -96,11 +96,16 @@ jobs:
         # toolchain (~/.nvm/versions/node/<v>/bin/pi) — see internal/cli/pi.go
         # resolveNodeVersion. GitHub-hosted runners ship nvm; we must install
         # node + pi under nvm so the CLI finds pi, NOT into the PATH node from
-        # actions/setup-node. Set PI_NODE_VERSION to pin an exact nvm version.
+        # actions/setup-node. Pin an explicit version: `nvm install latest`
+        # fails on current runner images ("Version 'latest' not found"), so we
+        # pin Node 22.19.0 and set PI_NODE_VERSION to the SAME version so the
+        # CLI resolves the exact toolchain we installed.
+        env:
+          PI_NODE_VERSION: 'v22.19.0'
         run: |
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-          nvm install "${PI_NODE_VERSION:-latest}"
+          nvm install "${PI_NODE_VERSION:-v22.19.0}"
           # Install pi into the active nvm-managed Node toolchain.
           npm install -g pi
           echo "nvm node: $(nvm which current)"

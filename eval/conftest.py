@@ -390,3 +390,92 @@ def fake_collector():
     collector = FakeCollector()
     yield collector
     collector.close()
+
+
+# ---------------------------------------------------------------------------
+# Self-contained eval report writer (replaces the pytest-json-report plugin).
+#
+# pytest-json-report 1.5.0 silently fails to write its file under pytest 9.1.1
+# (the sessionfinish save path swallows the error and the "report saved" line
+# never appears), so score_run.py never saw a report. Instead of depending on
+# that plugin, the live suite writes its own report JSON via this hook when
+# PI_EVAL_REPORT is set. The shape matches what score_run.py already parses:
+# {"tests": [{"nodeid", "outcome", "user_properties": [{key: value}, ...]}]}
+# where user_properties is a FLAT, ORDERED list of single-key dicts (each
+# record_property call appends one dict; the live suite records one set per
+# repeat, so score_run.py zips them back into per-run rows).
+# ---------------------------------------------------------------------------
+def pytest_sessionfinish(session, exitstatus):
+    report_path = os.environ.get("PI_EVAL_REPORT")
+    if not report_path:
+        return
+    tests = []
+    for item in session.items:
+        nodeid = getattr(item, "nodeid", "")
+        tests.append(
+            {
+                "nodeid": nodeid,
+                # Outcome recorded by pytest_runtest_makereport (teardown):
+                # the live suite's real pass/fail comes from user_properties
+                # (score_run.py derives passRate from the "pass" property);
+                # outcome is used for incomplete/error detection.
+                "outcome": _session_outcomes.get(nodeid, "passed"),
+                "user_properties": _session_user_properties.get(nodeid, []),
+            }
+        )
+    payload = {"created": 0, "duration": 0, "exitcode": exitstatus, "tests": tests}
+    path = Path(report_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+
+# Populated by the pytest_runtest_logreport hook below: nodeid -> flat list
+# of {key: value} dicts, one per record_property call, in order.
+_session_user_properties: dict[str, list[dict]] = {}
+_session_outcomes: dict[str, str] = {}
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_runtest_logreport(report):
+    """Snapshot record_property data + outcome for the eval report.
+
+    Unlike pytest_runtest_makereport (a firstresult hook where the default
+    implementation returns the report and later hooks never run), this hook is
+    called for every report and always fires. record_property appends to
+    item.user_properties during the call; the CALL-stage report carries them,
+    and the report.outcome is the authoritative pass/fail. Teardown reports
+    carry the final outcome (e.g. a failure raised in a fixture).
+    """
+    nodeid = getattr(report, "nodeid", "")
+    if not nodeid:
+        return
+    if report.when == "call":
+        props = [{str(key): value} for key, value in (report.user_properties or [])]
+        if props:
+            _session_user_properties[nodeid] = props
+        _session_outcomes[nodeid] = report.outcome
+    elif report.when == "teardown" and nodeid not in _session_outcomes:
+        _session_outcomes[nodeid] = report.outcome
+@pytest.hookimpl(trylast=True)
+def pytest_runtest_makereport(item, call):
+    """Snapshot record_property data + outcome for the eval report.
+
+    pytest_runtest_makereport is a firstresult hook; the default pytest
+    implementation (tryfirst) builds the TestReport, and this trylast hook is
+    called with the same (item, call) but must RETURN the report or None. We
+    only observe, so we return None (the first non-None from the default
+    implementation is used). Reading item.user_properties at the CALL stage is
+    reliable — record_property appends there during the call — and the call
+    outcome captures assertion failures.
+    """
+    if call.when == "call":
+        props = [{str(key): value} for key, value in item.user_properties]
+        if props:
+            _session_user_properties[item.nodeid] = props
+        _session_outcomes[item.nodeid] = "failed" if call.excinfo else "passed"
+    elif call.when == "teardown" and item.nodeid not in _session_outcomes:
+        # Setup/collection failures never reach a "call" stage; do not mark
+        # them passed.
+        _session_outcomes[item.nodeid] = "failed" if call.excinfo else "passed"
+    return None
+

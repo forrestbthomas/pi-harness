@@ -123,11 +123,17 @@ jobs:
         run: mkdir -p eval/live-results
       - name: Run live suite
         # N agent runs per case (EVAL_RUNS_PER_CASE) + the judged metrics
-        # layer + the E2E task-completion test. --json-report-file is relative
-        # to this step's working directory (eval/), so the report lands at
-        # eval/live-results/report.json in the repo — the same path
-        # score_run.py reads in the next step and the artifact uploads.
-        run: .venv/bin/python -m pytest tests/test_live_suite.py tests/test_live_metrics.py tests/test_agent_task_completion.py -v --json-report-file=live-results/report.json
+        # layer + the E2E task-completion test. The eval report is written by
+        # eval/conftest.py's pytest_runtest_logreport hook when PI_EVAL_REPORT
+        # is set (pytest-json-report 1.5.0 silently fails to write under
+        # pytest 9.1.1, so we do not depend on it). The path is repo-relative
+        # and matches what score_run.py reads in the next step.
+        env:
+          # Relative to this step's working directory (eval/), so the hook
+          # writes eval/live-results/report.json from the repo root — the
+          # same path score_run.py reads in the next step.
+          PI_EVAL_REPORT: live-results/report.json
+        run: .venv/bin/python -m pytest tests/test_live_suite.py tests/test_live_metrics.py tests/test_agent_task_completion.py -v
         working-directory: eval
       - name: Run baseline gate
         # Per-case pass-rate tolerance 0.05 and cost-per-task >2x baseline fail

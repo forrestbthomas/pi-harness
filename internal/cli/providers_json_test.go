@@ -323,3 +323,50 @@ func TestConfigCheckModelTiersValid(t *testing.T) {
 		t.Fatalf("config-check with corrupted providers.json must print [FAIL] tier check:\n%s", out)
 	}
 }
+
+// TestConfigCheckGlobalSettingsAbsentIsInfo proves a missing global
+// ~/.pi/agent/settings.json does NOT fail config-check (fresh machine / CI
+// runner has no global Pi settings) — only a present-but-invalid file is a
+// real failure. Regression for the nightly deterministic job crash.
+func TestConfigCheckGlobalSettingsAbsentIsInfo(t *testing.T) {
+	t.Setenv("HARNESS_ROOT", t.TempDir()) // repo markers absent -> defaults still fine
+	absentHome := t.TempDir()             // no ~/.pi/agent/settings.json
+	t.Setenv("HOME", absentHome)
+	_, out := captureRunStdout(t, []string{"config-check"})
+	if strings.Contains(out, "[FAIL] ~/.pi/agent/settings.json") {
+		t.Fatalf("missing global settings must not FAIL config-check:\n%s", out)
+	}
+	if !strings.Contains(out, "~/.pi/agent/settings.json not found") {
+		t.Fatalf("missing global settings should print an [info] line:\n%s", out)
+	}
+
+	// Present-but-invalid -> real failure.
+	badHome := t.TempDir()
+	badGlobal := filepath.Join(badHome, ".pi", "agent", "settings.json")
+	if err := os.MkdirAll(filepath.Dir(badGlobal), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(badGlobal, []byte("{ not json"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HOME", badHome)
+	_, out = captureRunStdout(t, []string{"config-check"})
+	if !strings.Contains(out, "[FAIL] ~/.pi/agent/settings.json valid JSON") {
+		t.Fatalf("present-but-invalid global settings must FAIL:\n%s", out)
+	}
+
+	// Present-and-valid -> [ok].
+	okHome := t.TempDir()
+	okGlobal := filepath.Join(okHome, ".pi", "agent", "settings.json")
+	if err := os.MkdirAll(filepath.Dir(okGlobal), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(okGlobal, []byte(`{"defaultProvider":"openai","defaultModel":"openai/gpt-5.6-terra"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HOME", okHome)
+	_, out = captureRunStdout(t, []string{"config-check"})
+	if !strings.Contains(out, "[ok]   ~/.pi/agent/settings.json valid JSON") {
+		t.Fatalf("valid global settings must pass:\n%s", out)
+	}
+}

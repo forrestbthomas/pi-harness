@@ -196,12 +196,17 @@ func collectPendingState(dir string) pendingState {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	// git rev-parse --git-path rebase-merge|rebase-apply resolves into the
-	// worktree's git dir; a non-empty result means a rebase is in progress.
+	// worktree's git dir, but it prints the path even when no rebase is in
+	// progress — the existence check is authoritative (mirrors self_heal.go's
+	// rebaseStateDir).
 	for _, state := range []string{"rebase-merge", "rebase-apply"} {
 		cmd := exec.CommandContext(ctx, "git", "rev-parse", "--git-path", state)
 		cmd.Dir = dir
-		if out, err := cmd.Output(); err == nil && strings.TrimSpace(string(out)) != "" {
-			return pendingState{RebaseInProgress: true, Note: state}
+		if out, err := cmd.Output(); err == nil {
+			p := strings.TrimSpace(string(out))
+			if p != "" && pathExists(p) {
+				return pendingState{RebaseInProgress: true, Note: state}
+			}
 		}
 	}
 	return pendingState{}

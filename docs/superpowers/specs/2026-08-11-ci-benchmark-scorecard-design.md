@@ -280,7 +280,10 @@ jobs:
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
           nvm install "${PI_NODE_VERSION:-latest}"
-          npm install -g pi
+          # The REAL Pi coding agent: the plain `pi` npm package is an
+          # unrelated legacy CLI that prints "3" for every invocation
+          # (silent garbage in eval runs).
+          npm install -g @earendil-works/pi-coding-agent
       - name: Pull last scorecard (baseline)
         uses: actions/download-artifact@v4
         with:

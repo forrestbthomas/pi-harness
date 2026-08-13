@@ -35,11 +35,21 @@ nvm install "$NODE_VERSION"
 
 NVM_NODE_BIN="$(dirname "$(nvm which current)")"
 if [ ! -x "$NVM_NODE_BIN/pi" ]; then
-  echo "  [global] Installing pi CLI with npm -g ..."
+  echo "  [global] Installing the Pi coding agent with npm -g ..."
   echo "  [global] This installs pi in the active nvm-managed Node toolchain."
-  npm install -g pi
+  # The REAL Pi coding agent: the plain `pi` npm package is an unrelated
+  # legacy CLI (a digits-of-pi calculator) that prints "3" for every
+  # invocation — pi-run would silently eval garbage.
+  npm install -g @earendil-works/pi-coding-agent
 else
   echo "  pi CLI already installed for the active nvm Node"
+fi
+# Sanity check: the coding agent reports a semver (e.g. 0.84.1); the legacy
+# impostor prints "3". Refuse to proceed on a wrong CLI.
+if ! "$NVM_NODE_BIN/pi" --version 2>/dev/null | grep -Eq '^[0-9]+\.[0-9]+\.'; then
+  echo "  ERROR: $NVM_NODE_BIN/pi is not the Pi coding agent " \
+       "(pi --version: $($NVM_NODE_BIN/pi --version 2>&1 | head -1))" >&2
+  exit 1
 fi
 
 # 2. Build pi-run

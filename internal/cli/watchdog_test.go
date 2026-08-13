@@ -427,7 +427,7 @@ func TestCollectSideEffectsInRealRepo(t *testing.T) {
 			t.Fatalf("git %v: %v (%s)", args, err, out)
 		}
 	}
-	git("init", "-q", ".")
+	git("init", "-q", "-b", "main", ".")
 	git("config", "user.name", "testvalue")
 	git("config", "user.email", "t@testvalue")
 	if err := os.WriteFile(dir+"/f.txt", []byte("one\n"), 0o644); err != nil {
@@ -468,7 +468,7 @@ func TestCollectPendingStateNoRebase(t *testing.T) {
 			t.Fatalf("git %v: %v (%s)", args, err, out)
 		}
 	}
-	git("init", "-q", ".")
+	git("init", "-q", "-b", "main", ".")
 	git("config", "user.name", "testvalue")
 	git("config", "user.email", "t@testvalue")
 	if err := os.WriteFile(dir+"/f.txt", []byte("base\n"), 0o644); err != nil {
@@ -503,7 +503,7 @@ func TestCollectPendingStateRebase(t *testing.T) {
 			t.Fatalf("git %v: %v (%s)", args, err, out)
 		}
 	}
-	git("init", "-q", ".")
+	git("init", "-q", "-b", "main", ".")
 	git("config", "user.name", "testvalue")
 	git("config", "user.email", "t@testvalue")
 	// base commit on main

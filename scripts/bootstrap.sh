@@ -39,8 +39,9 @@ if [ ! -x "$NVM_NODE_BIN/pi" ]; then
   echo "  [global] This installs pi in the active nvm-managed Node toolchain."
   # The REAL Pi coding agent: the plain `pi` npm package is an unrelated
   # legacy CLI (a digits-of-pi calculator) that prints "3" for every
-  # invocation — pi-run would silently eval garbage.
-  npm install -g @earendil-works/pi-coding-agent
+  # invocation — pi-run would silently eval garbage. --ignore-scripts is the
+  # README-documented install form.
+  npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 else
   echo "  pi CLI already installed for the active nvm Node"
 fi

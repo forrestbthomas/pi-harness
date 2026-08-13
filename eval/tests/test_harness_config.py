@@ -65,6 +65,37 @@ def test_no_hardcoded_user_paths_in_shipped_code():
         assert "/Users/forrestthomas/" not in text, path
 
 
+_PI_INSTALL_SITES = (
+    HARNESS / ".github" / "workflows" / "nightly-live-eval.yml",
+    HARNESS / ".github" / "workflows" / "provider-scorecard.yml",
+    HARNESS / "scripts" / "bootstrap.sh",
+)
+
+
+def test_pi_installs_use_scoped_coding_agent_package():
+    """The Pi coding agent is installed from its scoped npm package.
+
+    The unscoped `pi` npm package is "pi-number" (IonicaBizau's pi-digits
+    calculator): its `pi` binary prints digits of pi and exits 0, so a
+    harness that installs it silently neuters every agent run — each run
+    "succeeds" in ~50ms with a non-empty "3", zero spend, and failed
+    grading (nightly live-eval run 31652076075: costUsd 0 across the board
+    while judge cost was real). Every install site must use the scoped
+    package name (@earendil-works/pi-coding-agent), which ships the real
+    coding agent CLI as `pi`.
+    """
+    for path in _PI_INSTALL_SITES:
+        lines = [ln.strip() for ln in path.read_text(encoding="utf-8").splitlines()]
+        assert "npm install -g pi" not in lines, (
+            f"{path} installs the unscoped `pi` package (pi-number) instead of "
+            "the coding agent — every agent run would print pi digits and "
+            "record zero spend"
+        )
+        assert any(
+            "@earendil-works/pi-coding-agent" in ln for ln in lines
+        ), f"{path} must install the scoped @earendil-works/pi-coding-agent package"
+
+
 @pytest.mark.skipif(not PERSONAL, reason="personal-machine check (set PI_RUN_PERSONAL=1)")
 def test_personal_pi_run_binary_symlinked_into_home_bin():
     link = HOME / "bin" / "pi-run"

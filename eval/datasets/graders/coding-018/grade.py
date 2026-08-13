@@ -39,7 +39,9 @@ def main():
             "does not switch",
             "doesn't switch",
             "same provider",
-            "within",
+            "within the",
+            "within openai",
+            "within a provider",
             "stays on",
             "remains on",
             "overrid",  # "overriding the provider's default model"

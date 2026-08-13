@@ -21,15 +21,10 @@ def extract_shell(candidate):
 
 
 def run_bash(script, cwd):
-    """Run the candidate one-liner; fall back to its first line when prose
-    after the command trips bash (e.g. '...\\n\\nThis lists recent files')."""
-    tries = [script]
-    lines = [ln for ln in script.splitlines() if ln.strip()]
-    if len(lines) > 1:
-        tries.append(lines[0])
-        tries.append(lines[-1])
+    """Run the candidate one-liner; fall back to command-like lines when prose
+    around the command trips bash (real LLM output is prose-heavy)."""
     last = None
-    for text in tries:
+    for text in _command_candidates(script):
         proc = subprocess.run(
             ["bash", "-c", text],
             cwd=cwd,
@@ -38,9 +33,58 @@ def run_bash(script, cwd):
             timeout=30,
         )
         if proc.returncode == 0:
-            return proc.stdout
+            if proc.stdout.strip():
+                return proc.stdout
+            # Exit 0 with empty output is a vacuous pipeline (e.g. a GNU-only
+            # `stat --printf` on macOS: errors go to stderr, awk still exits
+            # 0). Empty output can never satisfy the grader's content checks,
+            # so keep looking instead of shadowing the real command.
+            last = proc.stderr or "candidate produced empty output"
+            continue
         last = proc.stderr
     raise RuntimeError(f"candidate failed under bash:\n{last}")
+
+
+# Command starters that mark a line as runnable shell even when it sits inside
+# prose or contains parentheticals (real LLM answers are prose-heavy: bullets
+# and multi-option answers are the norm, e.g. "- Recursive (GNU find):").
+_SHELL_STARTERS = frozenset(
+    (
+        "find", "ls", "grep", "wc", "cat", "awk", "sed", "xargs", "echo",
+        "head", "tail", "sort", "stat", "du", "touch", "cp", "mv", "rm",
+        "mkdir", "chmod", "chown", "printf", "tr", "cut", "uniq", "tee",
+        "diff", "ps", "kill", "tar", "curl", "wget", "python", "python3",
+        "node", "bash", "sh", "export", "set", "cd", "for", "while", "if",
+        "source", "alias", "shopt", "umask", "ulimit", "df", "file",
+        "dirname", "basename", "readlink", "realpath", "date", "sleep",
+        "test", "[", "true", "false", "exit", "return", "declare", "local",
+    )
+)
+
+
+def _command_candidates(script):
+    """Candidate bash commands, in priority order: the whole text first (a
+    bare one-liner, or a fenced block already extracted by extract_shell),
+    then each line that plausibly starts a shell command. Prose lines
+    (bullets, sentence punctuation, parentheticals) are skipped so they are
+    never executed - the old first-line/last-line fallback ran bullets like
+    "- Recursive ..." and died with a confusing "bash: - : invalid option"."""
+    tries = [script]
+    for raw in script.splitlines():
+        line = raw.strip()
+        if not line or line.startswith(("-", "*", "(", ")", ">")):
+            continue
+        if line.startswith("#") and not line.startswith("#!"):
+            continue
+        first = line.split(None, 1)[0] if line.split() else ""
+        if first in _SHELL_STARTERS:
+            tries.append(line)
+            continue
+        if line.endswith((":", ".", ",", ";", ")")):
+            continue  # prose sentence, not a command
+        if any(ch in line for ch in ("|", "<", "$", "&", ";")):
+            tries.append(line)
+    return tries
 
 
 def main():

@@ -100,6 +100,13 @@ jobs:
         # fails on current runner images ("Version 'latest' not found"), so we
         # pin Node 22.19.0 and set PI_NODE_VERSION to the SAME version so the
         # CLI resolves the exact toolchain we installed.
+        #
+        # Install the REAL Pi coding agent (@earendil-works/pi-coding-agent).
+        # The plain `pi` npm package is an unrelated legacy CLI (a digits-of-pi
+        # calculator) that exits 0 printing "3" for every invocation — the
+        # nightly's agent runs silently produced "3\n" (0 tokens, ~50ms), and
+        # every grader correctly failed on it (run 31652076075). The version
+        # probe below fails loudly instead of evaling garbage again.
         env:
           PI_NODE_VERSION: 'v22.19.0'
         run: |
@@ -107,9 +114,16 @@ jobs:
           [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
           nvm install "${PI_NODE_VERSION:-v22.19.0}"
           # Install pi into the active nvm-managed Node toolchain.
-          npm install -g pi
+          npm install -g @earendil-works/pi-coding-agent
           echo "nvm node: $(nvm which current)"
           echo "pi path:  $(command -v pi)"
+          # The coding agent reports a semver (e.g. 0.84.1); the legacy
+          # impostor prints "3". Refuse to run the eval on a wrong CLI.
+          pi --version | grep -Eq '^[0-9]+\.[0-9]+\.' || {
+            echo "::error::installed pi CLI is not the Pi coding agent " \
+                 "(pi --version: $(pi --version 2>&1 | head -1))"
+            exit 1
+          }
       - name: Key presence gate
         # Decision 3 — hard fail, never skip. A skipped eval is
         # indistinguishable from a passed one; the deterministic job above

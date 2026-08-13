@@ -35,11 +35,12 @@ Commands:
   providers     List configured providers and default models
   mcp-server    Serve a read-only MCP server over stdio (providers, cost, benchmark_dry_run)
   hooks         List or run .pi/hooks.json hooks (pre-eval, post-eval, pre-chat)
+  self-heal     Detect and recover in-progress git state (e.g. a wedged rebase)
   version       Print version
   help          Show this help
   --exit-codes  Print the exit-code table
 
-Exit codes: 0 ok · 1 generic · 2 usage · 3 missing key · 4 node/pi missing · 5 eval venv missing · 6 budget exceeded · 7 docker unavailable · 8 scorecard gate failed
+Exit codes: 0 ok · 1 generic · 2 usage · 3 missing key · 4 node/pi missing · 5 eval venv missing · 6 budget exceeded · 7 docker unavailable · 8 scorecard gate failed · 9 watchdog terminated
 
 chat/print flags:
   --provider <name>                        Provider (see 'pi-run providers'; env PI_PROVIDER; default openai)
@@ -89,6 +90,7 @@ const exitCodesText = `Exit codes:
   6  budget exceeded
   7  docker unavailable (benchmarks)
   8  scorecard gate failed (ci-benchmark)
+  9  watchdog terminated (stall/group-kill timeout)
 `
 
 // Run is the CLI entry point. It returns the process exit code.
@@ -147,6 +149,8 @@ func Run(args []string) int {
 		return runMCPServer()
 	case "hooks":
 		return runHooksCmd(args[1:])
+	case "self-heal":
+		return runSelfHeal(args[1:])
 	default:
 		fmt.Fprintf(os.Stderr, "pi-run: unknown command %q\n\n%s", args[0], usage)
 		return 2

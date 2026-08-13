@@ -31,10 +31,11 @@ Our stack has four concrete gaps the prevention env (PR #59) does **not** close:
 ## In Scope
 
 - **Watchdog command `pi-run self-heal`** (new CLI surface): detect in-progress git state and recover it; report state machine (ok / recovered / needs-attention / aborted).
-- **Process-group kill** for timed-out runs: replace `exec.CommandContext` direct-child kill in `execPiDirTimeout` with `SysProcAttr{Setpgid: true}` + `syscall.Kill(-pgid, SIGTERM)` → SIGKILL escalation, so grandchildren die with the parent.
-- **Output-activity stall detector** for non-interactive spawns (print/benchmark): goroutine consuming child stdout resets a timer on any byte; after N silent minutes → SIGTERM → SIGKILL the group; gated OFF for interactive chat (human thinking is not a hang).
+- **Process-group kill** for timed-out runs: replace `exec.CommandContext` direct-child kill in `execPiDirTimeout` with `SysProcAttr{Setpgid: true}` + `syscall.Kill(-pgid, SIGTERM)` → SIGKILL escalation (default grace 10s), so grandchildren die with the parent. `exec.CommandContext` must be **fully dropped**, not kept alongside — its deadline watcher would race the group-kill and truncate the grace window. Guard `ESRCH`/pgid-reuse when the leader exits between deadline and `kill(-pgid)`.
+- **Output-activity stall detector** for non-interactive spawns (print/benchmark): goroutine consuming child stdout resets a timer on any byte; after N silent minutes → SIGTERM → SIGKILL the group; gated OFF for interactive chat (human thinking is not a hang). Requires teeing child stdout (`io.MultiWriter(os.Stdout, pipe)`) since spawns currently bind `cmd.Stdout = os.Stdout`.
+- **Watchdog-terminated exit code:** new exit code `9` = "watchdog terminated" (SIGTERM/SIGKILL by watchdog, stall, or group-kill timeout), distinct from generic `1`; documented in the usage exit-code table.
+- **Escalation packet:** when a run is killed by watchdog/timeout, write `.pi/heal/<timestamp>-report.json` (original goal, side-effect ledger / git status+diff summary, pending state, trigger evidence (last-output timestamp, bytes), resume handle) **and** print a short human-readable stderr summary. For `--no-session` runs the resume handle is the explicit string `none (session not persisted)` — never a fabricated session reference.
 - **Git-state auto-recovery:** scan for `.git/rebase-merge`/`rebase-apply` via `git rev-parse --git-path`; if in-progress rebase and `git ls-files -u` empty → `GIT_EDITOR=true git rebase --continue`; if conflicts → record, do not guess; recovery recorded in the run report.
-- **Escalation packet:** when a run is killed by watchdog/timeout, emit structured report: original goal, side-effect ledger (git status/diff summary), pending state, trigger evidence (last-output timestamp, bytes), resume handle (`pi-run resume` / session id).
 - **`--self-heal` observability flag:** log stall/git-state events; post-prevention incident rate metric surfaced in scorecard (BACKLOG item 3).
 - **Hermetic tests** for all of the above (fake pi that hangs; fixture repo with rebase state; fake collector for events).
 
@@ -62,8 +63,11 @@ Our stack has four concrete gaps the prevention env (PR #59) does **not** close:
 - The vi-hang class is now prevented by PR #59's env; the watchdog is for the residual classes (streaming stall, wedged tool, post-exit hang, dirty git state from an interrupted run).
 - A process that produces **no stdout bytes for the configured window** is stuck (not thinking) in print/benchmark modes — matches research guidance (progress = harness-owned observable, not agent self-report).
 - `git ls-files -u` empty is a safe precondition for `rebase --continue`; we never guess conflict resolutions.
-- Default silent-window: 300s (matches existing `defaultBenchmarkTimeout`); configurable via env `PI_STALL_TIMEOUT_SECS` and flag.
+- Default silent-window: 300s (matches existing `defaultBenchmarkTimeout`); configurable via env `PI_STALL_TIMEOUT_SECS` and flag. Note: at the default, the stall window equals the benchmark run bound, so the stall detector is decisive for `print` (no wall clock) and tasks with `timeoutSecs > 300`; for default 300s benchmark tasks the wall clock fires first.
+- Default SIGTERM→SIGKILL grace window: 10s.
 - Default restart budget: 1 auto-recovery attempt per run; escalation after that.
+- Escalation packet destination: `.pi/heal/<timestamp>-report.json` (relative to run cwd) + stderr summary; watchdog-kill exit code is `9`.
+- Resume handle: real session id when persisted (budget cap active); explicit `none (session not persisted)` otherwise.
 
 ## Blocking Questions
 
@@ -105,14 +109,22 @@ Scenario: Conflicted rebase is reported, not guessed
 Scenario: Killed run produces an escalation packet
   Given a run terminated by the watchdog or timeout
   When the run exits
-  Then a structured report exists with original goal, side-effect ledger, pending state, trigger evidence, and a resume handle
+  Then `.pi/heal/<timestamp>-report.json` exists with original goal, side-effect ledger, pending state, trigger evidence, and a resume handle
+  And the process exit code is 9 (watchdog terminated)
+  And stderr contains a short human-readable summary
+
+Scenario: Killed non-session run reports an honest resume handle
+  Given a print-mode run launched with --no-session that is killed by the watchdog
+  When the escalation packet is written
+  Then the resume handle is the literal string "none (session not persisted)"
 ```
 
 Non-behavioral criteria:
 - `go build ./...`, `go vet ./...`, `go test ./...` green; hermetic pytest contract tests green.
 - No new external Go deps.
-- `pi-run self-heal --help` documented in usage; exit codes documented.
+- `pi-run self-heal --help` documented in usage; exit-code table gains `9` = watchdog terminated.
 - Watchdog events (stall, group-kill, git-recovery, escalation) emitted under `--self-heal` observability flag and surfaced in scorecard.
+- Merge-order: `docs/self-healing-research-2026-08.md` lives on `feat/pm-layer` (PR #60); the spec branch must not block on it, but the citation must resolve before the W1 implementation PR merges (pm-layer merges first, or the file is vendored into the implementation branch).
 
 ## Edge Cases
 

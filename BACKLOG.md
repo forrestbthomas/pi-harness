@@ -23,6 +23,20 @@ one-screen snapshot and `docs/roadmap-workflow.md` for the cycle ritual.
 
 _Promoted 2026-08-13: per-tool-call timeout upstream → ROADMAP W5 (was rank #1). Closed 2026-08-13: doctor non-interactive-env guard (was rank #1 before promotion) — landed in `main`, see CHANGELOG [Unreleased]. Also closed earlier the same day: pin pi-subagents and owner-only artifact perms (in v0.9.2)._
 
+## Idea inbox (unranked, capture-only)
+
+- **Watchdog liveness heartbeat ("still actively working")** — after N minutes
+  of a long-running agent/subagent with no update, emit a heartbeat ("still
+  actively working — <elapsed>, <current step>") to the parent agent / terminal
+  viewer so a legitimately long run isn't mistaken for a hang. Pitch: honest
+  observability — a real 2026-08-13 case (deepseek thinking-high ran 19+ min
+  with no output and was suspected hung). Rough RICE: Reach 2 · Impact 1 ·
+  Conf 0.8 · Effort 0.5 pw → ~3.2, but deliberately deferred by user to a later
+  cycle. Open design question (discuss when prioritized): where it lives —
+  harness watchdog (run-level) vs upstream pi-subagents (per-child) vs
+  parent-agent nudge; and whether it also writes `.pi/heal/events.jsonl`
+  (`PI_SELF_HEAL`) so long runs are auditable.
+
 ## How items get in / out
 
 - **In:** one-paragraph pitch + DoD + rough RICE, added here, ranked.

@@ -1,2 +1,3 @@
-*
-!.gitignore
+# Only the installed tree is disposable; the manifest + lockfile are tracked
+# so a settings-triggered npm refresh cannot silently drift package versions.
+node_modules/

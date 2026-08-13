@@ -14,6 +14,15 @@ All notable changes to this project are documented here. Format follows
   gate now has real per-case regression bounds; verified to catch a
   deliberate regression (exit 1). `nightly-live-eval.yml` sets
   `PI_MODEL_TIER=cheap` so future re-baselines record the agent tier.
+- **Pi-subagents pinned** (BACKLOG #2): `.pi/settings.json` pins
+  `npm:pi-subagents@0.45.1`; `.pi/npm/package.json` + `package-lock.json` are
+  now tracked (exact `0.45.1`) so a settings-triggered npm refresh cannot
+  silently drift the subagent tooling. `pi-run config-check` verifies the pin.
+- **Owner-only writer perms** (BACKLOG #3): escalation packets,
+  `.pi/heal/events.jsonl`, the cost ledger, and the reset marker are now
+  created 0700/0600 instead of 0755/0644, closing the world-readable
+  secret-shaped artifact regression at the source. Go contract tests assert
+  the permissions.
 
 ## [0.9.1] - 2026-08-13
 

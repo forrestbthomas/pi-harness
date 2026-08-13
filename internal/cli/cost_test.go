@@ -465,6 +465,23 @@ func TestLedgerAppendAndSum(t *testing.T) {
 			t.Fatalf("unexpected mode %q", e.Mode)
 		}
 	}
+
+	// Owner-only permissions: ledger file 0600, .pi dir 0700 (spend ledger is
+	// pi-run-owned and attributed to sessions).
+	lf, err := os.Stat(ledgerPath(root))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := lf.Mode().Perm(); got != 0o600 {
+		t.Fatalf("ledger perms %o, want 0600", got)
+	}
+	df, err := os.Stat(filepath.Dir(ledgerPath(root)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := df.Mode().Perm(); got != 0o700 {
+		t.Fatalf("ledger dir perms %o, want 0700", got)
+	}
 }
 
 func TestCurrentSpendMaxSemantics(t *testing.T) {

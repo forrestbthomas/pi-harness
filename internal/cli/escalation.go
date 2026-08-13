@@ -53,7 +53,9 @@ type pendingState struct {
 // write the report must never change the exit code.
 func writeEscalationPacket(dir string, report escalationReport) error {
 	healDir := filepath.Join(dir, ".pi", "heal")
-	if err := os.MkdirAll(healDir, 0o755); err != nil {
+	// 0700: escalation packets carry goal text, side-effect ledgers, and resume
+	// handles — never world-readable (default umask 022 would make them 0755/0644).
+	if err := os.MkdirAll(healDir, 0o700); err != nil {
 		return err
 	}
 	name := fmt.Sprintf("%s-report.json", report.Timestamp)
@@ -67,7 +69,7 @@ func writeEscalationPacket(dir string, report escalationReport) error {
 	if err != nil {
 		return err
 	}
-	if err := os.WriteFile(path, append(data, '\n'), 0o644); err != nil {
+	if err := os.WriteFile(path, append(data, '\n'), 0o600); err != nil {
 		return err
 	}
 
@@ -226,7 +228,9 @@ func logSelfHealEvent(dir, kind, detail string) {
 		return
 	}
 	healDir := filepath.Join(dir, ".pi", "heal")
-	if err := os.MkdirAll(healDir, 0o755); err != nil {
+	// 0700: events.jsonl records stall/group-kill/recovery events that can
+	// reference goals and resume handles — keep it owner-only like the packets.
+	if err := os.MkdirAll(healDir, 0o700); err != nil {
 		return
 	}
 	ev := map[string]string{
@@ -238,7 +242,7 @@ func logSelfHealEvent(dir, kind, detail string) {
 	if err != nil {
 		return
 	}
-	f, err := os.OpenFile(filepath.Join(healDir, "events.jsonl"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	f, err := os.OpenFile(filepath.Join(healDir, "events.jsonl"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
 		return
 	}

@@ -50,6 +50,21 @@ def test_project_defaults_unchanged():
     assert settings["defaultModel"] == "openai/gpt-5.6-terra"
 
 
+def test_pi_subagents_pinned_exact_version():
+    """pi-subagents must be pinned to an exact version so a settings-triggered
+    npm refresh cannot silently drift the subagent tooling (BACKLOG #2)."""
+    settings = _load_json(PROJECT_SETTINGS)
+    packages = settings["packages"]
+    specs = [p for p in packages if p.startswith("npm:pi-subagents")]
+    assert len(specs) == 1, f"expected exactly one pi-subagents package spec, got {specs}"
+    spec = specs[0]
+    rest = spec.removeprefix("npm:pi-subagents")
+    assert rest.startswith("@"), f"pi-subagents must be pinned with @version, got {spec!r}"
+    version = rest[1:]
+    assert version and version[0].isdigit(), f"pin must be an exact semver, got {spec!r}"
+    assert "^" not in version and "~" not in version, f"pin must be exact (no ^/~), got {spec!r}"
+
+
 def test_no_literal_keys_anywhere():
     for path in (PROJECT_SETTINGS,):
         text = path.read_text(encoding="utf-8")

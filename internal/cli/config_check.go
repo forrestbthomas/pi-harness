@@ -39,11 +39,11 @@ func runConfigCheck() int {
 		} else {
 			check("enabledModels present", false)
 		}
+		check("pi-subagents pinned (exact version) in .pi/settings.json", piSubagentsPinned(s))
 	} else {
 		check(".pi/settings.json valid JSON", false)
 	}
 	check("no literal API keys in .pi/settings.json", !hasLiteralSecret(readFile(project)))
-
 	// 2. Global settings (personal-machine check unless PI_RUN_PERSONAL=1).
 	// A missing global ~/.pi/agent/settings.json is normal on a fresh machine
 	// or CI runner — it is NOT a harness defect, so it must not fail
@@ -172,4 +172,31 @@ var secretRe = regexp.MustCompile(`sk-[A-Za-z0-9_-]{8,}`)
 
 func hasLiteralSecret(b []byte) bool {
 	return secretRe.Match(b)
+}
+
+// piSubagentsPinned reports whether the project settings pin pi-subagents to an
+// exact version (npm:pi-subagents@<semver>) so a settings-triggered npm refresh
+// cannot silently drift the subagent tooling (BACKLOG #2).
+func piSubagentsPinned(s map[string]any) bool {
+	pkgs, ok := s["packages"].([]any)
+	if !ok {
+		return false
+	}
+	for _, p := range pkgs {
+		spec, ok := p.(string)
+		if !ok || !strings.HasPrefix(spec, "npm:pi-subagents") {
+			continue
+		}
+		rest := strings.TrimPrefix(spec, "npm:pi-subagents")
+		// Require @<exact semver>: a bare name or a ^/~ range is not pinned.
+		if len(rest) < 2 || rest[0] != '@' {
+			return false
+		}
+		v := rest[1:]
+		if v == "" || strings.ContainsAny(v, "^~") {
+			return false
+		}
+		return v[0] >= '0' && v[0] <= '9'
+	}
+	return false
 }

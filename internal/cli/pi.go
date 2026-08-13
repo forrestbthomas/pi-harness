@@ -49,10 +49,12 @@ func nodeBinDir(home, version string) (string, error) {
 // permissionMode is the harness-level permission tier (default|plan|
 // acceptEdits|bypassPermissions). It is NOT a Pi flag: Pi has no
 // --permission-mode. The tier is mapped to Pi's real tool-control surface:
-//   plan             -> --tools read,grep,find,ls (read-only toolset)
-//   acceptEdits      -> no extra flag (Pi's default already permits edits)
-//   bypassPermissions -> --approve (trust project-local files)
-//   default / empty  -> no flag
+//
+//	plan             -> --tools read,grep,find,ls (read-only toolset)
+//	acceptEdits      -> no extra flag (Pi's default already permits edits)
+//	bypassPermissions -> --approve (trust project-local files)
+//	default / empty  -> no flag
+//
 // pi runs with --offline so startup network ops (version check, changelog,
 // catalog refresh) never hang on the flaky pi.dev endpoint; the stored model
 // catalogs are used instead. `pi-run setup` is the explicit online path.
@@ -78,13 +80,14 @@ func piArgs(p Provider, model, mode string, rest []string, persist bool, permiss
 	return append(args, rest...)
 }
 
-// launchEnv returns the provider key and any provider-specific environment
-// needed by the Pi child. BaseURL is meaningful for OpenAI-compatible
-// providers (e.g. local, azure, mistral) via OPENAI_BASE_URL and for
-// Anthropic-compatible providers (e.g. AWS Bedrock) via ANTHROPIC_BASE_URL;
-// Anthropic-routed providers also receive the key under ANTHROPIC_API_KEY so
-// pi's anthropic provider can authenticate when the entry's own keyEnv differs
-// (e.g. BEDROCK_API_KEY).
+// launchEnv returns the provider key, any provider-specific environment
+// needed by the Pi child, and the non-interactive shell environment that
+// prevents child bash tools from blocking on interactive prompts. BaseURL is
+// meaningful for OpenAI-compatible providers (e.g. local, azure, mistral) via
+// OPENAI_BASE_URL and for Anthropic-compatible providers (e.g. AWS Bedrock)
+// via ANTHROPIC_BASE_URL; Anthropic-routed providers also receive the key
+// under ANTHROPIC_API_KEY so pi's anthropic provider can authenticate when
+// the entry's own keyEnv differs (e.g. BEDROCK_API_KEY).
 func launchEnv(p Provider, key string) []string {
 	env := []string{p.KeyEnv + "=" + key}
 	switch p.PiProvider {
@@ -102,6 +105,19 @@ func launchEnv(p Provider, key string) []string {
 			env = append(env, "OPENAI_BASE_URL="+p.BaseURL)
 		}
 	}
+	// Non-interactive shell environment for every spawned pi process (and thus
+	// every child bash tool it runs). Without these, commands like
+	// `git rebase --continue` or `git commit` (no -m) open an interactive
+	// editor in the agent's terminal and hang forever with no output — the
+	// subagent never returns. GIT_EDITOR/SEQUENCE_EDITOR=true make git accept
+	// the default message; GIT_TERMINAL_PROMPT=0 refuses credential prompts;
+	// PAGER=cat prevents less/more pager hangs.
+	env = append(env,
+		"GIT_EDITOR=true",
+		"GIT_SEQUENCE_EDITOR=true",
+		"GIT_TERMINAL_PROMPT=0",
+		"PAGER=cat",
+	)
 	return env
 }
 

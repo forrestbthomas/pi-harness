@@ -216,6 +216,23 @@ func TestLaunchEnvAddsBaseURLOnlyWhenConfigured(t *testing.T) {
 	}
 }
 
+// TestLaunchEnvNonInteractive proves every spawned pi process (and therefore
+// every child bash tool) gets the non-interactive shell environment, so git
+// editors / pagers can never block an agent run forever.
+func TestLaunchEnvNonInteractive(t *testing.T) {
+	env := strings.Join(launchEnv(Provider{KeyEnv: "OPENAI_API_KEY"}, "testvalue"), "\n")
+	for _, want := range []string{
+		"GIT_EDITOR=true",
+		"GIT_SEQUENCE_EDITOR=true",
+		"GIT_TERMINAL_PROMPT=0",
+		"PAGER=cat",
+	} {
+		if !strings.Contains(env, want) {
+			t.Fatalf("launch environment missing non-interactive var %q: %v", want, env)
+		}
+	}
+}
+
 func TestLaunchEnvAnthropicCompatibleProvider(t *testing.T) {
 	// Anthropic-routed providers (e.g. AWS Bedrock) must hand pi the key under
 	// ANTHROPIC_API_KEY and the base URL under ANTHROPIC_BASE_URL so pi's
@@ -233,9 +250,13 @@ func TestLaunchEnvAnthropicCompatibleProvider(t *testing.T) {
 	}
 
 	// The plain anthropic entry keeps its own key env and must not duplicate
-	// ANTHROPIC_API_KEY.
+	// ANTHROPIC_API_KEY, but must still carry the non-interactive vars.
 	plain := launchEnv(Provider{KeyEnv: "ANTHROPIC_API_KEY", PiProvider: "anthropic"}, "testvalue")
-	if strings.Join(plain, "\n") != "ANTHROPIC_API_KEY=testvalue" {
+	plainText := strings.Join(plain, "\n")
+	if !strings.Contains(plainText, "ANTHROPIC_API_KEY=testvalue") {
 		t.Fatalf("plain anthropic launch environment changed: %v", plain)
+	}
+	if !strings.Contains(plainText, "GIT_EDITOR=true") {
+		t.Fatalf("plain anthropic launch environment missing non-interactive vars: %v", plain)
 	}
 }

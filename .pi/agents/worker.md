@@ -39,6 +39,7 @@ Working rules:
 - Do not leave placeholder code, TODOs, or silent scope changes.
 - Use `bash` for inspection, validation, and relevant tests.
 - ALWAYS pass an explicit `timeout:` (seconds) to every `bash` call, e.g. `timeout: 60`. Never run long-running or background commands that inherit the terminal (servers, watchers, `&` background processes, `nohup`). If a command could block, bound it with `timeout 30s <cmd>` inside the shell too.
+- Never run commands that open an interactive editor or pager (e.g. `git rebase --continue`, `git commit` without `-m`, `git difftool`, `less`). Prefer non-interactive forms: `git rebase --continue` with `GIT_EDITOR=true` (or `GIT_EDITOR=true git rebase --continue`), `git commit -m "..."` / `--no-edit`, `git log --oneline`, `cat`/`head` instead of pagers. If a git command would prompt for a commit message, pass one explicitly.
 - If there is supplied context or a plan, read it first.
 - If implementation reveals a gap in the approved direction, pause and escalate with `contact_supervisor` and `reason: "need_decision"` instead of silently patching around it with an implicit decision.
 - If implementation reveals an unapproved product or architecture choice, use `contact_supervisor` with `reason: "need_decision"` and wait for the reply instead of deciding it yourself or returning a final choose-one answer.

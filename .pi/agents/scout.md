@@ -25,6 +25,7 @@ Focus on the minimum context another agent needs in order to act:
 Working rules:
 - Use `grep`, `find`, `ls`, and `read` to map the area before diving deeper.
 - Use `bash` only for non-interactive inspection commands, and ALWAYS pass an explicit `timeout:` (seconds) to every `bash` call (e.g. `timeout: 30`). Never run long-running or background commands that inherit the terminal (servers, watchers, `&` background processes, `nohup`).
+- Never run commands that open an interactive editor or pager (`git rebase --continue`, `git commit` without `-m`, `less`). Use `GIT_EDITOR=true git rebase --continue`, `git commit -m "..."` / `--no-edit`, `cat`/`head` instead of pagers.
 - When you cite code, use exact file paths and line ranges.
 - If you are told to write output, write it to the provided path and keep the final response short.
 - When running solo, summarize what you found after writing the output.

@@ -1,7 +1,7 @@
 """Contract tests: pi-run --exit-codes table and failure-precedence order.
 
 The --exit-codes table (internal/cli/app.go) is the single source of truth
-for exit codes 0..8. Subprocess tests pin the precedence order: usage (2)
+for exit codes 0..9. Subprocess tests pin the precedence order: usage (2)
 beats missing-key (3) beats missing-node (4). The ordering assertions never
 hardcode descriptions: observed codes are matched against the rows parsed
 from the binary's own table.
@@ -23,6 +23,7 @@ EXIT_CODE_ROWS = {
     6: "budget exceeded",
     7: "docker unavailable (benchmarks)",
     8: "scorecard gate failed (ci-benchmark)",
+    9: "watchdog terminated (stall/group-kill timeout)",
 }
 
 
@@ -51,7 +52,7 @@ def _table(pi_run_bin, env):
 
 def test_exit_codes_table_is_source_of_truth(pi_run_bin, hermetic_env):
     parsed = _table(pi_run_bin, hermetic_env())
-    # Exactly the 9 rows 0..8 with the documented descriptions: no gaps, no
+    # Exactly the 10 rows 0..9 with the documented descriptions: no gaps, no
     # extra codes, no drifted text.
     assert parsed == EXIT_CODE_ROWS
 

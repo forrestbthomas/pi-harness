@@ -251,6 +251,50 @@ func TestWriteEscalationPacket(t *testing.T) {
 	if !strings.Contains(stderr.String(), "watchdog: run terminated (stall") {
 		t.Fatalf("stderr summary missing: %q", stderr.String())
 	}
+
+	// Owner-only permissions: heal dir 0700, packet 0600 (secret-bearing
+	// content: goal text, side-effect ledger, resume handle).
+	dirInfo, err := os.Stat(dir + "/.pi/heal")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := dirInfo.Mode().Perm(); got != 0o700 {
+		t.Fatalf("heal dir perms %o, want 0700", got)
+	}
+	fileInfo, err := os.Stat(dir + "/.pi/heal/" + entries[0].Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := fileInfo.Mode().Perm(); got != 0o600 {
+		t.Fatalf("packet perms %o, want 0600", got)
+	}
+}
+
+// TestLogSelfHealEventPerms locks the observability writer to owner-only:
+// .pi/heal 0700, events.jsonl 0600.
+func TestLogSelfHealEventPerms(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("PI_SELF_HEAL", "1")
+	logSelfHealEvent(dir, "stall", "test event")
+
+	dirInfo, err := os.Stat(dir + "/.pi/heal")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := dirInfo.Mode().Perm(); got != 0o700 {
+		t.Fatalf("heal dir perms %o, want 0700", got)
+	}
+	fileInfo, err := os.Stat(dir + "/.pi/heal/events.jsonl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := fileInfo.Mode().Perm(); got != 0o600 {
+		t.Fatalf("events perms %o, want 0600", got)
+	}
+	data, err := os.ReadFile(dir + "/.pi/heal/events.jsonl")
+	if err != nil || !strings.Contains(string(data), "test event") {
+		t.Fatalf("events file missing event (err %v): %q", err, data)
+	}
 }
 
 // TestExecPiDirTimeoutStallTerminates is the hermetic end-to-end proof: a fake

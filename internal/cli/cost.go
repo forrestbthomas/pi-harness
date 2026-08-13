@@ -324,7 +324,9 @@ func printCostTable(w io.Writer, report costReport) {
 func costReset(root string) (string, error) {
 	now := time.Now().UTC()
 	dir := filepath.Join(root, ".pi")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	// 0700: the spend ledger and reset marker under .pi are pi-run-owned
+	// artifacts; keep them owner-only (the dir itself holds sessions too).
+	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return "", err
 	}
 	archive := ""
@@ -334,7 +336,7 @@ func costReset(root string) (string, error) {
 			return "", err
 		}
 	}
-	if err := os.WriteFile(resetMarkerPath(root), []byte(now.Format(time.RFC3339)+"\n"), 0o644); err != nil {
+	if err := os.WriteFile(resetMarkerPath(root), []byte(now.Format(time.RFC3339)+"\n"), 0o600); err != nil {
 		return "", err
 	}
 	return archive, nil
@@ -397,10 +399,12 @@ func ledgerSum(root string) (float64, error) {
 // current UTC time.
 func ledgerAppend(root string, entries []ledgerEntry) error {
 	path := ledgerPath(root)
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+	// 0700/0600: the spend ledger records real per-run costs (and can be
+	// attributed to sessions); never world-readable.
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return err
 	}
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
 		return err
 	}

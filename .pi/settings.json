@@ -64,7 +64,7 @@
     "npm:@loreai/pi",
     "npm:pi-spark",
     "git:github.com/dannote/dot-pi",
-    "npm:pi-subagents"
+    "npm:pi-subagents@0.45.1"
   ],
   "extensions": [],
   "skills": [],

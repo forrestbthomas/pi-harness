@@ -42,6 +42,12 @@ active, stop and cut scope before continuing.
 - `SCOPE.md` is the boundary contract for the active workstream; deviations are
   flagged, never silently absorbed.
 
+## Git hygiene (how we avoid the sharp tools)
+
+- **Sync after a PR merge with a fast-forward only:** `git fetch github && git checkout main && git pull --ff-only github main`. This can never lose work — it refuses if the branches have diverged.
+- **NEVER use `git reset --hard` as a routine sync.** It silently destroys local work if main has unique commits. It is only justified when local history was rewritten upstream (e.g., 6 local commits collapsed into one squash) AND local main has no unique work — and even then only with explicit user confirmation.
+- Branch cleanup is `git branch -d` (safe) then `git remote prune github`; `-D` only when the branch content is verified merged.
+
 ## Release rule
 
 Land every release commit (incl. CHANGELOG notes) on main via PR **first**, then

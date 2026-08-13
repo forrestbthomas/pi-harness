@@ -60,3 +60,12 @@ v0.9.2). Correct order:
 2. `git fetch github && git tag -a vX.Y.Z main && git push github vX.Y.Z`.
 3. The Release workflow builds, publishes, and updates the Homebrew tap; its
    first step verifies the tag is an ancestor of `main` and fails otherwise.
+
+## Syncing after a merge
+
+After a PR is squash-merged, sync local `main` with a **fast-forward only**:
+`git fetch github && git checkout main && git pull --ff-only github main`.
+Never use `git reset --hard` as a routine sync — it destroys local work if
+`main` has diverged. Reset is only justified when upstream rewrote local
+history (squash collapse) with no unique local commits, and only with explicit
+user confirmation.

@@ -1,5 +1,5 @@
 # Scope Contract
-**Task:** Self-healing agent runs — W1 | **Plan:** docs/superpowers/specs/2026-08-13-self-healing-design.md | **Date:** 2026-08-13 | **Status:** ACTIVE
+**Task:** Self-healing agent runs — W1 | **Plan:** docs/superpowers/specs/2026-08-13-self-healing-design.md | **Date:** 2026-08-13 | **Status:** CLOSED — 2 changes logged
 
 ## In Scope
 - **Files:**

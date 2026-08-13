@@ -28,6 +28,7 @@ Ranked by rough RICE (Reach × Impact × Confidence / Effort). Higher = do next.
 - Nightly run should archive the watchdog/git-state events for postmortem queries
 - `pi-run hooks` post-rebase hook to auto-continue a wedged rebase after agent timeout
 
+- Harness continuous self-evaluation (sidenote 2026-08-13): audit skills present in a harness/project for compatibility (duplicate names, conflicting instructions, stale collections); classify compatible/incompatible; offer the user an option to reconcile (never automatic). Separate workstream from self-healing W1; natural home is pi-run doctor/config-check or a new self-eval command.
 ## How items get in / out
 
 - **In:** one-paragraph pitch + DoD + rough RICE, added here, ranked.

@@ -4,6 +4,17 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Real live-eval baseline** (W2): `eval/baselines/live-baseline.json` is now
+  the honest baseline from the 2026-08-13 green nightly (17 deterministic
+  cases × 3 runs, cheap tier + gpt-4.1-mini judge, overall 82.4%, four
+  sub-1.0 cases recorded as-is) instead of an empty placeholder. The nightly
+  gate now has real per-case regression bounds; verified to catch a
+  deliberate regression (exit 1). `nightly-live-eval.yml` sets
+  `PI_MODEL_TIER=cheap` so future re-baselines record the agent tier.
+
 ## [0.9.1] - 2026-08-13
 
 ### Added

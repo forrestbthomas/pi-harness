@@ -39,3 +39,4 @@ A **self-healing, measurable, distributable coding-agent harness**: you point `p
 2. **Before implementation →** `scope-lock` generates a `SCOPE.md` contract from the approved plan; deviations are flagged, not silently absorbed.
 3. **Before merge →** the change must close its DoD checkboxes; `verification-before-completion` applies.
 4. **End of milestone →** update ROADMAP statuses; move done items to CHANGELOG; re-rank the backlog.
+5. **Release →** land every release commit (incl. CHANGELOG/ROADMAP notes) on `main` via PR **first**; then create the tag from the **fetched main tip** (`git fetch github && git tag -a vX.Y.Z main && git push github vX.Y.Z`) — never tag a local commit that has not yet merged, because squash merges rewrite hashes and the tag would not be an ancestor of main (v0.9.1/v0.9.2 both hit this; `release.yml` now hard-fails a non-ancestor tag).

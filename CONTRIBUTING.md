@@ -47,3 +47,16 @@ See `SECURITY.md` for reporting vulnerabilities. Never commit API keys.
   the summary, test plan, and checklist.
 - Add a dated `## [x.y.z]` entry at the top of `CHANGELOG.md` for any
   user-visible change.
+
+## Releases
+
+Main is branch-protected and uses squash merges, which rewrite commit hashes.
+**The release tag must be created from the merged main tip, never from a local
+commit that has not yet landed** — otherwise the tag is not an ancestor of
+`main` and `git describe`/ancestry walks break (this happened on v0.9.1 and
+v0.9.2). Correct order:
+
+1. Merge all release commits (including the CHANGELOG entry) via PR.
+2. `git fetch github && git tag -a vX.Y.Z main && git push github vX.Y.Z`.
+3. The Release workflow builds, publishes, and updates the Homebrew tap; its
+   first step verifies the tag is an ancestor of `main` and fails otherwise.

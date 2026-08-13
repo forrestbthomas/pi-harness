@@ -17,6 +17,27 @@ This repository is a **coding agent evaluation harness** built around the [Pi co
 - Never commit API keys, tokens, or kubeconfig contents.
 - Keep changes minimal and focused; do not refactor unrelated code.
 
+## Project Management (added 2026-08-13)
+
+This project is managed against `ROADMAP.md` and `BACKLOG.md` (ranked by rough
+RICE). Rituals every session must honor:
+
+1. **Scope discipline** — before implementing any new workstream, invoke the
+   `scope-lock` skill to generate a `SCOPE.md` boundary contract from the
+   approved plan; flag deviations instead of silently absorbing them. If a
+   requested change serves no roadmap/backlog item, ask before building.
+2. **Prioritization** — new ideas get a one-paragraph pitch + DoD + rough RICE
+   in `BACKLOG.md` before becoming active work; promotion to `ROADMAP.md` is a
+   user decision.
+3. **Definition of Done** — every workstream in `ROADMAP.md` has an explicit
+   DoD checklist; a change is not complete until its DoD boxes are closed and
+   `verification-before-completion` has run.
+4. **Skills** — PM/SDLC skills are installed via `scripts/install-skills.sh`
+   (durable clones under `~/.pi/agent/skills/`): `scope-lock` (anti-scope-creep),
+   `productskills` (feature-prioritization, roadmap-planning, scope-cutting,
+   prd-writing, …), `spec-coding-skills` (spec-plan, spec-crlp, spec-index).
+   Re-run the script to refresh; `pi-run config-check` verifies registration.
+
 ## Workflow
 
 1. Provider credentials come from **Bitwarden** (CLI `bw`, folder "Dev API

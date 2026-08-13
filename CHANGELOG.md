@@ -6,6 +6,8 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-08-13
+
 ### Added
 - **Real live-eval baseline** (W2): `eval/baselines/live-baseline.json` is now
   the honest baseline from the 2026-08-13 green nightly (17 deterministic

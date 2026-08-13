@@ -448,6 +448,41 @@ func TestCollectSideEffectsInRealRepo(t *testing.T) {
 	}
 }
 
+// TestCollectPendingStateNoRebase proves a plain git repo with NO rebase in
+// progress reports RebaseInProgress=false — git rev-parse --git-path prints
+// the state path even when absent, so the existence check must be the gate.
+func TestCollectPendingStateNoRebase(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not available")
+	}
+	dir := t.TempDir()
+	env := append(os.Environ(),
+		"GIT_AUTHOR_NAME=testvalue", "GIT_AUTHOR_EMAIL=t@testvalue",
+		"GIT_COMMITTER_NAME=testvalue", "GIT_COMMITTER_EMAIL=t@testvalue",
+		"GIT_EDITOR=true")
+	git := func(args ...string) {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		cmd.Env = env
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v (%s)", args, err, out)
+		}
+	}
+	git("init", "-q", ".")
+	git("config", "user.name", "testvalue")
+	git("config", "user.email", "t@testvalue")
+	if err := os.WriteFile(dir+"/f.txt", []byte("base\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	git("add", "f.txt")
+	git("commit", "-qm", "base")
+
+	ps := collectPendingState(dir)
+	if ps.RebaseInProgress {
+		t.Fatal("collectPendingState reported a rebase in a clean repo (false positive)")
+	}
+}
+
 // TestCollectPendingStateRebase proves the escalation packet records an
 // in-progress rebase (pending state) for the self-heal command to recover. A
 // deliberate conflict guarantees the rebase stays in progress.

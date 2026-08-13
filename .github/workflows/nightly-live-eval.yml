@@ -55,7 +55,7 @@ jobs:
         # lane) + the dataset lint and the score_run unit tests (both fully
         # hermetic). test_score_run.py MUST run here, not just in the live
         # job, so its unit tests execute in CI without a provider key.
-        run: .venv/bin/python -m pytest tests/test_harness_config.py tests/test_secret_resolution.py tests/test_dataset_schema.py tests/test_benchmark_format.py tests/test_code_quality.py tests/test_contract_mcp.py tests/test_contract_otel.py tests/test_contract_launch.py tests/test_contract_project_understand.py tests/test_score_run.py -v
+        run: .venv/bin/python -m pytest tests/test_harness_config.py tests/test_secret_resolution.py tests/test_dataset_schema.py tests/test_benchmark_format.py tests/test_code_quality.py tests/test_grader_realistic_output.py tests/test_contract_mcp.py tests/test_contract_otel.py tests/test_contract_launch.py tests/test_contract_project_understand.py tests/test_score_run.py -v
         working-directory: eval
 
   live:
@@ -113,8 +113,13 @@ jobs:
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
           nvm install "${PI_NODE_VERSION:-v22.19.0}"
-          # Install pi into the active nvm-managed Node toolchain.
-          npm install -g @earendil-works/pi-coding-agent
+          # Install the Pi coding agent into the active nvm-managed Node
+          # toolchain. The unscoped `pi` npm package is an UNRELATED
+          # pi-digits calculator ("pi-number"): its binary prints digits of
+          # pi and exits 0, so every live agent run would "succeed" in ~50ms
+          # with zero spend (nightly run 31652076075: costUsd 0 everywhere,
+          # judge cost real). --ignore-scripts is the README-documented form.
+          npm install -g --ignore-scripts @earendil-works/pi-coding-agent
           echo "nvm node: $(nvm which current)"
           echo "pi path:  $(command -v pi)"
           # The coding agent reports a semver (e.g. 0.84.1); the legacy

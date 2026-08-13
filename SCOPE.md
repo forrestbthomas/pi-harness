@@ -1,6 +1,8 @@
 # Scope Contract
 **Task:** Self-healing agent runs — W1 | **Plan:** docs/superpowers/specs/2026-08-13-self-healing-design.md | **Date:** 2026-08-13 | **Status:** CLOSED — 2 changes logged
 
+> **Superseded (2026-08-13):** W1 shipped in v0.9.1. Current workstreams: `ROADMAP.md`.
+
 ## In Scope
 - **Files:**
   - `internal/cli/pi.go` — process-group kill (drop `exec.CommandContext`, add `SysProcAttr{Setpgid:true}` + group SIGTERM→SIGKILL, ESRCH guard); stall-detector tee of child stdout; escalation packet write; `--self-heal` event logging

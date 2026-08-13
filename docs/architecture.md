@@ -26,8 +26,9 @@ pytest suite.
 
 ## Components
 
-- **`internal/cli/app.go`** — command dispatch (`chat`, `print`, `eval`,
-  `config-check`, `doctor`, `setup`, `install`, `clean`, `providers`,
+- **`internal/cli/app.go`** — command dispatch (`chat`, `print`, `resume`, `eval`,
+  `cost`, `ci-benchmark`, `config-check`, `project-understand`, `mcp-server`,
+  `hooks`, `self-heal`, `doctor`, `setup`, `install`, `clean`, `providers`,
   `version`), flag parsing, pass-through of extra args to `pi`.
 - **`internal/cli/providers.go`** — the provider routing table. Loaded from
   `providers.json` at init (fallback to built-in defaults). Each entry: name,

@@ -5,6 +5,11 @@
 **Purpose:** High-signal comparison of public AI coding-agent harnesses vs. pi-harness — what they have that we don't — to feed both **roadmap** (next features) and **positioning** (README/marketing/launch emphasis).
 **Method:** Web research across the Q2 2026 CLI-agent landscape (wal.sh comparison verified against official docs), eval-harness projects (SWE-bench, OpenHands, terminal-bench, aider), and platform agents (Claude Code, Codex CLI, OpenCode, Goose, Gemini CLI, Copilot CLI).
 
+> **Superseded (2026-08-13):** written 2026-08-11; several present-tense "gaps"
+> shipped in v0.8.0/v0.9.x (`mcp-server`, `--permission-mode`, hooks,
+> `project-understand`, `--model-tier`). Retained as a dated research record;
+> see `ROADMAP.md` for current workstreams.
+
 ---
 
 ## 1. Where pi-harness sits

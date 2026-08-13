@@ -22,7 +22,7 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
 
 > `@zigai/pi-ui-tweaks` was removed because its bundled settings schema is currently incompatible with this Pi version.
 - **Project context files**: `AGENTS.md`, `.pi/SYSTEM.md`, `.pi/APPEND_SYSTEM.md`.
-- **DeepEval environment** in `eval/.venv` with sample tests and datasets. Python deps live in `eval/requirements.txt` (DeepEval + pytest stack, `~=`-bounded; `pytest-json-report` is a deliberate addition for the nightly live-eval gate). Add new dependencies deliberately; `pi-run setup` installs them.
+- **DeepEval environment** in `eval/.venv` with sample tests and datasets. Python deps live in `eval/requirements.txt` (DeepEval + pytest stack, `~=`-bounded; `pytest-json-report` is retained, but the nightly live-eval report is written by a conftest hook via `PI_EVAL_REPORT`, not by pytest-json-report). Add new dependencies deliberately; `pi-run setup` installs them.
 - **Automation** via the `pi-run` CLI (no Makefile, no shell functions).
 
 ## Prerequisites
@@ -35,7 +35,7 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
   DeepSeek, Anthropic, Gemini, Groq, local OpenAI-compatible endpoints
   (Ollama/vLLM), Azure OpenAI, and 9 more OpenAI-/Anthropic-compatible cloud
   providers (Mistral, Cohere, Together, Perplexity, Fireworks, Moonshot, xAI,
-  AWS Bedrock) — 17 providers in total. Keys are resolved **env-first**, then
+  AWS Bedrock, Ollama) — 17 providers in total. Keys are resolved **env-first**, then
   from an optional secret store (`BW_GET` override; Bitwarden is a documented
   example). See [API Key Resolution](#api-key-resolution) and `pi-run
   providers`.
@@ -79,7 +79,7 @@ brew install forrestbthomas/tap/pi-run
 pi-run config-check        # no API key needed for this
 ```
 
-**From source (all platforms):**
+**From source (macOS/Linux/WSL):**
 
 ```bash
 # 1. Clone the repo
@@ -117,7 +117,7 @@ bin/pi-run chat --provider deepseek
 
 ## Releases
 
-Tag a release (`git tag v0.3.0 && git push --tags`) to trigger the GitHub
+Tag a release (`git tag v0.9.1 && git push --tags`) to trigger the GitHub
 Actions release workflow, which cross-compiles `pi-run` for linux/darwin/windows
 × amd64/arm64 and attaches the binaries to the release. To build locally:
 `bash scripts/build-release.sh <tag>`.
@@ -228,6 +228,9 @@ nudge (spec `docs/superpowers/specs/2026-08-13-self-healing-design.md`):
   recover it: `GIT_EDITOR=true git rebase --continue` when conflicts are
   resolved, or report `needs-attention` with conflict paths (never guesses
   resolutions). `--abort` is explicit-only.
+- **Non-interactive child env** — every launch injects `GIT_EDITOR=true`,
+  `GIT_SEQUENCE_EDITOR=true`, `GIT_TERMINAL_PROMPT=0`, `PAGER=cat` so child
+  bash tools can never block on an interactive editor/pager (#59).
 - **Process-group kill** — timed-out runs kill the whole process tree
   (SIGTERM → 10s grace → SIGKILL), not just the direct `pi` child.
 - **Output-stall watchdog** — non-interactive runs (print/benchmark) that emit
@@ -237,8 +240,8 @@ nudge (spec `docs/superpowers/specs/2026-08-13-self-healing-design.md`):
   (goal, side-effect ledger, pending state, trigger evidence, resume handle)
   and exit `9` (watchdog terminated).
 - **Observability** — set `PI_SELF_HEAL=1` to log stall/group-kill/recovery
-  events to `.pi/heal/events.jsonl` (CI nightly sets it; deterministic tests
-  leave it off).
+  events to `.pi/heal/events.jsonl` (set `PI_SELF_HEAL=1` to enable;
+  deterministic tests leave it off).
 
 ### Nightly live eval
 
@@ -524,6 +527,7 @@ tasks.
 | `pi-run ci-benchmark --providers <a,b> [flags]` | Provider scorecard in CI: run the benchmark suite against 2+ providers, gate on pass rate / budget / baseline |
 | `pi-run providers` | List configured providers, default models, and available model tiers |
 | `pi-run project-understand [--out <dir>]` | Generate deterministic project-understanding docs (product.md / tech.md / structure.md) from the checkout |
+| `pi-run self-heal [--abort]` | Detect and recover a wedged git state (`rebase --continue` when clean, `needs-attention` with conflict paths; `--abort` explicit-only) |
 | `pi-run mcp-server` | Serve a read-only MCP server over stdio (tools: providers, cost, benchmark_dry_run) |
 | `pi-run hooks list` / `hooks run <event>` | List or run `.pi/hooks.json` hook commands |
 | `pi-run config-check` | Deterministic harness checks (no keys, no network) |
@@ -534,7 +538,7 @@ tasks.
 | `pi-run --exit-codes` | Print the stable exit-code table |
 | `pi-run version` / `help` | Version / usage |
 
-Exit codes: `0` ok · `1` generic · `2` usage · `3` missing API key · `4` node/pi not found · `5` eval venv missing · `6` budget exceeded · `7` docker unavailable (benchmarks) · `8` scorecard gate failed (ci-benchmark).
+Exit codes: `0` ok · `1` generic · `2` usage · `3` missing API key · `4` node/pi not found · `5` eval venv missing · `6` budget exceeded · `7` docker unavailable (benchmarks) · `8` scorecard gate failed (ci-benchmark) · `9` watchdog terminated (stall/group-kill timeout).
 
 ## Telemetry (OTLP)
 

@@ -45,4 +45,5 @@ See `SECURITY.md` for reporting vulnerabilities. Never commit API keys.
   feature requests.
 - Use the pull request template (`.github/PULL_REQUEST_TEMPLATE.md`) — fill in
   the summary, test plan, and checklist.
-- Update `CHANGELOG.md` under `[Unreleased]` for any user-visible change.
+- Add a dated `## [x.y.z]` entry at the top of `CHANGELOG.md` for any
+  user-visible change.

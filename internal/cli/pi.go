@@ -1,9 +1,9 @@
 package cli
 
 import (
-	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -156,10 +156,21 @@ func execPiDir(nodeVersion string, args []string, extraEnv []string, dir string)
 	return 0, nil
 }
 
-// execPiDirTimeout is execPiDir bounded by a wall-clock timeout. On expiry the
-// child is killed (SIGKILL after the context deadline) so a hung pi process
-// cannot block the caller forever — used by the benchmark runner for the agent
-// step, which has no other bound. An empty dir runs in the caller's cwd.
+// execPiDirTimeout is execPiDir bounded by a wall-clock timeout and the
+// output-activity watchdog, for non-interactive (print/benchmark) agent runs.
+// Unlike the plain execPiDir (chat), the child is spawned into its own
+// process group so a timeout or stall can terminate the WHOLE tree (pi, its
+// bash tools, and anything they forked) — the direct-child-only kill of
+// exec.CommandContext left grandchildren orphaned holding pipes (the Codex
+// #4337 class). exec.CommandContext is deliberately NOT used here: its
+// deadline watcher would race the group-kill and truncate the SIGTERM→SIGKILL
+// grace window.
+//
+// On watchdog termination (stall) or wall-clock expiry the process group is
+// SIGTERM'd, escalated to SIGKILL after the grace window, an escalation
+// packet is written to .pi/heal/, and exit code 9 (watchdog terminated) is
+// returned. Interactive chat is never supervised (execPiDir has no watchdog).
+// An empty dir runs in the caller's cwd.
 func execPiDirTimeout(nodeVersion string, args []string, extraEnv []string, dir string, timeout time.Duration) (int, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -169,24 +180,58 @@ func execPiDirTimeout(nodeVersion string, args []string, extraEnv []string, dir 
 	if err != nil {
 		return 4, err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-	cmd := exec.CommandContext(ctx, filepath.Join(binDir, "pi"), args...)
+	cmd := exec.Command(filepath.Join(binDir, "pi"), args...)
 	cmd.Dir = dir
 	cmd.Env = childEnv(binDir, extraEnv)
 	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		if ctx.Err() == context.DeadlineExceeded {
-			return 1, fmt.Errorf("pi agent run timed out after %s", timeout)
-		}
-		if ee, ok := errors.AsType[*exec.ExitError](err); ok {
-			return ee.ExitCode(), nil
-		}
+	cmd.SysProcAttr = newProcessGroupAttr()
+
+	// Tee child stdout: the user still sees output, the watchdog consumes a
+	// copy and resets its stall clock on every byte. If the child were bound
+	// straight to os.Stdout the watchdog would never see the bytes.
+	pr, pw := io.Pipe()
+	cmd.Stdout = io.MultiWriter(os.Stdout, pw)
+
+	if err := cmd.Start(); err != nil {
+		_ = pw.Close()
 		return 1, err
 	}
-	return 0, nil
+	pgid := cmd.Process.Pid // Setpgid makes the child its own group leader: pid == pgid
+	wd := newWatchdog(stallTimeout(), watchdogGrace(), pgid, pr, pw)
+	wd.start()
+	defer wd.stop() // closes pw → reader unblocks; safe after child exit too
+
+	// Wait for exit OR wall-clock expiry OR stall, whichever comes first.
+	waitCh := make(chan error, 1)
+	go func() { waitCh <- cmd.Wait() }()
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+
+	select {
+	case err := <-waitCh:
+		if err != nil {
+			if ee, ok := errors.AsType[*exec.ExitError](err); ok {
+				return ee.ExitCode(), nil // pi printed its own errors; pass the code through
+			}
+			return 1, err
+		}
+		return 0, nil
+	case <-timer.C:
+		terminateProcessGroup(pgid, watchdogGrace())
+		<-waitCh // reap the group before returning
+		report := buildEscalationReport(dir, args, "timeout", exitWatchdogTerminated, wd, timeout)
+		_ = writeEscalationPacket(dir, report)
+		logSelfHealEvent(dir, "group-kill", "wall-clock timeout after "+timeout.String())
+		return exitWatchdogTerminated, fmt.Errorf("pi agent run timed out after %s", timeout)
+	case <-wd.stalled():
+		terminateProcessGroup(pgid, watchdogGrace())
+		<-waitCh
+		report := buildEscalationReport(dir, args, "stall", exitWatchdogTerminated, wd, 0)
+		_ = writeEscalationPacket(dir, report)
+		logSelfHealEvent(dir, "group-kill", "output stall: no stdout for "+stallTimeout().String())
+		return exitWatchdogTerminated, fmt.Errorf("pi agent run stalled: no output for %s", stallTimeout())
+	}
 }
 
 // resolveNodeVersion returns the version of the latest Node installed via nvm

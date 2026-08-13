@@ -20,7 +20,9 @@ This repository is a **coding agent evaluation harness** built around the [Pi co
 ## Project Management (added 2026-08-13)
 
 This project is managed against `ROADMAP.md` and `BACKLOG.md` (ranked by rough
-RICE). Rituals every session must honor:
+RICE). **Every session starts by reading `STATUS.md` (one-screen) →
+`ROADMAP.md` → `BACKLOG.md`**, then follows the cycle ritual in
+`docs/roadmap-workflow.md`. Rituals every session must honor:
 
 1. **Scope discipline** — before implementing any new workstream, invoke the
    `scope-lock` skill to generate a `SCOPE.md` boundary contract from the

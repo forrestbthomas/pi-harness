@@ -11,6 +11,12 @@ eval/live-results/
 .env
 *.pyc
 .DS_Store
+
+# Root-level test caches (eval/ variants covered below)
+.pytest_cache/
+
+# Generated `pi-run project-understand` output (regenerable)
+docs/understand/
 # Git worktrees for parallel agent work
 .worktrees/
 
@@ -19,9 +25,6 @@ eval/live-results/
 
 # Go build output
 bin/
-
-# Leftover from an extracted subproject (not part of the harness)
-github-repo-controller/bin/
 
 # pi-subagents runtime artifacts (may contain sensitive session transcripts)
 .pi-subagents/
@@ -33,6 +36,7 @@ github-repo-controller/bin/
 
 # DeepEval cache
 eval/.deepeval/
+.deepeval/
 
 # Local multi-axis review sweep artifacts (gpt-5.6-terra)
 .review-sweep/

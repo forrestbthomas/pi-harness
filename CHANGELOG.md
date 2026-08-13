@@ -115,8 +115,6 @@ All notable changes to this project are documented here. Format follows
   root, and a missing `eval/requirements.txt` fails fast with a clear message
   instead of a confusing pip error (works from any cwd, incl. brew installs)
   (#31).
-
-### Added
 - `pi-run chat|print --permission-mode default|plan|acceptEdits|bypassPermissions`
   (+ `--read-only` alias, `PI_PERMISSION_MODE` env). Maps to Pi's real flags:
   plan → `--tools read,grep,find,ls`; bypassPermissions → `--approve`;

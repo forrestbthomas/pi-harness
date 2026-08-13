@@ -81,8 +81,8 @@ wrappers in `.pi/agents/` already set a 10-minute default, but explicit launch
 values are still preferred. Children are instructed (in the wrappers) to pass
 `timeout:` on every `bash` call and to avoid long-running/background commands.
 
-<!-- This section is maintained by the coding agent via lore (https://github.com/BYK/loreai) -->
 ## Long-term Knowledge
 
-For long-term knowledge entries managed by [lore](https://github.com/BYK/loreai) (gotchas, patterns, decisions, architecture), see [`.lore.md`](.lore.md) in the project root.
-<!-- End lore-managed section -->
+Historical project knowledge is frozen in [`.lore.md`](.lore.md) (no longer
+maintained by lore; kept as a dated record). For current state, see
+`ROADMAP.md`, `BACKLOG.md`, `CHANGELOG.md`, and `docs/`.

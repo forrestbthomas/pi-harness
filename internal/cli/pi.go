@@ -80,6 +80,31 @@ func piArgs(p Provider, model, mode string, rest []string, persist bool, permiss
 	return append(args, rest...)
 }
 
+// nonInteractiveEnv is injected into every spawned pi process (see launchEnv)
+// so child bash tools can never block on an interactive editor or pager.
+// doctor (runDoctor) and missingNonInteractiveEnv treat these as required —
+// removing one is a regression of the #59 hang-prevention guard.
+var nonInteractiveEnv = []string{
+	"GIT_EDITOR=true",
+	"GIT_SEQUENCE_EDITOR=true",
+	"GIT_TERMINAL_PROMPT=0",
+	"PAGER=cat",
+}
+
+// missingNonInteractiveEnv returns which required hang-prevention vars are
+// absent from env (empty slice = all present). Doctor uses it as the
+// operational regression guard for the #59 non-interactive launch env.
+func missingNonInteractiveEnv(env []string) []string {
+	joined := "\n" + strings.Join(env, "\n") + "\n"
+	var missing []string
+	for _, want := range nonInteractiveEnv {
+		if !strings.Contains(joined, "\n"+want+"\n") {
+			missing = append(missing, want)
+		}
+	}
+	return missing
+}
+
 // launchEnv returns the provider key, any provider-specific environment
 // needed by the Pi child, and the non-interactive shell environment that
 // prevents child bash tools from blocking on interactive prompts. BaseURL is
@@ -112,12 +137,7 @@ func launchEnv(p Provider, key string) []string {
 	// subagent never returns. GIT_EDITOR/SEQUENCE_EDITOR=true make git accept
 	// the default message; GIT_TERMINAL_PROMPT=0 refuses credential prompts;
 	// PAGER=cat prevents less/more pager hangs.
-	env = append(env,
-		"GIT_EDITOR=true",
-		"GIT_SEQUENCE_EDITOR=true",
-		"GIT_TERMINAL_PROMPT=0",
-		"PAGER=cat",
-	)
+	env = append(env, nonInteractiveEnv...)
 	return env
 }
 

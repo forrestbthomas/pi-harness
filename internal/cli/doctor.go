@@ -81,6 +81,15 @@ func runDoctor() int {
 	venv := filepath.Join(root, "eval", ".venv", "bin", "python")
 	check("eval/.venv present", pathExists(venv))
 
+	// Non-interactive launch env (regression guard for #59): child bash tools
+	// must never be able to open an interactive editor/pager and hang forever.
+	// Doctor fails loudly if any required var is missing from the launch env.
+	missing := missingNonInteractiveEnv(launchEnv(Provider{KeyEnv: "OPENAI_API_KEY"}, "testvalue"))
+	for _, m := range missing {
+		fmt.Printf("  [info] non-interactive launch env missing: %s\n", m)
+	}
+	check("non-interactive launch env present (hang prevention)", len(missing) == 0)
+
 	// Symlink onto PATH is an install convention; informational
 	// unless PI_RUN_PERSONAL=1 so doctor passes on a fresh clone.
 	if personalMode() {

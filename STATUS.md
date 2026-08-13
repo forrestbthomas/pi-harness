@@ -16,11 +16,10 @@ BACKLOG.md (RICE pass 2026-08-13); the top items await promotion._
 
 | Item | RICE | Tag |
 |---|---|---|
-| **BACKLOG #1 — doctor verifies non-interactive env** (regression guard) | 3.60 | Blocker |
-| **BACKLOG #2 — per-tool-call timeout upstream** (pi-subagents #150) | 2.80 | Blocker |
-| **BACKLOG #3 — surface PI_SELF_HEAL events in scorecard + enable in CI** | 1.40 | Enabler |
-| **BACKLOG #4 — post-rebase hook** (auto-continue wedged rebase) | 1.20 | Enabler |
-| **BACKLOG #5 — nightly archives watchdog/git-state events** | 1.00 | Enabler |
+| **BACKLOG #1 — per-tool-call timeout upstream** (pi-subagents #150) | 2.80 | Blocker |
+| **BACKLOG #2 — surface PI_SELF_HEAL events in scorecard + enable in CI** | 1.40 | Enabler |
+| **BACKLOG #3 — post-rebase hook** (auto-continue wedged rebase) | 1.20 | Enabler |
+| **BACKLOG #4 — nightly archives watchdog/git-state events** | 1.00 | Enabler |
 
 ## Later (raw — ideas worth exploring)
 

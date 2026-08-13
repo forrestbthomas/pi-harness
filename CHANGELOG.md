@@ -7,6 +7,11 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **Adopt upstream run-level timeout machinery** (W5 Part A): pin
+  `npm:pi-subagents@0.45.1` → `0.48.0` so the harness finally installs the
+  default wall-clock timeout for async subagent runs (our upstream #978/#979,
+  shipped 0.47.0+). Lockfile re-resolved; config-check + pin test + subagent
+  smoke verified.
 - **`pi-run doctor` non-interactive env check** (BACKLOG #1): `doctor` now
   verifies the #59 hang-prevention launch env (`GIT_EDITOR`/`GIT_SEQUENCE_EDITOR`,
   `GIT_TERMINAL_PROMPT`, `PAGER`) is present and fails loudly if a required var

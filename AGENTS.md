@@ -17,6 +17,23 @@ This repository is a **coding agent evaluation harness** built around the [Pi co
 - Never commit API keys, tokens, or kubeconfig contents.
 - Keep changes minimal and focused; do not refactor unrelated code.
 
+## Repository navigation (how to find things)
+
+| Path | What lives there |
+|---|---|
+| `cmd/pi-run/`, `internal/cli/` | The Go CLI (single module `github.com/forrestthomas1/pi-harness`): command dispatch + all logic (watchdog, self-heal, cost, provider routing, doctor, config-check) |
+| `eval/` | DeepEval suite: datasets (`datasets/`), tests (`tests/`), scripts (`scripts/`, incl. `score_run.py`), baselines (`baselines/`) |
+| `docs/` | Architecture, specs (`superpowers/specs/`), knowledge base (`knowledge-base/`), workflow (`roadmap-workflow.md`), research (`*.md`) |
+| `.pi/` | Pi runtime config: `settings.json` (project packages incl. pinned `pi-subagents`), `SYSTEM.md`, agent wrappers (`agents/`), npm workspace (`npm/`) |
+| `.github/workflows/` | CI: `ci.yml`, `nightly-live-eval.yml`, `release.yml`, `provider-scorecard.yml`, `codeql.yml` |
+| `scripts/` | Bootstrap, install-skills, build-release, update-homebrew-formula, tag-release |
+| `examples/` | Worked examples (subagents, plugins) |
+| Root docs | `ROADMAP.md` (workstreams + DoD), `BACKLOG.md` (ranked RICE queue), `STATUS.md` (one-screen snapshot), `SCOPE.md` (active scope-lock contract), `CHANGELOG.md` (shipped = versions), `AGENTS.md` (this file) |
+
+**Session entry:** start at `STATUS.md` → `ROADMAP.md` → `BACKLOG.md`, then
+follow the ritual in `docs/roadmap-workflow.md` (cycle cadence, ownership,
+traceability, release + git hygiene rules).
+
 ## Project Management (added 2026-08-13)
 
 This project is managed against `ROADMAP.md` and `BACKLOG.md` (ranked by rough

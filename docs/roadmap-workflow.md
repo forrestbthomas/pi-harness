@@ -17,6 +17,12 @@ tags diverged from main twice). Follow it every session.
 
 ## Cycle cadence (weekly, at cycle start — not ad hoc)
 
+0. **Post-merge docs reconciliation** — after any behavior-changing merge, run
+   `eval/.venv/bin/python -m pytest eval/tests/test_docs_drift.py` (deterministic
+   invariants: README exit-code table, provider count, version claims, roadmap
+   statuses) and update the docs that describe the changed behavior
+   (README/CHANGELOG/ROADMAP/STATUS) **before** starting new work. The drift
+   test also runs in CI (`python-quick`).
 1. **Reconcile statuses with reality** — for every merged PR since last cycle,
    check its workstream row: statuses must match what actually shipped (this is
    the W1-class drift guard). Fix before adding anything new.

@@ -6,6 +6,27 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+### Added
+- **Self-healing agent runs** (W1, spec
+  `docs/superpowers/specs/2026-08-13-self-healing-design.md`):
+  - `pi-run self-heal` detects in-progress git state and recovers it
+    (`GIT_EDITOR=true git rebase --continue` when conflicts are resolved;
+    reports `needs-attention` with conflict paths otherwise; `--abort` is
+    explicit-only; worktree-safe detection, index.lock idempotency guard).
+  - Process-group kill for timed-out runs: SIGTERM → 10s grace → SIGKILL
+    reaps the whole tree (fixes the direct-child-only kill gap).
+  - Output-stall watchdog for non-interactive spawns (`PI_STALL_TIMEOUT_SECS`,
+    default 300s; chat excluded).
+  - Escalation packet `.pi/heal/<timestamp>-report.json` + exit code `9`
+    (watchdog terminated), honest resume handle for `--no-session` runs.
+  - `PI_SELF_HEAL=1` observability events (`.pi/heal/events.jsonl`).
+- **Contract test pin** for exit code `9` in `test_contract_exit_codes.py`.
+
+### Changed
+- `launchEnv` injects non-interactive env (`GIT_EDITOR=true`,
+  `GIT_SEQUENCE_EDITOR=true`, `GIT_TERMINAL_PROMPT=0`, `PAGER=cat`) so child
+  bash tools can never block on an interactive editor/pager (#59).
+- Subagent wrappers forbid interactive editor/pager commands (#59).
 ## [0.9.0] - 2026-08-12
 
 ### Added

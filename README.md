@@ -10,7 +10,7 @@ A ready-to-use coding agent harness built around the [Pi coding agent](https://p
 
 ## What You Get
 
-- **`pi-run` CLI** — a compiled Go binary (repo `bin/pi-run`) that owns the harness runtime: `chat`, `print`, `resume`, `cost`, `ci-benchmark`, `eval`, `config-check`, `doctor`, `setup`, `install`, `clean`, `project-understand`, `mcp-server`, `providers`, `hooks`, `version`.
+- **`pi-run` CLI** — a compiled Go binary (repo `bin/pi-run`) that owns the harness runtime: `chat`, `print`, `resume`, `cost`, `ci-benchmark`, `eval`, `config-check`, `doctor`, `setup`, `install`, `clean`, `project-understand`, `mcp-server`, `self-heal`, `providers`, `hooks`, `version`.
 - **Pi CLI** installed globally (via nvm) and configured for this project.
 - **Curated Pi packages** installed project-locally:
   - `pi-mcp-adapter` — token-efficient MCP adapter.
@@ -218,6 +218,27 @@ pi-run eval
 ```
 
 `pi-run eval --quick` and the config tests run without any key.
+
+### Self-healing agent runs
+
+`pi-run` can detect and recover wedged agent runs so a hang never needs a human
+nudge (spec `docs/superpowers/specs/2026-08-13-self-healing-design.md`):
+
+- **`pi-run self-heal`** — detect in-progress git state (a wedged rebase) and
+  recover it: `GIT_EDITOR=true git rebase --continue` when conflicts are
+  resolved, or report `needs-attention` with conflict paths (never guesses
+  resolutions). `--abort` is explicit-only.
+- **Process-group kill** — timed-out runs kill the whole process tree
+  (SIGTERM → 10s grace → SIGKILL), not just the direct `pi` child.
+- **Output-stall watchdog** — non-interactive runs (print/benchmark) that emit
+  no output for `PI_STALL_TIMEOUT_SECS` (default 300) are terminated; chat is
+  never auto-killed.
+- **Escalation packet** — killed runs write `.pi/heal/<timestamp>-report.json`
+  (goal, side-effect ledger, pending state, trigger evidence, resume handle)
+  and exit `9` (watchdog terminated).
+- **Observability** — set `PI_SELF_HEAL=1` to log stall/group-kill/recovery
+  events to `.pi/heal/events.jsonl` (CI nightly sets it; deterministic tests
+  leave it off).
 
 ### Nightly live eval
 

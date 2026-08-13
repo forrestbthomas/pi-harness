@@ -7,26 +7,26 @@
 
 | Item | Status |
 |---|---|
-| **W4 Project-management layer** (roadmap workflow, this STATUS file) | Active ritual — the governance layer that keeps everything else true |
+| **W4 Project-management layer** (roadmap workflow, STATUS, RICE cycle) | Active ritual — the governance layer that keeps everything else true |
 
-_No feature workstream is in flight. Next cycle starts with a prioritization
-pass (RICE) to promote the next item into Now._
+_No feature workstream is in flight. This cycle's candidates are ranked in
+BACKLOG.md (RICE pass 2026-08-13); the top items await promotion._
 
 ## Next (shaped — next 1–2 cycles)
 
-| Item | Evidence |
-|---|---|
-| **BACKLOG #1 — per-tool-call timeout upstream** (pi-subagents #150) | Our v0.9.1 watchdog bounds runs but not mid-tool wedges; upstream is the right home; our #978/#979 merged upstream |
-| **BACKLOG #2 — pin pi-subagents** | ✅ **SHIPPED 2026-08-13** (v0.9.2) — kept here until the cycle closes the row |
-| **BACKLOG #3 — owner-only artifact perms** | ✅ **SHIPPED 2026-08-13** (v0.9.2) — kept here until the cycle closes the row |
+| Item | RICE | Tag |
+|---|---|---|
+| **BACKLOG #1 — doctor verifies non-interactive env** (regression guard) | 3.60 | Blocker |
+| **BACKLOG #2 — per-tool-call timeout upstream** (pi-subagents #150) | 2.80 | Blocker |
+| **BACKLOG #3 — surface PI_SELF_HEAL events in scorecard + enable in CI** | 1.40 | Enabler |
+| **BACKLOG #4 — post-rebase hook** (auto-continue wedged rebase) | 1.20 | Enabler |
+| **BACKLOG #5 — nightly archives watchdog/git-state events** | 1.00 | Enabler |
 
 ## Later (raw — ideas worth exploring)
 
-- Cloud eval backend · context-engine un-park (`pi-run context`) · model-catalog
-  auto-refresh in CI · Windows support
-- Idea inbox (unranked): doctor non-interactive-env guard · eval output gallery ·
-  self-heal auto-issue · nightly event archiving · post-rebase hook ·
-  `PI_SELF_HEAL` scorecard surfacing · harness self-evaluation
+- Model-catalog auto-refresh in CI · auto-open issue on N self-heals (needs #3) ·
+  harness self-evaluation · cloud eval backend · eval output gallery ·
+  context-engine un-park · Windows support
 
 ## Shipped recently (one spelling: CHANGELOG)
 

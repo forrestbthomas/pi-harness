@@ -233,6 +233,20 @@ func TestLaunchEnvNonInteractive(t *testing.T) {
 	}
 }
 
+// TestNonInteractiveEnvPinned pins the single source of truth itself, so the
+// doctor regression guard cannot be silently defeated by emptying the list.
+func TestNonInteractiveEnvPinned(t *testing.T) {
+	want := []string{"GIT_EDITOR=true", "GIT_SEQUENCE_EDITOR=true", "GIT_TERMINAL_PROMPT=0", "PAGER=cat"}
+	if len(nonInteractiveEnv) != len(want) {
+		t.Fatalf("nonInteractiveEnv has %d entries, want %d: %v", len(nonInteractiveEnv), len(want), nonInteractiveEnv)
+	}
+	for i := range want {
+		if nonInteractiveEnv[i] != want[i] {
+			t.Fatalf("nonInteractiveEnv[%d] = %q, want %q", i, nonInteractiveEnv[i], want[i])
+		}
+	}
+}
+
 func TestLaunchEnvAnthropicCompatibleProvider(t *testing.T) {
 	// Anthropic-routed providers (e.g. AWS Bedrock) must hand pi the key under
 	// ANTHROPIC_API_KEY and the base URL under ANTHROPIC_BASE_URL so pi's

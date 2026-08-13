@@ -6,6 +6,13 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+### Added
+- **`pi-run doctor` non-interactive env check** (BACKLOG #1): `doctor` now
+  verifies the #59 hang-prevention launch env (`GIT_EDITOR`/`GIT_SEQUENCE_EDITOR`,
+  `GIT_TERMINAL_PROMPT`, `PAGER`) is present and fails loudly if a required var
+  is removed. `launchEnv` builds from a single `nonInteractiveEnv` source of
+  truth; unit tests pin the exact set so the guard cannot be silently emptied.
+
 ## [0.9.2] - 2026-08-13
 
 ### Added

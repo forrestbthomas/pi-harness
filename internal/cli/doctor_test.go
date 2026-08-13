@@ -85,6 +85,25 @@ func TestDoctorNoKeyExitsZero(t *testing.T) {
 	if strings.Contains(string(output), "FAILURES FOUND") {
 		t.Fatalf("runDoctor output contains unexpected failure summary: %s", output)
 	}
+	if !strings.Contains(string(output), "non-interactive launch env present (hang prevention)") {
+		t.Fatalf("runDoctor output missing the non-interactive env check: %s", output)
+	}
+}
+
+// TestMissingNonInteractiveEnv locks the regression-guard helper: it reports
+// exactly which hang-prevention vars are absent from a launch env.
+func TestMissingNonInteractiveEnv(t *testing.T) {
+	full := []string{"GIT_EDITOR=true", "GIT_SEQUENCE_EDITOR=true", "GIT_TERMINAL_PROMPT=0", "PAGER=cat"}
+	if missing := missingNonInteractiveEnv(full); len(missing) != 0 {
+		t.Fatalf("expected no missing vars, got %v", missing)
+	}
+	noPager := []string{"GIT_EDITOR=true", "GIT_SEQUENCE_EDITOR=true", "GIT_TERMINAL_PROMPT=0"}
+	if missing := missingNonInteractiveEnv(noPager); len(missing) != 1 || missing[0] != "PAGER=cat" {
+		t.Fatalf("expected [PAGER=cat] missing, got %v", missing)
+	}
+	if missing := missingNonInteractiveEnv(nil); len(missing) != 4 {
+		t.Fatalf("expected all 4 missing for empty env, got %v", missing)
+	}
 }
 
 func TestDoctorMissingNodeFails(t *testing.T) {

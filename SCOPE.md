@@ -16,6 +16,7 @@
   - `src/extension/config.ts`, `src/shared/types.ts` — `config.toolTimeoutMs` + `PI_SUBAGENT_TOOL_TIMEOUT_MS` env
   - `src/runs/background/subagent-runner.ts`, `src/runs/shared/async-execution.ts` — async per-tool timer (arm/clear, termination reuse)
   - `src/runs/foreground/execution.ts`, `src/runs/foreground/subagent-executor.ts` — foreground per-tool timer + validation
+  - `src/runs/foreground/chain-execution.ts`, `src/runs/shared/parallel-utils.ts` — tight foreground chain/parallel propagation needed to carry the resolved per-tool timeout to every child
   - `test/unit/`, `test/integration/` — new + extended timeout tests
   - `docs/configuration.md`, `docs/agents.md`, `docs/tool-reference.md`, `CHANGELOG.md`
 - **Features:**
@@ -41,6 +42,7 @@
 # Scope Change Log
 | # | Category | What | Why | Decision | Outcome |
 |---|----------|------|-----|----------|---------|
+| 1 | File-surface expansion | `src/runs/foreground/chain-execution.ts`, `src/runs/shared/parallel-utils.ts` | Required to preserve per-agent timeout precedence through foreground chain and parallel child launches; no new behavior beyond W5. | **Approved by user 2026-08-13** | Retained; validation and docs remain within original W5 boundaries. |
 
 # Follow-up Tasks
 - [ ] — (none yet)

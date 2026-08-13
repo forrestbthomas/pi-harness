@@ -7,7 +7,7 @@
 
 | Item | Status |
 |---|---|
-| **W5 — Upstream per-tool-call timeout** (pi-subagents #150) | In research (Phase 1) — then spec → scope-lock → implement → validate |
+| **W5 — Upstream per-tool-call timeout** (upstream #1076/#1077; run-level trace #978/#979) | Part A (pin 0.48.0) landed; **Part B submitted upstream** — issue #1076, PR #1077 open, awaiting maintainer review; Part C (observe via `PI_SELF_HEAL`) starts after a release carries `toolTimeoutMs` |
 | **W4 Project-management layer** (roadmap workflow, STATUS, RICE cycle) | Active ritual — the governance layer that keeps everything else true |
 
 ## Next (shaped — next 1–2 cycles)
@@ -33,4 +33,4 @@
 
 ## Open PRs / branches
 
-- Open PRs: **none** · Branches: `main` only · Remotes: `github` only
+- Open PRs: **none** (harness) · Upstream: pi-subagents **#1077** (per-tool-call timeout) open, issue **#1076** · Branches: `main` only · Remotes: `github` only

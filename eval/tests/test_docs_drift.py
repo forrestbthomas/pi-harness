@@ -138,12 +138,13 @@ def test_contributing_commit_prefixes_match_practice():
 
 def test_agents_workflow_target_exists():
     """docs-audit P1-2 (Surface E): AGENTS.md step 3 pointed at phantom
-    eval/outputs/; the documented capture target must exist and be the real
-    consumer (eval/live-results/)."""
+    eval/outputs/; the documented capture target must be the real consumer
+    (eval/live-results/). No existence assertion: eval/live-results/ is a
+    generated output dir, absent on fresh checkouts (GOV-3 CI wiring caught
+    the false positive 2026-08-14)."""
     agents = _read("AGENTS.md")
     assert "eval/live-results/" in agents, "AGENTS.md must point at the real live-results output dir"
     assert "eval/outputs/" not in agents, "AGENTS.md phantom eval/outputs/ dir must be gone"
-    assert (HARNESS / "eval/live-results").is_dir(), "eval/live-results/ must exist (score_run consumer)"
 
 
 def test_system_commands_are_real():

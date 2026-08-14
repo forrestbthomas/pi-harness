@@ -42,8 +42,13 @@ jobs:
         run: |
           python -m venv eval/.venv
           eval/.venv/bin/pip install -r eval/requirements.txt
+      - name: Fetch release tags (GOV-3)
+        # GOV-1's tag↔changelog invariants (test_pm_drift.py) shell out to
+        # `git tag`; the default shallow checkout has no tags, so without this
+        # the v0.7.0-gap class would skip silently instead of failing CI.
+        run: git fetch --tags --force origin
       - name: Run quick eval
-        run: .venv/bin/python -m pytest tests/test_code_quality.py tests/test_agent_task_completion.py::test_dataset_expected_outputs_are_non_empty -v
+        run: .venv/bin/python -m pytest tests/test_code_quality.py tests/test_agent_task_completion.py::test_dataset_expected_outputs_are_non_empty tests/test_docs_drift.py tests/test_pm_drift.py -v
         working-directory: eval
 
   python-contract:

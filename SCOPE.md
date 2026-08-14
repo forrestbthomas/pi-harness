@@ -1,5 +1,5 @@
 # Scope Contract
-**Task:** W8 — EVAL-3: dataset versioning + scorecard provenance | **Plan:** `docs/superpowers/specs/2026-08-14-dataset-versioning-and-provenance.md` | **Date:** 2026-08-14 | **Status:** ACTIVE (approved 2026-08-14)
+**Task:** W8 — EVAL-3: dataset versioning + scorecard provenance | **Plan:** `docs/superpowers/specs/2026-08-14-dataset-versioning-and-provenance.md` | **Date:** 2026-08-14 | **Status:** CLOSED — 0 changes logged (shipped #89)
 
 > Supersedes the W7 flake-aware gate contract (CLOSED 2026-08-14; record preserved in git history). W5 Part C remains tracked in ROADMAP (upstream release gate).
 

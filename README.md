@@ -560,25 +560,22 @@ Exit codes: `0` ok · `1` generic · `2` usage · `3` missing API key · `4` nod
 ## Skills
 
 Pi auto-discovers skills from `~/.agents/skills/`, `.pi/skills/`, packages, and
-the `skills` array in settings. Two curated collections are pre-installed:
+project settings. Five curated collections are installed via
+`bash scripts/install-skills.sh` (durable clones under `~/.pi/agent/skills/`):
 
-- **Superpowers** (`obra/superpowers`): a skills collection (brainstorming,
-  writing-plans, executing-plans, systematic-debugging,
-  test-driven-development, ...). Refresh from
-  https://github.com/obra/superpowers.
-- **Addy Osmani's agent-skills**: cloned into a local skills directory and
-  wired via the `skills` array in `.pi/settings.json`. Includes
-  spec-driven-development, code-review-and-quality, test-driven-development,
-  and more.
+- **Superpowers** — planning/execution skills (brainstorming, writing-plans,
+  executing-plans, systematic-debugging, ...)
+- **agent-skills** — engineering skills (code-review-and-quality,
+  test-driven-development, security-and-hardening, ...)
+- **scope-lock** — anti-scope-creep SCOPE.md boundary contracts
+- **productskills** — PM skills (feature-prioritization, roadmap-planning,
+  prd-writing, ...)
+- **spec-coding-skills** — spec-plan, spec-crlp, spec-index
 
-For a durable copy, run `bash scripts/install-skills.sh` once (with network).
-It clones both collections into a Pi auto-discovered location, points the
-settings `skills` arrays at the durable clone, and is idempotent — re-run it
-any time to `git pull` both collections.
-
+Re-run `bash scripts/install-skills.sh` any time to refresh the clones.
 Invoke a skill in-session with `/skill:<name>` or just describe the task — the
 agent loads the matching skill automatically. `enableSkillCommands` is on in
-`.pi/settings.json`.
+`.pi/settings.json`. (AGENTS.md §Charter lists the same five.)
 
 ## Project Layout
 
@@ -605,17 +602,21 @@ agent loads the matching skill automatically. `enableSkillCommands` is on in
     ├── requirements.txt
     ├── pytest.ini
     ├── conftest.py            # Shared fixtures and Pi runner helper (uses pi-run)
+    ├── grader.py              # Shared deterministic grading harness
     ├── datasets/
-    │   └── coding_samples.jsonl
-    ├── benchmarks/            # Docker-isolated benchmark tasks (task.json + tests/run.sh)
-    │   └── benchmark-results/  # Git-ignored JSON run reports
-    └── tests/
-        ├── test_benchmark_format.py  # Hermetic benchmark task-format checks
-        ├── test_coding_correctness.py
-        ├── test_code_quality.py
-        ├── test_agent_task_completion.py
-        ├── test_secret_resolution.py
-        └── test_harness_config.py   # Deterministic config checks (no API key)
+    │   ├── tasks.json         # Manifest: datasetVersion + task table (count authority)
+    │   ├── coding_samples.jsonl
+    │   ├── graders/           # 49 deterministic grader scripts
+    │   └── references/        # 54 reference answers/solutions
+    ├── baselines/             # Committed live baseline (live-baseline.json)
+    ├── scripts/               # score_run.py baseline gate + scorer
+    ├── benchmarks/            # 8 Docker-isolated benchmark tasks (task.json + tests/run.sh)
+    ├── benchmark-results/     # Git-ignored JSON run reports (scorecard-<run>.json)
+    ├── live-results/          # Git-ignored nightly report + seam-report.json
+    └── tests/                 # 19 hermetic + live test files (contract, eval, drift guards)
+        └── (test_benchmark_format, test_dataset_schema, test_score_run,
+             test_docs_drift, test_pm_drift, test_benchmark_seam, test_contract_*,
+             test_live_suite, test_live_metrics, test_harness_config, ...)
 ```
 
 ## Adding New Evaluations

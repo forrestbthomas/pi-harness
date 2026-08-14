@@ -7,6 +7,15 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **Documentation audit Wave 3+4 (P2/P3)** (docs-audit, 2026-08-14): README
+  Skills section rewritten to the real 5 auto-discovered collections (was
+  "two curated via skills array"); Project Layout tree refreshed (real
+  datasets/grader/reference/baseline/live-results paths, 19-test list,
+  correct `eval/benchmark-results/` sibling path); requirements.txt
+  pytest-json-report comment corrected (conftest hook writes the report, not
+  the plugin); EPICS header stamp; anti-lockin "last verified" stamp;
+  PR-template traceability adds EPIC option; AGENTS.md `.pi/` row adds
+  APPEND_SYSTEM.md + config-check `PI_RUN_PERSONAL=1` caveat.
 - **Documentation audit Wave 2 (P1)** (docs-audit, 2026-08-14): canonical
   release procedure (CONTRIBUTING + README point at `scripts/tag-release.sh`;
   versioning policy now actually codified in CONTRIBUTING; commit prefixes

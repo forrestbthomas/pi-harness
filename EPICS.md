@@ -1,5 +1,7 @@
 # Epics — themed initiatives that group backlog items
 
+**Owner:** forrestthomas · **Last updated:** 2026-08-14
+
 ## Why epics exist
 
 The backlog is a ranked queue of individual bets. An **epic** groups related

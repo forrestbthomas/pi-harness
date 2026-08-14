@@ -2,7 +2,7 @@
 What this change does and why.
 
 ## Roadmap traceability
-- [ ] Serves: **ROADMAP W# — <name>** or **BACKLOG #N — <name>**
+- [ ] Serves: **ROADMAP W# — <name>**, **BACKLOG #N — <name>**, or **EPIC #N — <name>**
 - [ ] If it serves neither: justify here (scope rule — out-of-scope work needs a backlog entry first)
 
 ## Test plan

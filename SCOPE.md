@@ -1,51 +1,31 @@
 # Scope Contract
-**Task:** Cut list from the 2026-08-14 persona debate (consumerless machinery + scope hygiene) | **Plan:** `.pi/debate/synthesis.md` + `docs/knowledge-base/decision/2026-08-14-persona-debate-scope.md` | **Date:** 2026-08-14 | **Status:** CLOSED — 3 changes logged
+**Task:** Apply the maturity-scan change-set to the PM layer (EPICS.md + BACKLOG.md + STATUS.md) | **Plan:** `.pi/debate/maturity-scan/synthesis.md` (six-persona convergence, 2026-08-14) | **Date:** 2026-08-14 | **Status:** CLOSED — 0 changes logged
 
 ## In Scope
-- **Files — MCP server (cut):**
-  - `internal/cli/mcp.go` (384 lines), `internal/cli/mcp_test.go` (527 lines) — delete
-  - `internal/cli/app.go` — remove `mcp-server` command case + usage line
-  - `README.md` — remove MCP server section + command-table row + CLI list mention + `pi-mcp-adapter` package note if it exists only for this
-  - `eval/tests/test_contract_mcp.py` (234 lines) — delete
-  - `.github/workflows/nightly-live-eval.yml`, `.github/workflows/ci.yml` — remove `test_contract_mcp.py` from pytest invocations
-  - `eval/conftest.py` — update `pi_run_bin` probe (remove "usage must document mcp-server" assertion); keep `SUPPORTED_PROVIDER_KEYS` mirror (used by other tests)
-  - `docs/*.md` — remove `pi-run mcp-server` command references where they describe the command (keep historical spec/research text)
-- **Files — OTel exporter (cut):**
-  - `internal/cli/otel.go` (183 lines), `internal/cli/otel_test.go` (222 lines) — delete
-  - `internal/cli/app.go` — remove `maybeExportOTLPSpan` call + `PI_OTLP_ENDPOINT` usage line
-  - `README.md` — remove Telemetry (OTLP) section + env table row
-  - `eval/tests/test_contract_otel.py` (106 lines) — delete
-  - `.github/workflows/nightly-live-eval.yml`, `.github/workflows/ci.yml` — remove `test_contract_otel.py` from pytest invocations
-  - `eval/conftest.py` — remove `PI_OTLP_ENDPOINT` from `_HERMETIC_ENV_VARS`
-- **Files — pdf2txt (cut):**
-  - `scripts/pdf2txt.sh` — delete (only referenced by the decision record itself)
-- **Files — docs hygiene:**
-  - `README.md` — already single-product (done in #98); clean remaining orphaned mentions
-  - `AGENTS.md`, `.pi/SYSTEM.md`, `CHARTER.md` — update any MCP/OTel references to reflect removal
-  - `docs/knowledge-base/decision/2026-08-14-persona-debate-scope.md` — update follow-up checklist (cut list done)
+- **Files:**
+  - `EPICS.md` — apply the converged epic shape: EPIC-1 trimmed (outcome "research-grade measurement", appetite in person-weeks, +EVAL-13..16, −EVAL-10, EVAL-7 parked, EVAL-6/12 updated); EPIC-2 (HEAL-1 demoted, HEAL-2 data-gated); EPIC-3 (COST-1 within-provider); EPIC-4 parked → PORT-0; EPIC-5 dissolved (DX-1/DX-2 → idea inbox); **EPIC-6 (new) "Repo maturity"** added.
+  - `BACKLOG.md` — rebuild the ranked queue: remove shipped EVAL-1..5 rows, remove EVAL-10, park EVAL-7/EPIC-4 items, demote HEAL-1 to a deferred section, add OSS-1/GOV-1/GOV-2/OSS-2/OWN-1/TAX-1/TAX-2/PORT-0/SECURITY-line + EVAL-13/14/15/16; update EVAL-6 (RICE 1.4), EVAL-12 (DoD), EVAL-5 (hold at 50), HEAL-2, COST-1; expand idea inbox (EVAL-10, DX-1, DX-2, HEAL-1 design question).
+  - `STATUS.md` — regenerate the one-screen snapshot to match the new epic/queue shape (EPIC-6 next; EPIC-4 parked; EPIC-5 dissolved).
+  - `SCOPE.md` — this contract, closed on completion.
+- **Features:**
+  1. Five epic rows: EPIC-1, 2, 3, 4 (parked: PORT-0 line), 6 (new); EPIC-5 dissolved; DX-1/DX-2/HEAL-1/EVAL-10/EVAL-7/PORT-1/PORT-2 in idea-inbox or deferred with recorded triggers.
+  2. EPIC-1 honest core ≈ 2.5–3 pw (EVAL-12 → EVAL-6 → EVAL-8 → EVAL-13/14/15/16); EVAL-5 held at 50.
+  3. EPIC-6 "Repo maturity" closes (DoD: OSS-1 + GOV-1 + GOV-2 + OSS-2 + OWN-1 + TAX-1 + TAX-2 + SECURITY line shipped/parked with recorded decisions; backlog ≤ ~12 active rows).
+- **Boundaries:**
+  - PM docs only — no product code, no workflow changes, no eval/dataset changes.
+  - RICE values are the debate's converged rough scores; documented as such.
+  - GOV-2 ships before GOV-1 in execution order (can't guard a location that doesn't exist); RICE order governs the ranked queue.
 
-## Boundaries
-- **No behavior change to remaining CLI surface.** Only removal; no refactor of code that stays.
-- **Exit-code table unchanged** (0–9 are stable contract; no mcp/otel codes to remove).
-- **Dataset case `coding-020`** (harness-routing, MCP protocol version) is a *knowledge* grader about MCP protocol negotiation — it references `pi-run mcp-server` in its prompt. Handle per decision below (flag).
-- **No change to eval grading, baselines, budget, score_run, watchdog, self-heal, cost, providers, hooks, install, doctor, config-check.**
-- **Hermetic tests stay green** after removal: `go build/vet/test`, pytest contract subset, config-check.
-
-## Out of Scope (explicit)
-- **Homebrew / release machinery** — CHARTER.md (just landed, #98) declares "macOS/Homebrew is the shipped leg." Cutting `update-homebrew-formula.sh` / `release.yml` Homebrew step contradicts the charter. Flagged for decision; NOT cut without explicit approval.
-- **PM artifacts relocation to `docs/governance/`** — declared in CHARTER.md as a follow-up; it is a docs-move workstream with wide link churn (ROADMAP/BACKLOG/EPICS/STATUS/SCOPE references), not a code cut. Separate PR.
-- **Spec shelf-ware consolidation** (19 specs → one decisions file) — shipped specs are referenced by ROADMAP rows; archiving them breaks roadmap links. Flagged for decision on depth (archive-only vs full consolidation); not cut blind.
-- `install-skills.sh`, `bootstrap.sh`, `tag-release.sh`, `build-release.sh` — governance/release tooling, not consumerless product surface.
-- `.pi/settings.json` Pi packages — runtime config, not harness product surface.
+## Out of Scope
+- Executing any individual backlog item (each lands as a normal workstream later).
+- The OSS-1 module-path/identity fix itself (that's a backlog item to execute next, not part of this docs restructure).
+- Spec shelf-ware physical archive (that's GOV-2's execution, not this contract).
+- Any change to code, CI, or the eval suite.
 
 # Scope Change Log
 | # | Category | What | Why | Decision | Outcome |
 |---|----------|------|-----|----------|---------|
-| 1 | ambiguity | `coding-020` dataset case references `pi-run mcp-server` in its prompt | Cutting the MCP server makes the case's premise stale (the case itself tests MCP protocol knowledge, not our server) | **Permit (user-approved 2026-08-14)** — rewrite the prompt to generic MCP protocol negotiation, keep case + grader | Done — prompt/expected_output rewritten, `datasetVersion` → 2026-08-14.5 |
-| 2 | user-expansion | Homebrew/release machinery cut | Debate listed it; CHARTER.md (#98) says Homebrew is the shipped leg — direct conflict | **Decline (user-approved 2026-08-14)** — charter wins; Homebrew/release machinery kept as-is | Kept — no change |
-| 3 | user-expansion | Spec shelf-ware consolidation depth | Debate said "archive to one decisions file"; 19 specs are ROADMAP-linked history | **Defer (no option selected 2026-08-14)** — specs untouched; separate workstream later | Deferred — follow-up task |
 
 # Follow-up Tasks
-- [ ] Resolve flagged decisions (coding-020, Homebrew, specs) — scope change #1–3
-- [ ] After cuts: update CHANGELOG [Unreleased], run full verification
-- [ ] PM artifacts relocation to `docs/governance/` — separate workstream (declared in CHARTER.md)
+- [ ] After merge: execute OSS-1 (canonical install/identity) as the highest-value next workstream.
+- [ ] After merge: bet the next ROADMAP workstream (EVAL-12 re-baseline pending tonight's nightly; then EPIC-6 GOV-2 relocation).

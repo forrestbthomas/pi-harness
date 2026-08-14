@@ -51,7 +51,7 @@ def test_changelog_has_unreleased_section():
 
 def test_security_supported_versions_are_current():
     security = _read("SECURITY.md")
-    assert "v0.9.x" in security and "✅ Active" in security
+    assert "v0.10.x" in security and "✅ Active" in security
 
 
 def test_roadmap_shipped_workstreams_not_stale():

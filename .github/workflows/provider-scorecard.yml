@@ -17,6 +17,8 @@ on:
 jobs:
   scorecard:
     runs-on: ubuntu-latest # Docker is preinstalled on GitHub-hosted runners
+    env:
+      PI_SELF_HEAL: '1'   # record watchdog/group-kill/recovery events to .pi/heal/events.jsonl for the scorecard (EVAL-4)
     steps:
       # actions/checkout@v7
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1

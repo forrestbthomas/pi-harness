@@ -91,6 +91,14 @@ type scorecardBaseline struct {
 	Regressions []scorecardRegression `json:"regressions"`
 }
 
+// scorecardSelfHeal is the self-heal event ledger summary (EVAL-4): how many
+// watchdog/group-kill/recovery events were recorded during the run. Populated
+// from <root>/.pi/heal/events.jsonl (best-effort; informational, never gated).
+type scorecardSelfHeal struct {
+	NEvents int            `json:"nEvents"`
+	ByKind  map[string]int `json:"byKind"`
+}
+
 // scorecard is the full on-disk artifact written to
 // eval/benchmark-results/scorecard-<run>.json (schema §4.3).
 type scorecard struct {
@@ -104,6 +112,7 @@ type scorecard struct {
 	BaselinePath  string              `json:"baselinePath,omitempty"`
 	Providers     []scorecardProvider `json:"providers"`
 	Baseline      *scorecardBaseline  `json:"baseline,omitempty"`
+	SelfHeal      *scorecardSelfHeal  `json:"selfHeal,omitempty"`
 	Passed        bool                `json:"passed"`
 }
 
@@ -360,7 +369,7 @@ func runScorecard(args []string) int {
 		}
 	}
 
-	sc := buildScorecard(opts, rows, tasks, baseline, budgetCap, st, code)
+	sc := buildScorecard(root, opts, rows, tasks, baseline, budgetCap, st, code)
 	path, err := writeScorecard(root, sc)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "pi-run: ci-benchmark: %v\n", err)
@@ -684,8 +693,37 @@ func scorecardExitCode(st scorecardGateStatus) int {
 // timestamp and run ID. Production behavior is unchanged.
 var scorecardNow = time.Now
 
+// readSelfHealEvents reads the .pi/heal/events.jsonl ledger under root and
+// counts events by kind. Best-effort: a missing file or malformed lines yield
+// zero events — observability data must never fail the scorecard (mirrors the
+// Python score_run.parse_self_heal_events semantics from W6).
+func readSelfHealEvents(root string) scorecardSelfHeal {
+	path := filepath.Join(root, ".pi", "heal", "events.jsonl")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return scorecardSelfHeal{NEvents: 0, ByKind: map[string]int{}}
+	}
+	byKind := map[string]int{}
+	nEvents := 0
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		var ev struct {
+			Kind string `json:"kind"`
+		}
+		if json.Unmarshal([]byte(line), &ev) != nil || ev.Kind == "" {
+			continue
+		}
+		nEvents++
+		byKind[ev.Kind]++
+	}
+	return scorecardSelfHeal{NEvents: nEvents, ByKind: byKind}
+}
+
 // buildScorecard assembles the scorecard artifact from the run data.
-func buildScorecard(opts scorecardOptions, rows []scorecardProvider, tasks []benchmarkTask, baseline map[string]float64, budgetCap float64, st scorecardGateStatus, code int) scorecard {
+func buildScorecard(root string, opts scorecardOptions, rows []scorecardProvider, tasks []benchmarkTask, baseline map[string]float64, budgetCap float64, st scorecardGateStatus, code int) scorecard {
 	sc := scorecard{
 		SchemaVersion: 1,
 		RunID:         scorecardRunID(opts.providers),
@@ -700,6 +738,9 @@ func buildScorecard(opts scorecardOptions, rows []scorecardProvider, tasks []ben
 		BaselinePath: opts.baselinePath,
 		Providers:    rows,
 		Passed:       code == 0,
+	}
+	if selfHeal := readSelfHealEvents(root); selfHeal.NEvents > 0 || len(selfHeal.ByKind) > 0 {
+		sc.SelfHeal = &selfHeal
 	}
 	if opts.failBelow >= 0 {
 		fb := opts.failBelow

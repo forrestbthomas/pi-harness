@@ -1,5 +1,5 @@
 # Scope Contract
-**Task:** W6 — Surface `PI_SELF_HEAL` events in scorecard + enable in CI | **Plan:** `docs/superpowers/specs/2026-08-13-surface-self-heal-events-scorecard.md` | **Date:** 2026-08-13 | **Status:** ACTIVE (approved 2026-08-13)
+**Task:** W6 — Surface `PI_SELF_HEAL` events in scorecard + enable in CI | **Plan:** `docs/superpowers/specs/2026-08-13-surface-self-heal-events-scorecard.md` | **Date:** 2026-08-13 | **Status:** CLOSED — 0 changes logged (shipped #83, verified 2026-08-14)
 
 > Supersedes the W5 per-tool-call timeout contract (record preserved in git history; W5 Part C remains tracked in ROADMAP and resumes when an upstream release carries `toolTimeoutMs`).
 

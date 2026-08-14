@@ -20,7 +20,7 @@ one-screen snapshot and `docs/roadmap-workflow.md` for the cycle ritual.
 | 8 | context-engine un-park (`pi-run context` session-stats) | 0.17 | Enabler | 1.5 pw | user parked it; un-park trigger: user re-prioritizes |
 | 9 | Windows support | 0.11 | Enabler | 4 pw | Go stdlib portable but pi/nvm/brew story is Unix-first |
 
-_Promoted 2026-08-13: per-tool-call timeout upstream → ROADMAP W5 (was rank #1). Promoted 2026-08-13: surface `PI_SELF_HEAL` events in scorecard + enable in CI → ROADMAP W6 (was rank #1). Closed 2026-08-13: doctor non-interactive-env guard (was rank #1 before promotion) — landed in `main`, see CHANGELOG [Unreleased]. Also closed earlier the same day: pin pi-subagents and owner-only artifact perms (in v0.9.2)._
+_Promoted 2026-08-13: per-tool-call timeout upstream → ROADMAP W5 (was rank #1). Promoted 2026-08-13: surface `PI_SELF_HEAL` events in scorecard + enable in CI → ROADMAP W6 (was rank #1). Closed 2026-08-14: W6 — merged (#83) and verified on the 2026-08-14 manual nightly (`selfHeal` block surfaced; 0 events on a healthy run; gate failed on unrelated coding-005 pass-rate dip and coding-010 cost spike). Closed 2026-08-13: doctor non-interactive-env guard (was rank #1 before promotion) — landed in `main`, see CHANGELOG [Unreleased]. Also closed earlier the same day: pin pi-subagents and owner-only artifact perms (in v0.9.2)._
 
 ## Idea inbox (unranked, capture-only)
 

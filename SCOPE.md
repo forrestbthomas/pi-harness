@@ -1,5 +1,5 @@
 # Scope Contract
-**Task:** Execute the documentation-audit change-set (5 Technical Writer subagents' converged 4-wave plan) | **Plan:** `.pi/debate/docs-audit/synthesis.md` | **Date:** 2026-08-14 | **Status:** ACTIVE
+**Task:** Execute the documentation-audit change-set (5 Technical Writer subagents' converged 4-wave plan) | **Plan:** `.pi/debate/docs-audit/synthesis.md` | **Date:** 2026-08-14 | **Status:** CLOSED — 3 changes logged
 
 ## In Scope (the 4 waves, as 3 PRs to avoid a git mess)
 - **PR 1 — Wave 1 (P0): Truth restoration.** Dataset-count sweep to `tasks.json` authority (README/seam-doc/PM docs/test docstrings/nightly header → 62/54/49/54, datasetVersion .7) + restore the data-vs-prose drift guard in `test_docs_drift.py`; purge mcp-server ghost (plugins.md:54, gap-analysis banner, hardening spec); spec-status SHIPPED convention on 10 eval specs; PM reconciliation (13 backlog rows SHIPPED, STATUS regen, extend `test_pm_drift.py` "CHANGELOG entry ⇒ not open row").

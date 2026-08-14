@@ -1,41 +1,31 @@
 # Scope Contract
-**Task:** EVAL-6 (slice 1) — Agentic case family: tool-using cases that exercise the harness's read-only tool surface | **Plan:** BACKLOG EVAL-6 (EPIC-1, RICE 1.4, 1 pw total — this is the first ~0.5 pw slice); ROADMAP §Release Milestones v0.11.0 | **Date:** 2026-08-14 | **Status:** CLOSED — 1 change logged
+**Task:** GOV-1 (mechanical core) — PM-layer drift guard: EPICS↔BACKLOG↔STATUS consistency + changelog-never-skips-tag | **Plan:** BACKLOG GOV-1 (EPIC-6, RICE ~3.0, 0.5 pw); ROADMAP §Release Milestones v0.11.0 | **Date:** 2026-08-14 | **Status:** CLOSED — 1 change logged
 
 ## In Scope
-- **New dataset category `agentic`** (tool-using):
-  - `eval/tests/test_dataset_schema.py` — add `agentic` to `CATEGORIES` + `CATEGORY_BUDGET` (min 3, max 8); the category counts must stay within budget for all 6 existing categories too.
-  - `eval/datasets/coding_samples.jsonl` — add **4 new tool-using cases** (coding-051..054, `category: agentic`, `grader: deterministic`), each requiring a read-only tool fact the agent must gather from the repo:
-    - coding-051: read `go.mod` → report the Go version (tool: read)
-    - coding-052: list `eval/datasets/graders/` → count the graders (tool: ls/find)
-    - coding-053: read `providers.json` → count the providers (tool: read)
-    - coding-054: grep the README for the "Release Milestones" section heading → name it (tool: grep)
-  - `eval/datasets/graders/coding-051..054/grade.py` — deterministic graders on the tool-grounded fact (accept the true value; a hallucinated/wrong value fails). References contain the true values (oracle rule: references provably pass).
-  - `eval/datasets/references/coding-051..054/` — reference answers.
-  - `eval/datasets/tasks.json` — add the 4 tasks + bump `datasetVersion` (EVAL-3 rule).
-- **Live-suite tool enabling:**
-  - `eval/tests/test_live_suite.py` — `_run_agent_once` passes `--permission-mode plan` (read-only tools `read,grep,find,ls`) for `agentic`-category cases (only those — the other 50 keep the current no-tools invocation so their grading semantics don't change).
-  - `eval/conftest.py` — no change needed (run_pi_print already forwards extra_args); verify.
-- **Docs/records:** `CHANGELOG.md`, `SCOPE.md`, decision record.
+- **Files:**
+  - `eval/tests/test_pm_drift.py` (NEW) — hermetic PM-layer drift guards (extends the `test_docs_drift.py` pattern; runs keyless in the deterministic suite):
+    1. **EPICS↔BACKLOG consistency**: every BACKLOG ranked-row id with an Epic column exists in the EPICS.md item tables, and every EPICS.md item-table id appears in BACKLOG. (The "BACKLOG is the single ranked source of truth; the epic item table is an index" invariant.)
+    2. **Changelog-never-skips-tag**: every `[Unreleased]` + released version section in CHANGELOG.md has a matching `vX.Y.Z` git tag, and (the class that burned us) every tag has a changelog section — checked via `git tag --list` (the repo is a git checkout in CI, so this is available; the test asserts the v0.7.0 gap class is closed).
+    3. **STATUS↔ROADMAP**: STATUS "Now" rows reference shipped workstreams that exist in ROADMAP's active table or CHANGELOG (light sanity; the exact "In design after shipping" class).
+  - `CHANGELOG.md`, `SCOPE.md`, decision record — updates.
 - **Features:**
-  1. A new task surface exercises the harness's tool-using behavior (not just print mode) — the EVAL-6 "exercise harness differentiators" goal, slice 1.
-  2. Agentic cases are the first surface that can produce real `PI_SELF_HEAL` wedge observability (tool calls can stall — the data pump HEAL-2 is gated on).
-  3. Deterministic grading on tool-grounded facts — a model that hallucinates the answer fails, so the eval genuinely measures tool use.
+  1. The planning layer self-audits mechanically — the drift classes that burned us (EPIC-4/5 surviving the charter, the v0.7.0 changelog gap, STATUS stale after shipping) become CI failures instead of ritual reminders.
+  2. Deterministic, hermetic (except `git tag` which is available in CI), runs in the deterministic job.
 - **Boundaries:**
-  - Oracle rule holds: new deterministic references MUST pass their graders.
-  - Only `agentic` cases get `--permission-mode plan`; existing 50 cases keep their invocation (no semantic change to existing grading).
-  - No change to judge/score_run gate math, Go side, or workflows.
-  - This is slice 1 of EVAL-6 (tool-using); multi-turn/subagent/stall-recovery slices are follow-ups within the same backlog item.
+  - GOV-1 mechanical core only — the charter-citation / RICE-floor semantic layer (Purist's half) is deferred to GOV-1 slice 2 (avoid noise until the mechanical core is proven).
+  - **Sequencing deviation (scope change #1):** GOV-1 ships BEFORE GOV-2 (relocation). The debate said GOV-2 first ("you can't guard a location that doesn't exist"), but the mechanical guard checks file *contents* (ids, sections, tags) — path-independent. GOV-2 (relocation) is deferred; when it lands, only the guard's path constants change.
+  - No change to ROADMAP/BACKLOG/EPICS/STATUS content (the guard *checks* them; fixing any drift it finds is a follow-up if the test fails).
 
 ## Out of Scope
-- Multi-turn / subagent / interactive-session cases (EVAL-6 follow-up slices — need a different runner than `pi-run print`).
-- GOV-2/GOV-1, EVAL-12 (pending nightly), COST-2.
-- Changing existing case invocations or graders.
+- GOV-2 (relocation + spec archive) — deferred (15-file churn for zero-consumer presentation value; the Skeptic's tax rule).
+- GOV-1 semantic layer (charter-citation / RICE floor) — GOV-1 slice 2, after the mechanical core is proven non-noisy.
+- EVAL-6 slice 2 (multi-turn/subagent — needs a chat-session runner), EVAL-12 (pending nightly), COST-2.
 
 # Scope Change Log
 | # | Category | What | Why | Decision | Outcome |
 |---|----------|------|-----|----------|---------|
-| 1 | ambiguity | The 50-cap lint (`test_dataset_has_exactly_50_records`) conflicts with adding the `agentic` category | EVAL-5's "hold at 50" was about the six existing categories growing to 100; EVAL-6 is a NEW category axis (tool-using) with its own budget, explicitly sequenced as the next EPIC-1 bet | **Permit** — the lint becomes "≥ 50 + per-category budgets" (new `agentic` (3,8) budget); the six original categories stay within their existing budgets | Done — lint relaxed to ≥50; `agentic` (3,8) added; taxonomy updated in Python + Go benchmark parser + manifest |
+| 1 | user-expansion | GOV-1 ships before GOV-2 (debate sequenced GOV-2 first) | The mechanical guard checks file contents (ids/sections/tags), not locations — path-independent; GOV-2's relocation is presentation-only churn with zero consumers today | **Permit** — GOV-1 mechanical core first; GOV-2 deferred with its own backlog item; when GOV-2 lands, only path constants change | Done — test_pm_drift.py ships; GOV-2 stays deferred in BACKLOG |
 
 # Follow-up Tasks
-- [ ] EVAL-6 slice 2: multi-turn/subagent cases (needs a chat-session runner) — same backlog item.
-- [ ] After merge: next live nightly runs the 4 agentic cases with tools; confirm PI_SELF_HEAL observability potential on the new surface.
+- [ ] GOV-2 (relocation) — deferred; update guard path constants when it lands.
+- [ ] GOV-1 slice 2 (charter-citation / RICE-floor semantic layer) — after one month of mechanical-core CI proving non-noisy.

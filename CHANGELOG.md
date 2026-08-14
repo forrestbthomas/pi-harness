@@ -68,6 +68,14 @@ All notable changes to this project are documented here. Format follows
   print mode. The 50-cap lint became "≥50 + per-category budgets" (new
   `agentic` (3,8) budget); taxonomy updated in Python + Go benchmark parser +
   tasks.json manifest. Oracle rule holds (references provably pass).
+- **GOV-1 (mechanical core) — PM-layer drift guard** (EPIC-6, v0.11.0): new
+  hermetic `test_pm_drift.py` makes the planning layer self-audit —
+  EPICS↔BACKLOG index consistency (with a parked/deferred escape hatch),
+  every git tag has a CHANGELOG section (the v0.7.0 gap class) and every
+  released changelog section has a tag, and STATUS can't claim committed work
+  that's still in design. The drift classes that burned this project become
+  CI failures instead of ritual reminders. Ships before GOV-2 (sequencing
+  deviation logged — the guard checks file contents, not locations).
 
 ## [0.10.0] - 2026-08-14
 

@@ -235,6 +235,11 @@ Rules:
 | TAX-2 | Flag/env-var prune audit | ~0.8 | 0.25 pw |
 | SECURITY | Supported-versions bump in release ritual (same PR as CHANGELOG) | ~1.0 | 0.25 pw |
 | PORT-0 | Quarterly park re-confirm ticket (replaces EPIC-4 PORT-1/PORT-2) | ~0.1 | 0.1 pw/quarter |
+| REL-1 | Version-truth stamp: nightly/CI ldflags `piVersion` (never `dev`) + hermetic test | ~3.0 | 0.1 pw |
+| REL-2 | Changelog ledger repair: v0.7.0 gap + 0.4.3→0.6.0 jump; GOV-1 guard from v0.11.0 | ~2.0 | 0.1 pw |
+| REL-5 | Baseline-provenance fix: `PI_MODEL_TIER=cheap` in nightly when committing re-baselines | ~1.5 | 0.1 pw |
+| REL-3 | Post-release brew verify CI job (formula installs in temp prefix, `pi-run version` == tag) | ~1.5 | 0.25 pw |
+| REL-4 | Node-drift guard + `doctor` warning (Node/Go/deepeval/pi-subagents pins) | ~1.0 | 0.25 pw |
 
 ---
 

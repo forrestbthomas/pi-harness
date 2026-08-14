@@ -19,6 +19,18 @@ All notable changes to this project are documented here. Format follows
   shipped leg).
 
 ### Added
+- **Release milestones (v0.10.0 → v1.0.0)** — seven-persona version-milestone
+  debate (2026-08-14) converged on a gated release plan: v0.10.0 "Identity,
+  boundary, truth" (now), v0.11.0 "The gate that can't lie", v0.12.0
+  "Resilience with receipts" (ride-or-slip on W5 Part C), v1.0.0 "The
+  contract release" (gates, not dates: EPIC-1+6 DoDs, ≥14 green nightlies,
+  EVAL-16 enforced, install-path CI-proven, consumer OR recorded earned-bar
+  decision). Versioning policy codified (0.x minor = binary/contract delta;
+  patches = fixes only; data releases ride the eval lane). New release-
+  machinery items: REL-1 version-truth stamp, REL-2 changelog ledger repair,
+  REL-3 post-release brew verify, REL-4 Node-drift guard, REL-5 baseline
+  provenance. See `ROADMAP.md` §Release Milestones and `.pi/debate/
+  milestones/synthesis.md` (local).
 - **OSS-1 — Canonical install & identity alignment** (EPIC-6, 2026-08-14):
   Go module path `github.com/forrestthomas1/pi-harness` →
   `github.com/forrestbthomas/pi-harness` (matches the canonical repo URL —

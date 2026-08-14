@@ -49,7 +49,7 @@ Rules:
 - Dataset holds **54 live cases** across 7 categories (incl. the agentic tool-using family) with regression pairs and diff-graded code tasks (EVAL-5 capped the six original categories; growth only on a consumer or a 30-day regression-catch signal; `tasks.json` is the count authority).
 - The **split seam is verified, not assumed**: the eval suite's self-containment is proven by dry-run so the triggered pi-bench split stays cheap (EVAL-15).
 - The **loop measures itself**: changes to the harness report their own scorecard delta (EVAL-16, pilot-first).
-- Live runs exercise **agentic/tool-using behavior** (EVAL-6); sandboxing is **parked** behind a real contamination incident (EVAL-7); judge variance is bounded (EVAL-8); known-flaky cases are **quarantined** (EVAL-9).
+- Live runs exercise **agentic/tool-using behavior** (EVAL-6 slice 1 shipped #111; **EVAL-17** slice 2 multi-turn/subagent pending); sandboxing is **parked** behind a real contamination incident (EVAL-7); judge variance is bounded (EVAL-8); known-flaky cases are **quarantined** (EVAL-9).
 
 **Appetite:** ≈ 2.5–3 pw honest core for one author (restated from "≤ 2 cycles" — the 12-item plan was ~4.5× over budget at 9.0 pw; scope is cut, not extended).
 
@@ -58,12 +58,12 @@ Rules:
 **Sequence (dependency-ordered):**
 
 1. EVAL-12 — live re-baseline after W10 → 0 unbaselined cases; standing cadence (scheduled, tonight)
-2. EVAL-6 — agentic case family → the data pump EPIC-2's HEAL-2 is gated on (print-mode cannot wedge)
+2. EVAL-17 (EVAL-6 slice 2) — multi-turn/subagent agentic pump → the data pump EPIC-2's HEAL-2 is gated on (print-mode cannot wedge; chat-session runner is a named enabler)
 3. EVAL-8 — judge stabilization → bound variance
 4. EVAL-13 — cost-variance tolerance in the gate → kill the false-cost-alarm class
 5. EVAL-14 — benchmark provenance parity → "every scorecard" DoD enforced on both surfaces
 6. EVAL-15 — split-seam verification → prove "split cheap either way" physically
-7. EVAL-16 — harness-change eval gate (pilot-first; promote on first caught regression)
+7. EVAL-16 — harness-change eval gate (pilot independent of W5 Part C — orthogonal surfaces; promote on first caught regression; Part C rides v0.12.0's completeness claim)
 8. EVAL-11 — auto-open issue on N self-heals → automation
 9. EVAL-9 — quarantine mechanism → managed flake triage
 10. EVAL-7 — sandbox live runs (PARKED: trigger = a real contamination incident or external consumer)
@@ -82,10 +82,11 @@ Rules:
 | ID | Item | RICE | Effort |
 |---|---|---|---|
 | EVAL-12 | Live re-baseline after W10: 0 unbaselined cases + standing cadence | 1.10 | 0.25 pw |
-| EVAL-6 | Agentic case family: multi-turn/tool-using/subagent/stall-recovery | 1.40 | 1 pw |
+| EVAL-6 | Agentic case family: slice 1 (tool-using) SHIPPED #111; slice 2 (multi-turn/subagent) → **EVAL-17** | 1.40 | 1 pw |
+| EVAL-17 | Agentic case family slice 2: multi-turn/subagent + chat-session runner (re-opened from EVAL-6 slice 2, guard-safe id) | 1.40 | 1 pw |
 | EVAL-13 | Cost-variance tolerance in nightly gate (`costFlakes`, median-of-N, ≥2-run fail) | 1.00 | 0.5 pw |
 | EVAL-15 | Split-seam verification: contract doc + hermetic dry-run + test classification | 1.50 | 0.5 pw |
-| EVAL-16 | Harness-change eval gate (scorecard delta on eval-touching PRs; pilot-first) | 1.20 | 0.5 pw |
+| EVAL-16 | Harness-change eval gate (scorecard delta on eval-touching PRs; pilot independent of W5 Part C; promote on first caught regression) | 1.60 | 0.3–0.5 pw |
 | EVAL-14 | Benchmark provenance parity (ci-benchmark scorecard carries live-schema provenance) | 0.70 | 0.5 pw |
 | EVAL-11 | Auto-open GitHub issue on N self-heals | 0.50 | 0.5 pw |
 | EVAL-8 | Judge-case stabilization (majority-of-3, more deterministic graders) | 0.50 | 0.5 pw |
@@ -153,7 +154,7 @@ Rules:
 **Sequence (dependency-ordered):**
 
 1. COST-2 — model-catalog auto-refresh in CI (routing input must be current)
-2. COST-1 — cost-aware router, **within-provider tier choice only** (per-task-tier model choice; cross-provider routing explicitly out of scope)
+2. COST-1 — cost-aware router, **within-provider tier choice only** — **DEFERRED 2026-08-14** (persona debate: 2 pw / zero consumers; re-open on a consumer signal; cross-provider routing explicitly out of scope)
 
 **DoD:**
 
@@ -165,7 +166,7 @@ Rules:
 
 | ID | Item | RICE | Effort |
 |---|---|---|---|
-| COST-1 | Cost-aware router: **within-provider** per-task-tier model choice (cross-provider routing explicitly out of scope per charter) | 0.80 | 2 pw |
+| COST-1 | Cost-aware router: **within-provider** per-task-tier model choice — **DEFERRED 2026-08-14** (cross-provider routing explicitly out of scope per charter) | 0.80 | 2 pw |
 | COST-2 | Model-catalog auto-refresh in CI | 0.50 | 0.5 pw |
 
 ---
@@ -257,6 +258,7 @@ Rules:
 | HEAL-4 (loop/stuck detection) | Deferred; needs thresholds | Evidence of loop/stuck class with usable thresholds |
 | DX-1 (skill audit) | Dissolved with EPIC-5; data-guard half → GOV-1 | Real skill collision; user re-prioritization |
 | DX-2 (context stats) | User-parked ("treat context as a separate feature") | User re-prioritization |
+| COST-1 (cost-aware router, within-provider) | Deferred 2026-08-14 by persona debate: 2 pw / zero consumers; COST-2 owns the catalog-drift class | Consumer signal (an external user asking for cost routing) |
 | Cloud eval backend | Deferred to backlog per user | EPIC-4 (PORT-2): second machine/CI-with-keys pattern emerges |
 | Upstream pi-subagents release watch | Waiting on release carrying `toolTimeoutMs` | New upstream release (W5 Part C) |
 | Docker weekly eval | Kept weekly by design | If nightly signal degrades without container isolation |

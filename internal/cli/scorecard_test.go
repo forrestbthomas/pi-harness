@@ -557,7 +557,7 @@ func scorecardGoldenFixture(t *testing.T) scorecard {
 		baselineTolerance: 0.05,
 		runs:              1,
 	}
-	return buildScorecard(opts, rows, make([]benchmarkTask, 5), baseline, budgetCap, st, scorecardExitCode(st))
+	return buildScorecard(t.TempDir(), opts, rows, make([]benchmarkTask, 5), baseline, budgetCap, st, scorecardExitCode(st))
 }
 
 func TestBuildScorecardDeterministicWithSeam(t *testing.T) {
@@ -869,5 +869,84 @@ func TestExitCodesTableDocumentsScorecard(t *testing.T) {
 	}
 	if !strings.Contains(usage, "ci-benchmark") {
 		t.Fatalf("usage must document the ci-benchmark command")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Self-heal events in the provider scorecard (W9 — EVAL-4)
+// ---------------------------------------------------------------------------
+
+func writeHealEvents(t *testing.T, root string, lines ...string) {
+	t.Helper()
+	dir := filepath.Join(root, ".pi", "heal")
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	content := strings.Join(lines, "\n")
+	if content != "" {
+		content += "\n"
+	}
+	if err := os.WriteFile(filepath.Join(dir, "events.jsonl"), []byte(content), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestReadSelfHealEventsMissingFile(t *testing.T) {
+	got := readSelfHealEvents(t.TempDir())
+	if got.NEvents != 0 || len(got.ByKind) != 0 {
+		t.Fatalf("missing file => %+v, want zero events", got)
+	}
+}
+
+func TestReadSelfHealEventsCountsByKind(t *testing.T) {
+	root := t.TempDir()
+	writeHealEvents(t, root,
+		`{"ts":"2026-08-14T00:00:00Z","kind":"group-kill","detail":"wall-clock timeout"}`,
+		`{"ts":"2026-08-14T00:00:01Z","kind":"group-kill","detail":"output stall"}`,
+		`{"ts":"2026-08-14T00:00:02Z","kind":"recovery","detail":"rebase continued"}`,
+	)
+	got := readSelfHealEvents(root)
+	if got.NEvents != 3 {
+		t.Fatalf("nEvents = %d, want 3", got.NEvents)
+	}
+	if got.ByKind["group-kill"] != 2 || got.ByKind["recovery"] != 1 {
+		t.Fatalf("byKind = %+v, want group-kill 2 recovery 1", got.ByKind)
+	}
+}
+
+func TestReadSelfHealEventsSkipsMalformed(t *testing.T) {
+	root := t.TempDir()
+	writeHealEvents(t, root,
+		"not json",
+		`{"kind":"group-kill"}`,
+		"{broken",
+		"",
+		`{"kind":"recovery"}`,
+	)
+	got := readSelfHealEvents(root)
+	if got.NEvents != 2 {
+		t.Fatalf("nEvents = %d, want 2 (malformed skipped)", got.NEvents)
+	}
+	if got.ByKind["group-kill"] != 1 || got.ByKind["recovery"] != 1 {
+		t.Fatalf("byKind = %+v, want one of each", got.ByKind)
+	}
+}
+
+func TestBuildScorecardIncludesSelfHeal(t *testing.T) {
+	root := t.TempDir()
+	writeHealEvents(t, root, `{"kind":"group-kill"}`)
+	sc := buildScorecard(root, scorecardOptions{}, nil, nil, nil, 0, scorecardGateStatus{}, 0)
+	if sc.SelfHeal == nil {
+		t.Fatal("scorecard selfHeal block missing")
+	}
+	if sc.SelfHeal.NEvents != 1 || sc.SelfHeal.ByKind["group-kill"] != 1 {
+		t.Fatalf("selfHeal = %+v, want 1 group-kill", sc.SelfHeal)
+	}
+	encoded, err := json.Marshal(sc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(encoded, []byte(`"selfHeal"`)) {
+		t.Fatalf("scorecard JSON missing selfHeal: %s", encoded)
 	}
 }

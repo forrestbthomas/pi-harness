@@ -1,30 +1,28 @@
 # Scope Contract
-**Task:** W8 — EVAL-3: dataset versioning + scorecard provenance | **Plan:** `docs/superpowers/specs/2026-08-14-dataset-versioning-and-provenance.md` | **Date:** 2026-08-14 | **Status:** CLOSED — 0 changes logged (shipped #89)
+**Task:** W9 — EVAL-4: self-heal events in provider scorecard | **Plan:** `docs/superpowers/specs/2026-08-14-self-heal-in-provider-scorecard.md` | **Date:** 2026-08-14 | **Status:** ACTIVE (approved 2026-08-14) — W9 (EVAL-4); W10 (EVAL-5) contract approved, becomes ACTIVE when W9 closes
 
-> Supersedes the W7 flake-aware gate contract (CLOSED 2026-08-14; record preserved in git history). W5 Part C remains tracked in ROADMAP (upstream release gate).
+> Supersedes the W8 dataset versioning contract (CLOSED 2026-08-14; record preserved in git history). W10 (EVAL-5 dataset growth) is a separate contract drafted for the same bet and lands after this one closes.
 
 ## In Scope
 - **Files — harness:**
-  - `eval/datasets/tasks.json` — add `datasetVersion` (`YYYY-MM-DD.N`); `schemaVersion` unchanged
-  - `eval/scripts/score_run.py` — `provenance { datasetVersion, agentModel, judgeModel, piVersion }` in summary + compact (env-driven for models/pi; tasks.json for dataset; defaults `"unknown"`)
-  - `eval/tests/test_dataset_schema.py` — guard: tasks.json must carry a well-formed `datasetVersion`
-  - `eval/tests/test_score_run.py` — provenance tests (real datasetVersion, env models/pi, `"unknown"` defaults, summary + compact)
-  - `.github/workflows/nightly-live-eval.yml` — capture `pi-run version` into `PI_VERSION` (`$GITHUB_ENV`) before the score_run step
-  - `CHANGELOG.md`, `ROADMAP.md` (W8 row), `STATUS.md`, `BACKLOG.md` (EVAL-3 → active), `SCOPE.md`, spec
+  - `internal/cli/scorecard.go` — `scorecardSelfHeal { NEvents, ByKind }`; `SelfHeal` on `scorecard` (`omitempty`); `readSelfHealEvents(root)` best-effort reader; populate in `runScorecard`
+  - `.github/workflows/provider-scorecard.yml` — `PI_SELF_HEAL: '1'` in job env
+  - `internal/cli/scorecard_test.go` — reader + scorecard-JSON tests (golden fixture re-gen if schema grows)
+  - `CHANGELOG.md`, `ROADMAP.md` (W9 row), `STATUS.md`, `BACKLOG.md` (EVAL-4 → active), `SCOPE.md`, spec
 - **Features:**
-  1. Dataset carries an explicit, guarded content version.
-  2. Every scorecard (summary + compact) records dataset/agent/judge/pi provenance.
-  3. Hermetic tests + the schema lint enforce both.
+  1. Provider scorecard JSON surfaces `selfHeal { nEvents, byKind }` (informational; 0/omitted when no events).
+  2. Provider benchmark workflow records `.pi/heal/events.jsonl` (`PI_SELF_HEAL=1`).
+  3. Hermetic Go tests.
 - **Boundaries:**
-  - Provenance is informational; gate math unchanged.
-  - Dataset content is NOT changed (only the version field added).
-  - Missing file/env → `"unknown"`, never fatal.
+  - Informational only; no gating on self-heal counts.
+  - No change to ci-benchmark grading/baseline/budget logic.
+  - Backward-compatible JSON (`omitempty`).
 
 ## Out of Scope
-- EVAL-5 dataset growth.
-- Per-case provenance.
-- Re-baselining / baseline-math changes.
-- `ci-benchmark` (Go) provenance.
+- Self-heal gating/thresholds.
+- Python `score_run.py` selfHeal (shipped W6).
+- EVAL-5 dataset growth (W10, separate contract).
+- Any change to benchmark grading, baselines, or budget.
 
 # Scope Change Log
 | # | Category | What | Why | Decision | Outcome |

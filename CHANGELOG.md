@@ -7,6 +7,11 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **Self-heal events in the provider scorecard** (W9): `pi-run ci-benchmark`
+  sets `PI_SELF_HEAL=1` in the provider-scorecard workflow and the Go
+  scorecard JSON surfaces `selfHeal { nEvents, byKind }` (informational,
+  backward-compatible `omitempty`), so weekly cross-provider runs are as
+  observable as the nightly live eval.
 - **Dataset versioning + scorecard provenance** (W8): `tasks.json` carries a
   guarded `datasetVersion` (bumped on every dataset change; enforced by the
   dataset schema lint); `score_run.py` records `provenance { datasetVersion,

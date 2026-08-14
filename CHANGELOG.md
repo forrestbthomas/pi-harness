@@ -7,6 +7,12 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **Dataset growth Batch A** (W10): 20 → 35 live cases — +15 (code-gen 021-025,
+  bug-fix 026-030, regression twins 031-035), each with a deterministic hidden-test
+  grader and reference (schema lint proves every reference passes); category
+  budgets and the exactly-35 lint updated; `datasetVersion` → `2026-08-14.2`.
+  Authoring was parallelized across 3 subagent lanes with central verification
+  (grader reference-pass + reject-side spot checks).
 - **Self-heal events in the provider scorecard** (W9): `pi-run ci-benchmark`
   sets `PI_SELF_HEAL=1` in the provider-scorecard workflow and the Go
   scorecard JSON surfaces `selfHeal { nEvents, byKind }` (informational,

@@ -43,8 +43,8 @@ DIFFICULTIES = {"easy", "medium", "hard"}
 GRADERS = {"deterministic", "judge"}
 # Spec §4.2 category budget (min, max).
 CATEGORY_BUDGET = {
-    "code-gen": (3, 4),
-    "bug-fix": (3, 4),
+    "code-gen": (5, 10),
+    "bug-fix": (10, 16),
     "shell/ops": (2, 3),
     "concept": (3, 3),
     "negative-edge": (3, 4),
@@ -70,8 +70,8 @@ def rows():
         return [json.loads(line) for line in f if line.strip()]
 
 
-def test_dataset_has_exactly_twenty_records(rows):
-    assert len(rows) == 20, f"expected exactly 20 records, found {len(rows)}"
+def test_dataset_has_exactly_35_records(rows):
+    assert len(rows) == 35, f"expected exactly 35 records, found {len(rows)}"
 
 
 def test_required_fields_and_enum_values(rows):

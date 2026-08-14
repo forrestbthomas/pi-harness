@@ -64,6 +64,7 @@ func TestNoHardcodedUserPaths(t *testing.T) {
 
 	skipDirs := map[string]bool{
 		".git": true, ".worktrees": true, "bin": true, "sessions": true,
+		"subagents": true,
 		".venv": true, "__pycache__": true, ".pytest_cache": true, "node_modules": true,
 	}
 

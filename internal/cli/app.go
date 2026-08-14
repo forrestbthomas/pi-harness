@@ -33,7 +33,6 @@ Commands:
   install       Build the binary into bin/ and symlink pi-run onto your PATH
   clean         Remove eval/.venv and pytest caches
   providers     List configured providers and default models
-  mcp-server    Serve a read-only MCP server over stdio (providers, cost, benchmark_dry_run)
   hooks         List or run .pi/hooks.json hooks (pre-eval, post-eval, pre-chat)
   self-heal     Detect and recover in-progress git state (e.g. a wedged rebase)
   version       Print version
@@ -50,7 +49,6 @@ chat/print flags:
   --cost-mode <mode>                       Tag this run's ledger spend with <mode>: chat|print|resume|backfill|benchmark|live-eval (default: the command name; lets CI mark live-eval runs)
   --permission-mode <mode>                 Permission tier: default|plan|acceptEdits|bypassPermissions (env PI_PERMISSION_MODE). plan = read-only tools (--tools read,grep,find,ls); acceptEdits = Pi defaults (edits allowed); bypassPermissions = --approve (trust project-local files)
   --read-only                              Alias for --permission-mode plan (read-only session)
-  PI_OTLP_ENDPOINT                         Optional OTLP/HTTP collector (e.g. http://localhost:4318); exports one GenAI invoke_agent span per launch to <endpoint>/v1/traces (best-effort, never changes the exit code)
 
 cost flags:
   --json                                   Machine-readable JSON output
@@ -145,8 +143,6 @@ func Run(args []string) int {
 		return runClean()
 	case "providers":
 		return runProviders()
-	case "mcp-server":
-		return runMCPServer()
 	case "hooks":
 		return runHooksCmd(args[1:])
 	case "self-heal":
@@ -280,8 +276,6 @@ func runLaunch(mode string, args []string) int {
 			mode, postSpend, capUSD)
 	}
 
-	// Best-effort OTel GenAI telemetry (env-gated; never affects the exit code).
-	maybeExportOTLPSpan(p, model, mode, runStart, time.Now(), code)
 	return code
 }
 

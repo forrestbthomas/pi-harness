@@ -12,10 +12,9 @@ A self-healing, measurable coding-agent harness built around the [Pi coding agen
 
 ## What You Get
 
-- **`pi-run` CLI** — a compiled Go binary (repo `bin/pi-run`) that owns the harness runtime: `chat`, `print`, `resume`, `cost`, `ci-benchmark`, `eval`, `config-check`, `doctor`, `setup`, `install`, `clean`, `project-understand`, `mcp-server`, `self-heal`, `providers`, `hooks`, `version`.
+- **`pi-run` CLI** — a compiled Go binary (repo `bin/pi-run`) that owns the harness runtime: `chat`, `print`, `resume`, `cost`, `ci-benchmark`, `eval`, `config-check`, `doctor`, `setup`, `install`, `clean`, `project-understand`, `self-heal`, `providers`, `hooks`, `version`.
 - **Pi CLI** installed globally (via nvm) and configured for this project.
 - **Curated Pi packages** installed project-locally:
-  - `pi-mcp-adapter` — token-efficient MCP adapter.
   - `pi-web-access` — web fetch/search for agents.
   - `@demigodmode/pi-web-agent` — reliable web search/fetch with explicit boundaries.
   - `@loreai/pi` — Lore memory engine.
@@ -193,7 +192,6 @@ no DEEPSEEK_API_KEY available: export it, or check your secret manager
 | `PI_MAX_BUDGET_USD` | Default spend cap for `chat`/`print` when `--max-budget-usd` is omitted |
 | `PI_PERMISSION_MODE` | Default permission tier for `chat`/`print` when `--permission-mode` is omitted |
 | `PI_MODEL_TIER` | Default model tier (`fast`/`balanced`/`cheap`) for `chat`/`print` when `--model-tier` is omitted; ignored by `resume` |
-| `PI_OTLP_ENDPOINT` | Optional OTLP/HTTP collector (e.g. `http://localhost:4318`); exports one GenAI `invoke_agent` span per launch to `<endpoint>/v1/traces` (best-effort, never changes the exit code) |
 | `DEEPEVAL_MODEL` | Select a non-OpenAI DeepEval judge model |
 
 ## Running Evaluations
@@ -530,7 +528,6 @@ tasks.
 | `pi-run providers` | List configured providers, default models, and available model tiers |
 | `pi-run project-understand [--out <dir>]` | Generate deterministic project-understanding docs (product.md / tech.md / structure.md) from the checkout |
 | `pi-run self-heal [--abort]` | Detect and recover a wedged git state (`rebase --continue` when clean, `needs-attention` with conflict paths; `--abort` explicit-only) |
-| `pi-run mcp-server` | Serve a read-only MCP server over stdio (tools: providers, cost, benchmark_dry_run) |
 | `pi-run hooks list` / `hooks run <event>` | List or run `.pi/hooks.json` hook commands |
 | `pi-run config-check` | Deterministic harness checks (no keys, no network) |
 | `pi-run doctor` | Health report: node, pi, vault, per-provider keys, models, venv |
@@ -541,38 +538,6 @@ tasks.
 | `pi-run version` / `help` | Version / usage |
 
 Exit codes: `0` ok · `1` generic · `2` usage · `3` missing API key · `4` node/pi not found · `5` eval venv missing · `6` budget exceeded · `7` docker unavailable (benchmarks) · `8` scorecard gate failed (ci-benchmark) · `9` watchdog terminated (stall/group-kill timeout).
-
-## Telemetry (OTLP)
-
-Set `PI_OTLP_ENDPOINT` (e.g. `http://localhost:4318`) to export one GenAI
-`invoke_agent` span per `chat`/`print`/`resume` run to `<endpoint>/v1/traces`
-as OTLP/HTTP JSON (stdlib only, no protobuf). The export is best-effort: a 2s
-HTTP timeout, a single stderr warning on failure, and it **never changes the
-pi-run exit code**. With the env unset the feature is a complete no-op. The
-attribute names pin the OTel GenAI semantic conventions (Development status,
-see the code comments in `internal/cli/otel.go` for the pinned URLs).
-
-## MCP server
-
-`pi-run mcp-server` exposes pi-harness as a local, **read-only** MCP server
-(spec 2025-03-26) over stdio — wire it up in Claude Code, Codex, or any MCP
-client:
-
-```
-{
-  "mcpServers": {
-    "pi-run": {
-      "command": "pi-run",
-      "args": ["mcp-server"]
-    }
-  }
-}
-```
-
-Three tools are available: `providers` (provider table — env-var NAMES only,
-never values), `cost` (aggregate spend, optional `since`), and
-`benchmark_dry_run` (format validation, no Docker/keys). The server never
-launches agents, never resolves secrets, and never accepts remote connections.
 
 ## Skills
 

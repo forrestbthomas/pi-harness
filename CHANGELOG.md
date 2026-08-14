@@ -7,6 +7,14 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **GOV-3 — Wire drift guards into CI** (EPIC-6, 2026-08-14): the GOV-1
+  drift guards (`test_docs_drift.py`, `test_pm_drift.py`) now run in the
+  `python-quick` CI job on every push (they ran in zero workflows before,
+  despite the docs-audit claim); the job fetches release tags first so the
+  tag↔changelog invariants enforce instead of skipping on the shallow
+  checkout. End-to-end verified: a planted drift failed CI (throwaway PR
+  #124). Also fixed a fresh-checkout false positive the wiring exposed
+  (`test_agents_workflow_target_exists` asserted a generated output dir).
 - **OSS-2 — Contributor on-ramp v2** (EPIC-6, 2026-08-14): CONTRIBUTING gains
   a first-issue path (`good first issue` label workflow), a 7-day PR review
   SLA mirroring SECURITY.md, and a MIT-in/MIT-out license line; the PR

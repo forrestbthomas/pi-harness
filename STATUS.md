@@ -18,6 +18,7 @@
 | **Live-suite timeout sizing** (EVAL-12 enabler) | **SHIPPED — 2026-08-14** — #97: per-test 120→600s, job 30→60m so the 54-case nightly can finish |
 | **GOV-2 — Governance relocation + spec archive** | **SHIPPED — 2026-08-14** — #119: 19 dated specs → `docs/governance/specs-archive/` + `decisions.md` index; `docs/governance/` = governance home; living PM docs stay at root (scope decision — session-entry contract + GOV-1 path reads + coding-054 grader); SCOPE.md archived to `docs/governance/scope-history/` |
 | **OSS-2 — Contributor on-ramp v2** | **SHIPPED — 2026-08-14** — #122: CONTRIBUTING first-issue path (`good first issue`) + 7-day review SLA + MIT-in/MIT-out; PR-template bugfix carve-out; LICENSE identity → `forrestbthomas` |
+| **GOV-3 — Wire drift guards into CI** | **SHIPPED — 2026-08-14** — #123: docs/pm drift guards run in python-quick on every push (tags fetched so tag↔changelog enforces); end-to-end drift caught in CI (#124); guard fresh-checkout false positive fixed |
 | **W4 Project-management layer** | Active ritual — governance layer; now with EPIC-6 (repo maturity) owning governance/community/debt work |
 
 ## Next (shaped — next 1–2 cycles)
@@ -55,7 +56,7 @@
   stabilization (#108), REL-3/4 release machinery (#109), TAX-2 audit (#110),
   EVAL-6 agentic slice 1 (#111), GOV-1 drift guard (#112), GOV-2 relocation +
   spec archive (#119), GOV-3 CI-wiring item + docs-drift cwd fix (#120), OSS-2
-  contributor on-ramp (#122)
+  contributor on-ramp (#122), GOV-3 drift guards wired into CI (#123)
 
 ## Open PRs / branches
 

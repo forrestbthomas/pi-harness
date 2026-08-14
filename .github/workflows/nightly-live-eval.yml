@@ -173,6 +173,19 @@ jobs:
         # 6 surfaced as a gate failure). Baseline is deliberate and reviewed —
         # the nightly never updates its own baseline.
         run: eval/.venv/bin/python eval/scripts/score_run.py --report eval/live-results/report.json --baseline eval/baselines/live-baseline.json --tolerance 0.05 --runs 5 --budget-usd 2.0 --out eval/live-results/live-$(date +%Y%m%dT%H%M%S).json
+      - name: Emit scorecard-delta report (EVAL-16 pilot, report-only)
+        # Compares the just-produced scorecard against the committed baseline
+        # and writes a delta report into live-results/ (rides the artifact).
+        # Report-only by design: never fails the nightly (continue-on-error);
+        # the pilot's promotion decision is evidence-gated.
+        continue-on-error: true
+        run: |
+          LATEST=$(ls -1 eval/live-results/live-*.json | tail -1)
+          TS=$(date +%Y%m%dT%H%M%S)
+          eval/.venv/bin/python eval/scripts/score_delta.py --diff "$LATEST" eval/baselines/live-baseline.json \
+            --out "eval/live-results/delta-${TS}.json" \
+            --markdown "eval/live-results/delta-${TS}.md" \
+            || echo "score_delta failed (pilot, non-blocking)"
       - name: Upload live results
         # Upload on EVERY gate outcome (EVAL-1): a failed gate is exactly when
         # the evidence (report, summary, heal events) matters most.

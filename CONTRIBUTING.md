@@ -32,8 +32,22 @@ Then `go test ./internal/cli/` and `pi-run providers` to verify.
 ## Commit Style
 
 - Small, focused commits (one logical change each).
-- Prefix: `feat(oss):`, `fix(cli):`, `docs:`, `chore(oss):`, `test:`, `ci:`.
+- Prefix: `feat(<workstream-id>):`, `fix(<area>):`, `docs(<area>):`,
+  `chore(<area>):`, `test:`, `ci:`, `release(vX.Y.Z):`. The scope is usually
+  the backlog/workstream id (`feat(eval-6):`, `docs(tax-2):`, `docs(pm):`,
+  `docs(audit):`) — see `git log --format=%s` for the current practice.
 - Reference issues/PRs where relevant.
+
+## Versioning policy
+
+- **0.x minor** — any user-visible change (feature, removal, behavior change,
+  install path, gate semantics); BREAKING changes are flagged in CHANGELOG.
+- **0.x patch** — fixes to shipped behavior only, never features.
+- **Data releases** (dataset re-baselines, `datasetVersion` bumps) ride the
+  eval lane and never spawn a CLI tag.
+- **Post-1.0** — strict semver: breaking = major, additive = minor, fix =
+  patch. SECURITY's supported-versions table is bumped in the same PR as the
+  CHANGELOG entry.
 
 ## Security
 
@@ -57,9 +71,16 @@ commit that has not yet landed** — otherwise the tag is not an ancestor of
 v0.9.2). Correct order:
 
 1. Merge all release commits (including the CHANGELOG entry) via PR.
-2. `git fetch github && git tag -a vX.Y.Z main && git push github vX.Y.Z`.
-3. The Release workflow builds, publishes, and updates the Homebrew tap; its
-   first step verifies the tag is an ancestor of `main` and fails otherwise.
+2. Run the hardened script — it tags the fetched `github/main` tip and refuses
+   re-tags:
+   ```bash
+   bash scripts/tag-release.sh vX.Y.Z github
+   ```
+   (Manual fallback only if you first ensure local main is current:
+   `git fetch github && git pull --ff-only github main && git tag -a vX.Y.Z main && git push github vX.Y.Z`.)
+3. The Release workflow builds, publishes, updates the Homebrew tap, and now
+   verifies the installed formula reports `pi-run version` == the tag (REL-3);
+   its first step verifies the tag is an ancestor of `main` and fails otherwise.
 
 ## Syncing after a merge
 

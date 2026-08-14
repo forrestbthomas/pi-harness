@@ -1,5 +1,11 @@
 # P2 Research Synthesis + context-engine Decision — 2026-08-12
 
+> **Superseded (2026-08-14):** written 2026-08-12; the P2/P3 roadmap rows it
+> presents were overridden by the EPIC restructure (#101) and v0.10.0 —
+> context-engine/`pi-run context` is user-parked (ROADMAP parked table),
+> `pi-run mcp-server` was removed in v0.10.0. Retained as a dated decision
+> brief; see `ROADMAP.md` for current workstreams.
+
 **Status:** Research complete (3 parallel researcher lanes) + context-engine decision brief.
 **Purpose:** Turn the P2 roadmap into concrete, researched scope. Supersedes the stale
 memory guidance in docs/competitive-gap-analysis-2026-08.md §E (which assumed Lore).

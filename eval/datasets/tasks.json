@@ -30,6 +30,7 @@
       "tags": [
         "python",
         "math",
+        "function",
         "regression-factorial"
       ]
     },
@@ -38,7 +39,7 @@
       "surface": "live",
       "category": "concept",
       "difficulty": "easy",
-      "grader": "judge",
+      "grader": "deterministic",
       "tags": [
         "python",
         "concept",
@@ -62,11 +63,11 @@
       "surface": "live",
       "category": "concept",
       "difficulty": "easy",
-      "grader": "judge",
+      "grader": "deterministic",
       "tags": [
         "algorithms",
         "complexity",
-        "regression-binary-search"
+        "regression-binary-search-complexity"
       ]
     },
     {
@@ -78,11 +79,35 @@
       "tags": [
         "javascript",
         "function",
-        "regression-debounce"
+        "regression-debounce-timing"
       ]
     },
     {
       "id": "coding-006",
+      "surface": "live",
+      "category": "code-gen",
+      "difficulty": "easy",
+      "grader": "deterministic",
+      "tags": [
+        "python",
+        "algorithms",
+        "regression-fibonacci-off-by-one"
+      ]
+    },
+    {
+      "id": "coding-007",
+      "surface": "live",
+      "category": "code-gen",
+      "difficulty": "medium",
+      "grader": "deterministic",
+      "tags": [
+        "python",
+        "strings",
+        "regression-palindrome-case"
+      ]
+    },
+    {
+      "id": "coding-008",
       "surface": "live",
       "category": "bug-fix",
       "difficulty": "easy",
@@ -94,147 +119,91 @@
       ]
     },
     {
-      "id": "coding-007",
-      "surface": "live",
-      "category": "bug-fix",
-      "difficulty": "easy",
-      "grader": "deterministic",
-      "tags": [
-        "python",
-        "json",
-        "regression-json-parsing"
-      ]
-    },
-    {
-      "id": "coding-008",
-      "surface": "live",
-      "category": "code-gen",
-      "difficulty": "medium",
-      "grader": "deterministic",
-      "tags": [
-        "python",
-        "code-gen",
-        "regression-input-validation"
-      ]
-    },
-    {
       "id": "coding-009",
       "surface": "live",
       "category": "bug-fix",
       "difficulty": "medium",
       "grader": "deterministic",
       "tags": [
+        "python",
         "bug-fix",
-        "cli",
-        "regression-cli-flag"
+        "regression-json-keyerror"
       ]
     },
     {
       "id": "coding-010",
+      "surface": "live",
+      "category": "bug-fix",
+      "difficulty": "easy",
+      "grader": "deterministic",
+      "tags": [
+        "bash",
+        "bug-fix",
+        "regression-shell-variable-typo"
+      ]
+    },
+    {
+      "id": "coding-011",
+      "surface": "live",
+      "category": "shell/ops",
+      "difficulty": "easy",
+      "grader": "deterministic",
+      "tags": [
+        "bash",
+        "text-processing",
+        "regression-count-lines"
+      ]
+    },
+    {
+      "id": "coding-012",
       "surface": "live",
       "category": "shell/ops",
       "difficulty": "medium",
       "grader": "deterministic",
       "tags": [
         "bash",
-        "shell",
-        "regression-pipeline-error"
+        "filesystem",
+        "regression-largest-file"
       ]
     },
     {
-      "id": "coding-011",
+      "id": "coding-013",
+      "surface": "live",
+      "category": "concept",
+      "difficulty": "easy",
+      "grader": "deterministic",
+      "tags": [
+        "python",
+        "concept",
+        "regression-list-vs-tuple"
+      ]
+    },
+    {
+      "id": "coding-014",
       "surface": "live",
       "category": "negative-edge",
       "difficulty": "easy",
       "grader": "deterministic",
       "tags": [
         "negative-edge",
-        "refusal",
-        "regression-ambiguous-request"
-      ]
-    },
-    {
-      "id": "coding-012",
-      "surface": "live",
-      "category": "harness-routing",
-      "difficulty": "medium",
-      "grader": "deterministic",
-      "tags": [
-        "harness-routing",
-        "regression-otel-best-effort"
-      ]
-    },
-    {
-      "id": "coding-013",
-      "surface": "live",
-      "category": "negative-edge",
-      "difficulty": "hard",
-      "grader": "judge",
-      "tags": [
-        "negative-edge",
-        "hallucination-guard",
-        "regression-hallucination"
-      ]
-    },
-    {
-      "id": "coding-014",
-      "surface": "live",
-      "category": "code-gen",
-      "difficulty": "hard",
-      "grader": "deterministic",
-      "tags": [
-        "python",
-        "code-gen",
-        "regression-recursion-depth"
+        "ambiguous-request",
+        "regression-ambiguous-refactor"
       ]
     },
     {
       "id": "coding-015",
       "surface": "live",
-      "category": "shell/ops",
-      "difficulty": "hard",
+      "category": "negative-edge",
+      "difficulty": "easy",
       "grader": "deterministic",
       "tags": [
-        "shell",
-        "ops",
-        "regression-env-var"
+        "negative-edge",
+        "harness",
+        "regression-model-tier-resolution"
       ]
     },
     {
       "id": "coding-016",
-      "surface": "live",
-      "category": "harness-routing",
-      "difficulty": "hard",
-      "grader": "deterministic",
-      "tags": [
-        "harness-routing",
-        "regression-model-tier"
-      ]
-    },
-    {
-      "id": "coding-017",
-      "surface": "live",
-      "category": "bug-fix",
-      "difficulty": "hard",
-      "grader": "deterministic",
-      "tags": [
-        "bug-fix",
-        "regression-off-by-one"
-      ]
-    },
-    {
-      "id": "coding-018",
-      "surface": "live",
-      "category": "concept",
-      "difficulty": "medium",
-      "grader": "judge",
-      "tags": [
-        "concept",
-        "regression-complexity-analysis"
-      ]
-    },
-    {
-      "id": "coding-019",
       "surface": "live",
       "category": "negative-edge",
       "difficulty": "medium",
@@ -242,18 +211,55 @@
       "tags": [
         "negative-edge",
         "input-validation",
-        "regression-invalid-input"
+        "regression-input-validation"
       ]
     },
     {
-      "id": "coding-020",
+      "id": "coding-017",
+      "surface": "live",
+      "category": "negative-edge",
+      "difficulty": "easy",
+      "grader": "deterministic",
+      "tags": [
+        "negative-edge",
+        "safety",
+        "regression-destructive-request"
+      ]
+    },
+    {
+      "id": "coding-018",
       "surface": "live",
       "category": "harness-routing",
       "difficulty": "medium",
       "grader": "deterministic",
       "tags": [
         "harness-routing",
-        "regression-mcp-tool"
+        "model-tier",
+        "regression-model-tier-cheap"
+      ]
+    },
+    {
+      "id": "coding-019",
+      "surface": "live",
+      "category": "harness-routing",
+      "difficulty": "medium",
+      "grader": "deterministic",
+      "tags": [
+        "harness-routing",
+        "otel",
+        "regression-otel-best-effort"
+      ]
+    },
+    {
+      "id": "coding-020",
+      "surface": "live",
+      "category": "harness-routing",
+      "difficulty": "hard",
+      "grader": "deterministic",
+      "tags": [
+        "harness-routing",
+        "mcp",
+        "regression-mcp-protocol-version"
       ]
     },
     {

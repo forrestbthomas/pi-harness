@@ -74,7 +74,7 @@ contract) and `AGENTS.md` (project instructions). Key scope facts:
 
 ## Safety Rules
 
-- Prefer local validation with `go test`, `pytest`, and `kind` when available.
+- Prefer local validation with `go test`, `pytest`, and `config-check` when available.
 - Do not commit API keys, tokens, or kubeconfig contents.
 - Do not run destructive commands without confirmation.
 

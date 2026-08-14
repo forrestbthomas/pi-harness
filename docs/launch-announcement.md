@@ -1,5 +1,9 @@
 # Launch Announcement Drafts — pi-harness v0.3.0
 
+> **Status: unpublished draft (as of v0.3.0, 2026-08-09) — NOT current.** The
+> repo is at v0.10.0 (17 providers, benchmark runner, budget gate, self-heal);
+> refresh this copy before any launch. Retained for reuse.
+
 > Post where it fits your audience. Each draft is standalone. The core pitch:
 > **one harness, any AI provider — and a built-in way to prove your agent works.**
 

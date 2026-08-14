@@ -118,10 +118,21 @@ bin/pi-run chat --provider deepseek
 
 ## Releases
 
-Tag a release (`git tag v0.9.1 && git push --tags`) to trigger the GitHub
-Actions release workflow, which cross-compiles `pi-run` for linux/darwin/windows
-× amd64/arm64 and attaches the binaries to the release. To build locally:
-`bash scripts/build-release.sh <tag>`.
+Cut a release with the hardened script (tags the fetched `github/main` tip and
+refuses re-tags — see `CONTRIBUTING.md` §Releases):
+
+```bash
+bash scripts/tag-release.sh v0.10.0 github
+```
+
+This triggers the GitHub Actions release workflow, which cross-compiles
+`pi-run` for linux/darwin/windows × amd64/arm64, attaches the binaries, updates
+the Homebrew formula, and verifies the installed formula reports the tag
+(REL-3). To build locally: `bash scripts/build-release.sh <tag>`.
+
+> Do **not** tag a local commit directly (`git tag && git push --tags`): the
+> workflow hard-fails a tag that isn't an ancestor of `main` (this burned
+> v0.9.1/v0.9.2).
 
 ### Install via Homebrew (recommended on macOS)
 

@@ -71,12 +71,12 @@ RICE). **Every session starts by reading `STATUS.md` (one-screen) →
    are explicit alternatives via `--provider` / `PI_PROVIDER`. Unlock the
    vault first: `bw unlock` (or `export BW_SESSION=...`).
 2. Run Pi from the repository root so it loads `AGENTS.md`, `.pi/SYSTEM.md`, and project packages.
-3. Capture agent outputs to `eval/outputs/` or pipe them into DeepEval tests.
+3. Capture agent outputs to `eval/live-results/` (the score_run consumer) or pipe them into DeepEval tests.
 4. Run `pi-run eval` to execute the evaluation suite.
 
 ## Safety Rules
 
-- Do not run destructive commands (`rm -rf`, `git reset --hard`, database drops, CRD deletion in shared clusters) without explicit confirmation.
+- Do not run destructive commands (`rm -rf`, `git reset --hard`, git history rewrite) without explicit confirmation.
 - Do not install global system packages; use `eval/.venv` for Python dependencies and `.pi/npm/` for Pi packages.
 - Do not push sessions or evaluation outputs containing sensitive data.
 

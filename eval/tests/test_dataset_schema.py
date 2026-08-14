@@ -45,10 +45,10 @@ GRADERS = {"deterministic", "judge"}
 CATEGORY_BUDGET = {
     "code-gen": (5, 10),
     "bug-fix": (10, 16),
-    "shell/ops": (2, 3),
-    "concept": (3, 3),
-    "negative-edge": (3, 4),
-    "harness-routing": (2, 3),
+    "shell/ops": (8, 10),
+    "concept": (8, 10),
+    "negative-edge": (7, 10),
+    "harness-routing": (5, 10),
 }
 ID_RE = re.compile(r"^coding-\d{3}$")
 REGRESSION_RE = re.compile(r"^regression-.+")
@@ -70,8 +70,8 @@ def rows():
         return [json.loads(line) for line in f if line.strip()]
 
 
-def test_dataset_has_exactly_35_records(rows):
-    assert len(rows) == 35, f"expected exactly 35 records, found {len(rows)}"
+def test_dataset_has_exactly_50_records(rows):
+    assert len(rows) == 50, f"expected exactly 50 records, found {len(rows)}"
 
 
 def test_required_fields_and_enum_values(rows):

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "datasetVersion": "2026-08-14.2",
+  "datasetVersion": "2026-08-14.3",
   "categories": [
     "code-gen",
     "bug-fix",
@@ -491,6 +491,191 @@
         "python",
         "bug-fix",
         "regression-twin-merge-dicts"
+      ]
+    },
+    {
+      "id": "coding-036",
+      "surface": "live",
+      "category": "concept",
+      "difficulty": "medium",
+      "grader": "judge",
+      "tags": [
+        "python",
+        "concept",
+        "regression-mutable-immutable"
+      ]
+    },
+    {
+      "id": "coding-037",
+      "surface": "live",
+      "category": "concept",
+      "difficulty": "easy",
+      "grader": "judge",
+      "tags": [
+        "python",
+        "concept",
+        "regression-generator-vs-list"
+      ]
+    },
+    {
+      "id": "coding-038",
+      "surface": "live",
+      "category": "concept",
+      "difficulty": "hard",
+      "grader": "judge",
+      "tags": [
+        "python",
+        "concept",
+        "regression-recursion-vs-iteration"
+      ]
+    },
+    {
+      "id": "coding-039",
+      "surface": "live",
+      "category": "concept",
+      "difficulty": "medium",
+      "grader": "judge",
+      "tags": [
+        "python",
+        "data-structures",
+        "algorithms",
+        "concept",
+        "regression-dict-vs-list-lookup"
+      ]
+    },
+    {
+      "id": "coding-040",
+      "surface": "live",
+      "category": "concept",
+      "difficulty": "easy",
+      "grader": "judge",
+      "tags": [
+        "python",
+        "concept",
+        "regression-name-main-guard"
+      ]
+    },
+    {
+      "id": "coding-041",
+      "surface": "live",
+      "category": "shell/ops",
+      "difficulty": "easy",
+      "grader": "deterministic",
+      "tags": [
+        "bash",
+        "env-vars",
+        "regression-parameter-expansion-default"
+      ]
+    },
+    {
+      "id": "coding-042",
+      "surface": "live",
+      "category": "shell/ops",
+      "difficulty": "medium",
+      "grader": "deterministic",
+      "tags": [
+        "bash",
+        "text-processing",
+        "regression-awk-field-filter"
+      ]
+    },
+    {
+      "id": "coding-043",
+      "surface": "live",
+      "category": "shell/ops",
+      "difficulty": "hard",
+      "grader": "deterministic",
+      "tags": [
+        "bash",
+        "exit-codes",
+        "regression-config-parse-exit-code"
+      ]
+    },
+    {
+      "id": "coding-044",
+      "surface": "live",
+      "category": "shell/ops",
+      "difficulty": "medium",
+      "grader": "deterministic",
+      "tags": [
+        "bash",
+        "text-processing",
+        "regression-grep-double-filter"
+      ]
+    },
+    {
+      "id": "coding-045",
+      "surface": "live",
+      "category": "shell/ops",
+      "difficulty": "easy",
+      "grader": "deterministic",
+      "tags": [
+        "bash",
+        "pipelines",
+        "regression-sort-uniq-frequency"
+      ]
+    },
+    {
+      "id": "coding-046",
+      "surface": "live",
+      "category": "negative-edge",
+      "difficulty": "medium",
+      "grader": "deterministic",
+      "tags": [
+        "negative-edge",
+        "secrets",
+        "input-handling",
+        "regression-secret-redaction"
+      ]
+    },
+    {
+      "id": "coding-047",
+      "surface": "live",
+      "category": "negative-edge",
+      "difficulty": "easy",
+      "grader": "deterministic",
+      "tags": [
+        "negative-edge",
+        "input-validation",
+        "python",
+        "regression-missing-file-graceful"
+      ]
+    },
+    {
+      "id": "coding-048",
+      "surface": "live",
+      "category": "negative-edge",
+      "difficulty": "hard",
+      "grader": "deterministic",
+      "tags": [
+        "negative-edge",
+        "safety",
+        "git",
+        "regression-leaked-key-rotation"
+      ]
+    },
+    {
+      "id": "coding-049",
+      "surface": "live",
+      "category": "harness-routing",
+      "difficulty": "medium",
+      "grader": "deterministic",
+      "tags": [
+        "harness-routing",
+        "provider",
+        "regression-provider-key-routing"
+      ]
+    },
+    {
+      "id": "coding-050",
+      "surface": "live",
+      "category": "harness-routing",
+      "difficulty": "easy",
+      "grader": "deterministic",
+      "tags": [
+        "harness-routing",
+        "config-check",
+        "regression-config-check-no-key"
       ]
     }
   ]

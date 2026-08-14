@@ -1,0 +1,1 @@
+sort words.txt | uniq -c | sort -rn | head -1

@@ -7,6 +7,10 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **Dataset growth Batch B** (W10): 35 → 50 live cases — +15
+  (concept 036-040 judge-graded, shell/ops 041-045, negative-edge 046-048 +
+  harness-routing 049-050 deterministic with verified hidden-test graders);
+  lint exactly-50 + budgets updated; `datasetVersion` → `2026-08-14.3`.
 - **Dataset growth Batch A** (W10): 20 → 35 live cases — +15 (code-gen 021-025,
   bug-fix 026-030, regression twins 031-035), each with a deterministic hidden-test
   grader and reference (schema lint proves every reference passes); category

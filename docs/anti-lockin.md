@@ -1,5 +1,7 @@
 # Avoiding AI-Provider Vendor Lock-In with pi-harness
 
+> Last verified 2026-08-14 (provider table, env vars, no-fallback invariant).
+
 pi-harness keeps you out of vendor lock-in in three ways:
 
 ## 1. Provider-Agnostic Agent Runtime

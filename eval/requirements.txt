@@ -3,12 +3,10 @@
 # pytest-timeout, pypdf, and python-dotenv. Ranges use ~= (compatible release)
 # bounds for reproducibility. Add a new dependency only by deliberate decision:
 # update this policy comment and the README dependency-policy line together.
-# pytest-json-report~=1.5 is a deliberate addition for the nightly live-eval
-# gate: score_run.py consumes its JSON report to rebuild per-case aggregates
-# and baseline comparisons (live-agent-eval-v2 spec §5.4). It is small, widely
-# used, and its tests are hermetic (fixture JSON only, no keys, no network).
-# The README dependency-policy line for pytest-json-report is updated by the
-# docs pass (parent-owned).
+# pytest-json-report~=1.5 is retained for shape-compatibility with the scorer
+# fixtures; the nightly report is written by eval/conftest.py's own
+# pytest_runtest_logreport hook via PI_EVAL_REPORT (the plugin silently fails
+# to write under pytest 9.1.1, per conftest.py).
 # Run `pi-run setup` to install into eval/.venv.
 deepeval~=4.1
 pytest~=9.1

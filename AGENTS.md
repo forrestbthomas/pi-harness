@@ -28,7 +28,7 @@ This repository is a **self-healing, measurable coding-agent harness** built aro
 | `cmd/pi-run/`, `internal/cli/` | The Go CLI (single module `github.com/forrestbthomas/pi-harness`): command dispatch + all logic (watchdog, self-heal, cost, provider routing, doctor, config-check) |
 | `eval/` | DeepEval suite: datasets (`datasets/`), tests (`tests/`), scripts (`scripts/`, incl. `score_run.py`), baselines (`baselines/`) |
 | `docs/` | Architecture, specs (`superpowers/specs/`), knowledge base (`knowledge-base/`), workflow (`roadmap-workflow.md`), research (`*.md`) |
-| `.pi/` | Pi runtime config: `settings.json` (project packages incl. pinned `pi-subagents`), `SYSTEM.md`, agent wrappers (`agents/`), npm workspace (`npm/`) |
+| `.pi/` | Pi runtime config: `settings.json` (project packages incl. pinned `pi-subagents`), `SYSTEM.md`, `APPEND_SYSTEM.md`, agent wrappers (`agents/`), npm workspace (`npm/`) |
 | `.github/workflows/` | CI: `ci.yml`, `nightly-live-eval.yml`, `release.yml`, `provider-scorecard.yml`, `codeql.yml` |
 | `scripts/` | Bootstrap, install-skills, build-release, update-homebrew-formula, tag-release |
 | `examples/` | Worked examples (subagents, plugins) |
@@ -59,7 +59,8 @@ RICE). **Every session starts by reading `STATUS.md` (one-screen) →
    (durable clones under `~/.pi/agent/skills/`): `scope-lock` (anti-scope-creep),
    `productskills` (feature-prioritization, roadmap-planning, scope-cutting,
    prd-writing, …), `spec-coding-skills` (spec-plan, spec-crlp, spec-index).
-   Re-run the script to refresh; `pi-run config-check` verifies registration.
+   Re-run the script to refresh; `pi-run config-check` verifies registration
+   (with `PI_RUN_PERSONAL=1`; the default skips the skills check).
 
 ## Workflow
 

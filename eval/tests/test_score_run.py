@@ -261,6 +261,73 @@ def test_cost_regression_boundary():
     assert score_run.compare_case("coding-001", exactly_2x, baseline, 0.05)["costRegressed"] is False
 
 
+def _agg_mixed_costs(costs, n_runs=None):
+    """Aggregate a case whose per-run costs vary (EVAL-13)."""
+    n_runs = n_runs or len(costs)
+    runs = [std_run(True, cost=c) for c in costs]
+    return score_run.aggregate_case(runs, n_runs)
+
+
+def test_cost_flake_single_over_run_never_fails():
+    # EVAL-13: one run over 2x baseline (median under) is a reported cost
+    # flake, never a gate failure — the 2026-08-14 coding-010 false-fail class.
+    baseline = {"coding-001": {"passRate": 1.0, "costPerTaskUsd": 0.01}}
+    agg = _agg_mixed_costs([0.01, 0.01, 0.01, 0.01, 0.025], n_runs=5)  # median 0.01
+    comp = score_run.compare_case("coding-001", agg, baseline, 0.05)
+    assert comp["costFlake"] is True
+    assert comp["costRegressed"] is False
+    assert comp["nCostOver"] == 1
+
+
+def test_cost_regression_two_over_runs_fails():
+    # EVAL-13: >= 2 runs over 2x baseline is a real regression even if the
+    # median stays under (median 0.01 with 2 spikes of 0.025).
+    baseline = {"coding-001": {"passRate": 1.0, "costPerTaskUsd": 0.01}}
+    agg = _agg_mixed_costs([0.01, 0.01, 0.01, 0.025, 0.025], n_runs=5)
+    comp = score_run.compare_case("coding-001", agg, baseline, 0.05)
+    assert comp["costFlake"] is False
+    assert comp["costRegressed"] is True
+    assert comp["nCostOver"] == 2
+
+
+def test_cost_regression_median_over_fails_even_single_run():
+    # EVAL-13: a genuine median shift over 2x fails even with one expensive run.
+    baseline = {"coding-001": {"passRate": 1.0, "costPerTaskUsd": 0.01}}
+    agg = _agg_mixed_costs([0.021, 0.021, 0.021, 0.021, 0.021], n_runs=5)  # median 0.021 > 0.02
+    comp = score_run.compare_case("coding-001", agg, baseline, 0.05)
+    assert comp["costFlake"] is False
+    assert comp["costRegressed"] is True
+
+
+def test_cost_flake_never_fails_end_to_end(tmp_path):
+    # EVAL-13 end-to-end: a single over-2x run is a reported cost flake; the
+    # gate passes (returncode 0) and the summary lists it under costFlakes.
+    report = make_report({
+        "coding-001": [std_run(True, cost=c) for c in [0.01, 0.01, 0.01, 0.01, 0.025]],
+    })
+    baseline = make_baseline({"coding-001": {"passRate": 1.0, "costPerTaskUsd": 0.01}})
+    result = run_cli(tmp_path, report, baseline, "--runs", "5")
+    assert result.returncode == 0, result.stderr
+    summary = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))
+    assert summary["gate"]["passed"] is True
+    assert summary["costFlakes"] == ["coding-001"]
+
+
+def test_cost_regression_two_over_runs_fails_end_to_end(tmp_path):
+    # EVAL-13 end-to-end: >= 2 over-threshold runs is a real regression even
+    # with the median under 2x — gate fails and names the case.
+    report = make_report({
+        "coding-001": [std_run(True, cost=c) for c in [0.01, 0.01, 0.01, 0.025, 0.025]],
+    })
+    baseline = make_baseline({"coding-001": {"passRate": 1.0, "costPerTaskUsd": 0.01}})
+    result = run_cli(tmp_path, report, baseline, "--runs", "5")
+    assert result.returncode == 1
+    summary = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))
+    assert summary["gate"]["passed"] is False
+    assert any("coding-001" in failure and "costPerTaskUsd regression" in failure
+               for failure in summary["gate"]["failures"])
+
+
 def test_unbaselined_cases_recorded_not_failed():
     agg = _agg(0.0, cost=0.01)
     comp = score_run.compare_case("coding-001", agg, {}, 0.05)

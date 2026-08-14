@@ -6,6 +6,15 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+### Added
+- **EVAL-13 — Cost-variance tolerance in the nightly gate** (EPIC-1,
+  v0.11.0 "The gate that can't lie"): the cost gate is now flake-aware like
+  the pass-rate gate (EVAL-2). A single run over 2× baseline is a reported
+  **cost flake** (never a gate failure) — kills the 2026-08-14 coding-010
+  single-run cost-spike false-fail class; a median over 2× baseline OR ≥2
+  over-threshold runs still fails as a real regression. Scorecard JSON +
+  markdown surface `costFlakes`. Hermetic tests: 48 score_run tests pass.
+
 ## [0.10.0] - 2026-08-14
 
 ### BREAKING

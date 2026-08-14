@@ -73,3 +73,13 @@ def test_eval_workflows_upload_on_any_outcome():
         text = _read(rel)
         assert "actions/upload-artifact" in text, f"{rel} lost its artifact upload"
         assert "if: always()" in text, f"{rel} upload step must carry if: always()"
+
+
+def test_scorecard_surfaces_record_pi_version():
+    """Both eval surfaces must record pi-run version for scorecard provenance
+    (EVAL-3 nightly + EVAL-14 ci-benchmark) — otherwise piVersion is 'unknown'
+    and the 'every scorecard is attributable' DoD silently regresses."""
+    nightly = _read(".github/workflows/nightly-live-eval.yml")
+    assert "PI_VERSION=$(pi-run version" in nightly, "nightly must record PI_VERSION"
+    provider = _read(".github/workflows/provider-scorecard.yml")
+    assert "PI_VERSION=$(pi-run version" in provider, "provider-scorecard must record PI_VERSION (EVAL-14)"

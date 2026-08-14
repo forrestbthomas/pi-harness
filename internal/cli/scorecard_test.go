@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -948,5 +949,67 @@ func TestBuildScorecardIncludesSelfHeal(t *testing.T) {
 	}
 	if !bytes.Contains(encoded, []byte(`"selfHeal"`)) {
 		t.Fatalf("scorecard JSON missing selfHeal: %s", encoded)
+	}
+}
+
+func writeTasksManifest(t *testing.T, root, version string) {
+	t.Helper()
+	dir := filepath.Join(root, "eval", "datasets")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	content := fmt.Sprintf("{\"datasetVersion\": \"%s\"}\n", version)
+	if err := os.WriteFile(filepath.Join(dir, "tasks.json"), []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestBuildScorecardIncludesProvenance(t *testing.T) {
+	// EVAL-14: the ci-benchmark scorecard must carry the same provenance
+	// block as the live surface (datasetVersion / agentModel / judgeModel /
+	// piVersion), closing EPIC-1's "provenance in every scorecard" DoD on
+	// both surfaces.
+	root := t.TempDir()
+	writeTasksManifest(t, root, "2026-08-14.5")
+	t.Setenv("PI_MODEL_TIER", "cheap")
+	t.Setenv("OPENAI_MODEL_NAME", "gpt-4.1-mini")
+	Version = "v0.11.0-test"
+	defer func() { Version = "dev" }()
+
+	sc := buildScorecard(root, scorecardOptions{}, nil, nil, nil, 0, scorecardGateStatus{}, 0)
+	if sc.Provenance == nil {
+		t.Fatal("scorecard provenance block missing")
+	}
+	want := scorecardProvenance{
+		DatasetVersion: "2026-08-14.5",
+		AgentModel:     "cheap",
+		JudgeModel:     "gpt-4.1-mini",
+		PiVersion:      "v0.11.0-test",
+	}
+	if *sc.Provenance != want {
+		t.Fatalf("provenance = %+v, want %+v", *sc.Provenance, want)
+	}
+	encoded, err := json.Marshal(sc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(encoded, []byte(`"provenance"`)) ||
+		!bytes.Contains(encoded, []byte(`"datasetVersion":"2026-08-14.5"`)) {
+		t.Fatalf("scorecard JSON missing provenance: %s", encoded)
+	}
+}
+
+func TestBuildScorecardProvenanceBestEffort(t *testing.T) {
+	// EVAL-14 best-effort: no tasks.json, no env, dev version -> all "unknown",
+	// never a crash.
+	root := t.TempDir() // empty
+	Version = "dev"
+	defer func() { Version = "dev" }()
+
+	prov := buildScorecardProvenance(root)
+	want := scorecardProvenance{DatasetVersion: "unknown", AgentModel: "unknown",
+		JudgeModel: "unknown", PiVersion: "unknown"}
+	if prov != want {
+		t.Fatalf("best-effort provenance = %+v, want %+v", prov, want)
 	}
 }

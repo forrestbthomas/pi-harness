@@ -99,6 +99,18 @@ type scorecardSelfHeal struct {
 	ByKind  map[string]int `json:"byKind"`
 }
 
+// scorecardProvenance attributes a benchmark scorecard the same way the live
+// nightly surface is attributed (EVAL-3 schema). This closes EPIC-1's DoD
+// "dataset version + provenance in every scorecard" on BOTH surfaces
+// (live nightly gate + ci-benchmark provider scorecard). Best-effort: any
+// missing source yields "unknown" and never fails the run (EVAL-14).
+type scorecardProvenance struct {
+	DatasetVersion string `json:"datasetVersion"`
+	AgentModel     string `json:"agentModel"`
+	JudgeModel     string `json:"judgeModel"`
+	PiVersion      string `json:"piVersion"`
+}
+
 // scorecard is the full on-disk artifact written to
 // eval/benchmark-results/scorecard-<run>.json (schema §4.3).
 type scorecard struct {
@@ -113,6 +125,7 @@ type scorecard struct {
 	Providers     []scorecardProvider `json:"providers"`
 	Baseline      *scorecardBaseline  `json:"baseline,omitempty"`
 	SelfHeal      *scorecardSelfHeal  `json:"selfHeal,omitempty"`
+	Provenance    *scorecardProvenance `json:"provenance,omitempty"`
 	Passed        bool                `json:"passed"`
 }
 
@@ -722,6 +735,40 @@ func readSelfHealEvents(root string) scorecardSelfHeal {
 	return scorecardSelfHeal{NEvents: nEvents, ByKind: byKind}
 }
 
+// buildScorecardProvenance attributes the benchmark scorecard the same way
+// the live surface is attributed (EVAL-14). Best-effort: every source may be
+// absent (env unset, tasks.json missing/malformed) and yields "unknown"
+// rather than failing — provenance is observability, never a gate.
+func buildScorecardProvenance(root string) scorecardProvenance {
+	datasetVersion := "unknown"
+	if data, err := os.ReadFile(filepath.Join(root, "eval", "datasets", "tasks.json")); err == nil {
+		var manifest struct {
+			DatasetVersion string `json:"datasetVersion"`
+		}
+		if json.Unmarshal(data, &manifest) == nil && manifest.DatasetVersion != "" {
+			datasetVersion = manifest.DatasetVersion
+		}
+	}
+	agentModel := os.Getenv("PI_MODEL_TIER")
+	if agentModel == "" {
+		agentModel = "unknown"
+	}
+	judgeModel := os.Getenv("OPENAI_MODEL_NAME")
+	if judgeModel == "" {
+		judgeModel = "unknown"
+	}
+	piVersion := Version
+	if piVersion == "" || piVersion == "dev" {
+		piVersion = "unknown"
+	}
+	return scorecardProvenance{
+		DatasetVersion: datasetVersion,
+		AgentModel:     agentModel,
+		JudgeModel:     judgeModel,
+		PiVersion:      piVersion,
+	}
+}
+
 // buildScorecard assembles the scorecard artifact from the run data.
 func buildScorecard(root string, opts scorecardOptions, rows []scorecardProvider, tasks []benchmarkTask, baseline map[string]float64, budgetCap float64, st scorecardGateStatus, code int) scorecard {
 	sc := scorecard{
@@ -742,6 +789,8 @@ func buildScorecard(root string, opts scorecardOptions, rows []scorecardProvider
 	if selfHeal := readSelfHealEvents(root); selfHeal.NEvents > 0 || len(selfHeal.ByKind) > 0 {
 		sc.SelfHeal = &selfHeal
 	}
+	prov := buildScorecardProvenance(root)
+	sc.Provenance = &prov
 	if opts.failBelow >= 0 {
 		fb := opts.failBelow
 		sc.Gates.FailBelow = &fb

@@ -54,5 +54,11 @@
       }
     ]
   },
+  "provenance": {
+    "datasetVersion": "unknown",
+    "agentModel": "unknown",
+    "judgeModel": "unknown",
+    "piVersion": "unknown"
+  },
   "passed": false
 }

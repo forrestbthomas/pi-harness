@@ -71,6 +71,13 @@ jobs:
           name: benchmark-scorecard
           path: eval/benchmark-results/
         continue-on-error: true # first run has no baseline yet
+      - name: Record pi version for scorecard provenance
+        # EVAL-14: the ci-benchmark scorecard's provenance.piVersion must be a
+        # real version (or "unknown"), matching the nightly live surface
+        # (EVAL-3). The Go scorecard reads the Version ldflags stamp; recording
+        # it here also surfaces it in the step env for downstream checks.
+        run: |
+          echo "PI_VERSION=$(pi-run version 2>/dev/null || echo unknown)" >> "$GITHUB_ENV"
       - name: Run provider scorecard gate
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

@@ -1,6 +1,10 @@
 # Agent Harness: Project Instructions
 
-This repository is a **coding agent evaluation harness** built around the [Pi coding agent](https://pi.dev/) and the [DeepEval](https://github.com/confident-ai/deepeval) LLM evaluation framework.
+This repository is a **self-healing, measurable coding-agent harness** built around the [Pi coding agent](https://pi.dev/) and the [DeepEval](https://github.com/confident-ai/deepeval) LLM evaluation framework.
+
+## Charter & scope (read first)
+
+[`CHARTER.md`](CHARTER.md) is the project's boundary contract — read it before proposing or building anything. In one line: **one product, the harness** (`pi-run` + its measurement layer). We are explicitly **not** a benchmark product, a PM system, a spec library, an observability platform, or a general MCP platform. The eval suite under `eval/` is the harness's measurement layer (the "measurable" in the north star), not a separate product today; a standalone benchmark repo (pi-bench) is a *triggered* future split (EPIC-1 DoD closed **and** an external consumer), not current scope. "Distributable" is earned: macOS/Homebrew is the shipped leg; Windows/cloud are non-goals until a consumer asks.
 
 ## Project Goals
 

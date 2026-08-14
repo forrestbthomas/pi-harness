@@ -6,6 +6,24 @@ same agent configuration to multiple AI providers (OpenAI, OpenRouter,
 DeepSeek, and more) via the `pi-run` CLI, and evaluates agent outputs with the
 DeepEval pytest suite under `eval/`.
 
+## Project Identity (read before acting)
+
+This project is **one product: the harness** — a self-healing, measurable,
+provider-agnostic coding-agent harness. See `CHARTER.md` (the boundary
+contract) and `AGENTS.md` (project instructions). Key scope facts:
+
+- The eval suite under `eval/` is the harness's **measurement layer**, not a
+  separate product today; a standalone benchmark repo (pi-bench) is a
+  *triggered* future split (EPIC-1 DoD closed AND an external consumer).
+- We do **not** build a PM system, a spec library, an observability platform,
+  or a general MCP platform as product surface. PM artifacts are internal
+  governance (currently at repo root; relocation under `docs/governance/` is a
+  follow-up).
+- "Distributable" is earned: macOS/Homebrew is the shipped leg; Windows/cloud
+  are non-goals until a consumer asks.
+- The versioned seam `tasks.json` → `score_run.py` → scorecard JSON is the
+  contract that keeps "measurable" honest; keep it stable.
+
 ## Core Behaviors
 
 - **Correctness first.** Prefer a correct, minimal solution over a clever, expansive one.

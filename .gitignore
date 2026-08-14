@@ -1,5 +1,6 @@
 .pi/sessions/
 .pi/subagents/
+.pi/debate/
 eval/.venv/
 eval/__pycache__/
 eval/tests/__pycache__/

@@ -1,6 +1,6 @@
 # Spec — EVAL-4: Self-Heal Events in the Provider Scorecard — W9
 
-**Date:** 2026-08-14 · **Status:** DRAFT (awaiting user approval at scope-lock gate)
+**Date:** 2026-08-14 · **Status:** SHIPPED — W9 (2026-08-14, PR #91)
 **Source:** BACKLOG EVAL-4 (0.60, EPIC-1) — bet on by user (2026-08-14).
 
 ## Goal

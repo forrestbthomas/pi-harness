@@ -28,7 +28,7 @@ Rules:
 
 | Epic | Outcome | Appetite |
 |---|---|---|
-| EPIC-1 — Eval suite | smoke gate → research-grade **measurement** (0 flake false-fails, attributable, 50 cases held) | ≈ 2.5–3 pw (one author, honest core) |
+| EPIC-1 — Eval suite | smoke gate → research-grade **measurement** (0 flake false-fails, attributable, 54 live cases held) | ≈ 2.5–3 pw (one author, honest core) |
 | EPIC-2 — Self-healing resilience | every hang/wedge class detected, recovered, observable; watchdog tuned on real data; auto-resume decided | ≤ 1.5 cycles |
 | EPIC-3 — Cost intelligence & routing | know/control cost per provider+task; **within-provider** tier routing (never cross-provider) | ≤ 1 cycle |
 | EPIC-4 — Portability & distribution | **PARKED** — non-goals per CHARTER.md until a consumer asks; PORT-0 quarterly re-confirm | 0.1 pw/quarter |
@@ -44,14 +44,14 @@ Rules:
 - Every nightly/weekly eval leaves a **complete evidence artifact** (report, summary, heal events) on **every** gate outcome — zero lost runs.
 - **Gate false-fails from single-run flake → 0/week** — for **pass rate AND cost** (EVAL-2 + EVAL-13); the scorecard distinguishes flake from regression and reports flake/cost-flake rate.
 - Every scorecard is **attributable**: dataset version, pi version, and judge model recorded — **on both surfaces** (live nightly gate **and** ci-benchmark provider scorecard) (EVAL-3 + EVAL-14).
-- Dataset holds **50 cases** across ≥6 categories with regression pairs and diff-graded code tasks (EVAL-5 capped; growth only on a consumer or a 30-day regression-catch signal).
+- Dataset holds **54 live cases** across 7 categories (incl. the agentic tool-using family) with regression pairs and diff-graded code tasks (EVAL-5 capped the six original categories; growth only on a consumer or a 30-day regression-catch signal; `tasks.json` is the count authority).
 - The **split seam is verified, not assumed**: the eval suite's self-containment is proven by dry-run so the triggered pi-bench split stays cheap (EVAL-15).
 - The **loop measures itself**: changes to the harness report their own scorecard delta (EVAL-16, pilot-first).
 - Live runs exercise **agentic/tool-using behavior** (EVAL-6); sandboxing is **parked** behind a real contamination incident (EVAL-7); judge variance is bounded (EVAL-8); known-flaky cases are **quarantined** (EVAL-9).
 
 **Appetite:** ≈ 2.5–3 pw honest core for one author (restated from "≤ 2 cycles" — the 12-item plan was ~4.5× over budget at 9.0 pw; scope is cut, not extended).
 
-**Why now:** the eval is a smoke gate with n=5 runs and a committed 17-of-50 baseline. Friday's gate failed on a single-run flake (`coding-005`) and the 2026-08-14 nightly failed on a **cost spike** (`coding-010`) — the flake/cost false-fail classes are real, the baseline covers only 34% of the benchmark, and the loop does not yet measure changes to itself. Making the gate honest and the seam provable comes before any growth.
+**Why now:** the eval is a smoke gate with n=5 runs and a committed 17-of-54 baseline (31.5%). Friday's gate failed on a single-run flake (`coding-005`) and the 2026-08-14 nightly failed on a **cost spike** (`coding-010`) — the flake/cost false-fail classes are real, the baseline covers only 31.5% of the benchmark, and the loop does not yet measure changes to itself. Making the gate honest and the seam provable comes before any growth.
 
 **Sequence (dependency-ordered):**
 
@@ -70,7 +70,7 @@ Rules:
 
 - [ ] Each item closed via its own PR with hermetic tests (BACKLOG traceability).
 - [ ] Scorecard reports flakes vs. regressions AND cost-flakes; no false-fail from 1-of-N flake or a single-run cost spike.
-- [ ] Dataset version + provenance in **every** scorecard (live **and** ci-benchmark); 50 cases held.
+- [ ] Dataset version + provenance in **every** scorecard (live **and** ci-benchmark); 54 live cases held.
 - [ ] 0 unbaselined live cases after EVAL-12; re-baseline is a standing cadence (after every dataset/harness-behavior change; history in `eval/baselines/`).
 - [ ] Split-seam dry-run passes (or the gap is documented as the reason the split needs the dry-run).
 - [ ] EPIC-1 row closed in ROADMAP; CHANGELOG entries per shipped item.

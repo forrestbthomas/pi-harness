@@ -65,8 +65,9 @@ jobs:
     # against the per-case baseline.
     runs-on: ubuntu-latest
     needs: deterministic
-    # 50-case suite at EVAL_RUNS_PER_CASE=5: ~55s/case * 49 deterministic
-    # cases ~= 45 min of agent runs. 30 min was sized for the old 17-case
+    # 54-case suite at EVAL_RUNS_PER_CASE=5: ~55s/case * 49 deterministic
+    # cases + 5 judge cases + 4 agentic cases (tasks.json is the count
+    # authority). 30 min was sized for the old 17-case
     # suite and the job was killed at the cap on 2026-08-14. 60 min leaves
     # headroom; the per-case budget cap (PI_MAX_BUDGET_USD) bounds spend.
     timeout-minutes: 60

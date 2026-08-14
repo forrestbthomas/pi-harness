@@ -7,7 +7,9 @@
 
 > **Superseded (2026-08-13):** written 2026-08-11; several present-tense "gaps"
 > shipped in v0.8.0/v0.9.x (`mcp-server`, `--permission-mode`, hooks,
-> `project-understand`, `--model-tier`). Retained as a dated research record;
+> `project-understand`, `--model-tier`). `pi-run mcp-server` was subsequently
+> **removed in v0.10.0** (cut list #100; see CHANGELOG), and the provider
+> count is now 17 with 8 benchmark tasks. Retained as a dated research record;
 > see `ROADMAP.md` for current workstreams.
 
 ---

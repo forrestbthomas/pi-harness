@@ -1,6 +1,6 @@
 # Spec — Per-Tool-Call Timeout (Upstream pi-subagents) — W5
 
-**Date:** 2026-08-13 · **Status:** DRAFT (awaiting user approval at Phase-1 gate)
+**Date:** 2026-08-13 · **Status:** PART SHIPPED — run-level timeout pinned (Part A, 0.48.0); per-tool timeout merged upstream (Part B, a660ea3); Part C (observe via PI_SELF_HEAL) pending upstream release
 **Locked Phase-1 decisions:** kill-run semantics (`timedOut: true`) · opt-in default (no built-in per-tool timeout) · supervisor-tool allowlist · file upstream issue first · Part A (pin upgrade) lands as a separate PR before Part B.
 
 ## Goal

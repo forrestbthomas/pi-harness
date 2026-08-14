@@ -103,3 +103,20 @@ def test_readme_env_table_documents_watchdog_env_vars():
     readme = _read("README.md")
     for var in ("PI_SELF_HEAL", "PI_STALL_TIMEOUT_SECS", "PI_WATCHDOG_GRACE_SECS"):
         assert f"| `{var}` |" in readme, f"README env table must document {var}"
+
+
+def test_readme_live_dataset_count_matches_manifest():
+    """GOV-1 data-vs-prose guard (restored 2026-08-14 — SCOPE.md dropped it from
+    the GOV-1 core; EPICS.md:204 names the README '20-task dataset' drift as the
+    flagship honesty class). The README's Nightly section must state the live
+    dataset count that tasks.json actually carries, so the count can't rot again.
+    """
+    import json as _json
+    tasks = _json.loads(_read("eval/datasets/tasks.json"))
+    live_count = sum(1 for t in tasks["tasks"] if t.get("surface") == "live")
+    readme = _read("README.md")
+    # The Nightly section must carry the current live count, not a frozen one.
+    assert str(live_count) in readme, (
+        f"README Nightly section must state the live dataset count ({live_count}) "
+        f"from tasks.json — the '20-task' lie class (EPICS.md:204)"
+    )

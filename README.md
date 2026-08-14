@@ -249,19 +249,23 @@ nudge (spec `docs/superpowers/specs/2026-08-13-self-healing-design.md`):
 ### Nightly live eval
 
 The nightly workflow (`.github/workflows/nightly-live-eval.yml`) evaluates the
-agent against a **20-task dataset** (`eval/datasets/coding_samples.jsonl`)
-with a two-job split:
+agent against the live dataset (`eval/datasets/coding_samples.jsonl` —
+currently 54 cases across 7 categories; the manifest `eval/datasets/tasks.json`
+is the count authority) with a two-job split:
 
 - **Deterministic job** — runs the hermetic suite (config checks, contract
   tests against a fresh `pi-run` binary, dataset schema lint, scorer unit
   tests); no provider key needed.
-- **Live job** — runs each deterministic task 3× via `pi-run print
+- **Live job** — runs each case 5× (`EVAL_RUNS_PER_CASE`) via `pi-run print
   --model-tier cheap` plus LLM-judged metrics (`TaskCompletionMetric`,
-  G-Eval rubric), then gates per-case pass rates and cost-per-task against
-  `eval/baselines/live-baseline.json` (0.05 tolerance; cost regression >2×
-  baseline fails) with `eval/scripts/score_run.py`. **Missing provider key is
-  a hard failure, never a silent skip.** Budget-capped via
-  `PI_MAX_BUDGET_USD` (default $2/night); results artifact-retained 90 days.
+  G-Eval rubric; judge majority-of-3 via `EVAL_JUDGE_RUNS`), then gates
+  per-case pass rates and cost-per-task against
+  `eval/baselines/live-baseline.json` (0.05 tolerance; flake-aware cost gate:
+  a single run >2× baseline is a reported **cost flake**, never a failure —
+  a median >2× or ≥2 over-threshold runs fails, per EVAL-13) with
+  `eval/scripts/score_run.py`. **Missing provider key is a hard failure,
+  never a silent skip.** Budget-capped via `PI_MAX_BUDGET_USD` (default
+  $2/night); results artifact-retained 90 days.
 
 Judge model is pinned via `OPENAI_MODEL_NAME` (deepeval reads that knob, not
 `DEEPEVAL_MODEL`). Re-baselining is deliberate: run the suite green locally,

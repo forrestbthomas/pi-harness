@@ -1,7 +1,7 @@
 # Provider Scorecard in CI (`pi-run ci-benchmark`) — Design
 
 **Date:** 2026-08-11
-**Status:** Proposed (from competitive gap analysis, docs/competitive-gap-analysis-2026-08.md)
+**Status:** SHIPPED — `pi-run ci-benchmark` + provider scorecard (v0.6.0 era; scorecard.go)
 **Target release:** v0.6.0 (feature)
 
 ## 1. Context & Motivation

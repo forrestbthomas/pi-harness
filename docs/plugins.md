@@ -51,7 +51,7 @@ MCP and Agent Plugins are **complementary layers, not competitors**:
 
 | Layer | What it standardizes | In pi-harness today |
 |---|---|---|
-| **MCP** (Model Context Protocol) | Tools a client (agent host) can call — a live, procedural interface | `pi-run mcp-server` (read-only MCP over stdio, spec `2025-03-26`; see `internal/cli/mcp.go`) |
+| **MCP** (Model Context Protocol) | Tools a client (agent host) can call — a live, procedural interface | none — `pi-run mcp-server` shipped in v0.8.0 then **removed in v0.10.0** (cut list #100; see CHANGELOG) |
 | **Agent Plugins 1.0** (draft) | Packaged, portable agent behaviors/workflows — skills and MCP servers distributed as installable units | none (documented only) |
 
 MCP answers "how does an agent call a tool at runtime"; Agent Plugins answers

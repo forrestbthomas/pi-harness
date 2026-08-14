@@ -1,6 +1,6 @@
 # Spec — EVAL-3: Dataset Versioning + Scorecard Provenance — W8
 
-**Date:** 2026-08-14 · **Status:** DRAFT (awaiting user approval at scope-lock gate)
+**Date:** 2026-08-14 · **Status:** SHIPPED — W8 (2026-08-14, PR #89)
 **Source:** BACKLOG EVAL-3 (0.90, EPIC-1) — bet on by user (2026-08-14). Sequence position: must land before EVAL-5 (dataset growth) so growth is attributable.
 
 ## Goal

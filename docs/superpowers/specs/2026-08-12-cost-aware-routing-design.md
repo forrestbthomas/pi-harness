@@ -1,7 +1,7 @@
 # Cost-Aware Model Routing (`--model-tier`) — Design
 
 **Date:** 2026-08-12
-**Status:** Proposed (from P2 research synthesis, docs/p2-research-synthesis-2026-08.md §1.3 / §3)
+**Status:** SHIPPED — `--model-tier` + PI_MODEL_TIER (v0.8.0, PR #38)
 **Target release:** v0.8.0 (feature)
 
 ## 1. Context & Motivation

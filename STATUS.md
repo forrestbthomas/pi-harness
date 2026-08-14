@@ -15,16 +15,16 @@
 | **W8 — Dataset versioning + provenance** (EVAL-3) | **SHIPPED — 2026-08-14** — #89; guarded `datasetVersion` + `provenance` in scorecard |
 | **W9 — Self-heal events in provider scorecard** (EVAL-4) | **SHIPPED — 2026-08-14** — #91 |
 | **W10 — Dataset growth 20 → 50** (EVAL-5) | **SHIPPED — 2026-08-14** — 50 live cases + 3 edit-based benchmark tasks; EVAL-12 re-baseline is the follow-up (tonight) |
-| **Live-suite timeout sizing** (EVAL-12 enabler) | **SHIPPED — 2026-08-14** — #97: per-test 120→600s, job 30→60m so the 50-case nightly can finish |
+| **Live-suite timeout sizing** (EVAL-12 enabler) | **SHIPPED — 2026-08-14** — #97: per-test 120→600s, job 30→60m so the 54-case nightly can finish |
 | **W4 Project-management layer** | Active ritual — governance layer; now with EPIC-6 (repo maturity) owning governance/community/debt work |
 
 ## Next (shaped — next 1–2 cycles)
 
 | Item | RICE | Tag |
 |---|---|---|
-| **v0.10.0 — Identity, boundary, truth** (ship NOW: main batch #98–#102 + REL-1 version stamp + REL-2 ledger repair + REL-5 baseline provenance + BREAKING banner; EVAL-12 rides as data release) | — | Release |
-| **EPIC-1 — Eval suite → research-grade measurement** (EVAL-6, 12, 13–16, 8, 9, 11) | top EVAL-15 1.50 / EVAL-6 1.40 | EPIC-1 |
-| **EPIC-6 — Repo maturity** (OSS-1, GOV-1, GOV-2, OSS-2, OWN-1, TAX-1/2, REL-1..5, SECURITY, PORT-0) | top OSS-1 ~18 | EPIC-6 |
+| **v0.11.0 — The gate that can't lie** (EVAL-12 re-baseline → EVAL-16 harness gate; EVAL-6 slice 2; GOV-2 → GOV-1 follow-ups) | — | Release |
+| **EPIC-1 — Eval suite → research-grade measurement** (EVAL-12, EVAL-16, EVAL-6 slice 2, EVAL-9, EVAL-11) | top EVAL-15 1.50 (shipped) / EVAL-16 1.20 | EPIC-1 |
+| **EPIC-6 — Repo maturity** (GOV-2, OSS-2, OWN-1, TAX-1, SECURITY, PORT-0) | top GOV-2 ~2.5 | EPIC-6 |
 | **EPIC-2 — Self-healing resilience** (HEAL-5, HEAL-2 data-gated, HEAL-3; HEAL-1 demoted) | top HEAL-5 1.20 | EPIC-2 |
 | **EPIC-3 — Cost intelligence & routing** (COST-2, COST-1 within-provider) | top COST-1 0.80 | EPIC-3 |
 | **EPIC-4 — Portability & distribution** | **PARKED** — PORT-0 quarterly re-confirm only (charter non-goal until a consumer asks) | EPIC-4 |
@@ -41,12 +41,18 @@
 
 ## Shipped recently (one spelling: CHANGELOG)
 
+- **v0.10.0** (2026-08-14): charter (#98/#99), cut list −1790 lines (#100),
+  EPIC restructure (#101), OSS-1 canonical identity (#102), live-suite timeout
+  fix (#97), version-truth stamp + ledger repair (#104)
 - **v0.9.2** (2026-08-13): W2 live-eval baseline, pin pi-subagents, owner-only
   perms · **v0.9.1** (2026-08-13): W1 self-healing, non-interactive env, exit 9 ·
   **v0.9.0**: eval hardening + live eval v2 · **v0.8.0**: project-understand,
-  MCP, OTel, permission modes, hooks, 17 providers · post-v0.9.2 (main):
-  charter (#98/#99), cut list (#100), live-suite timeout fix (#97)
+  MCP, OTel, permission modes, hooks, 17 providers
+- **main (post-v0.10.0, v0.11.0 in flight)**: EVAL-13 cost gate (#105), EVAL-14
+  provenance parity (#106), EVAL-15 split-seam (#107), EVAL-8 judge
+  stabilization (#108), REL-3/4 release machinery (#109), TAX-2 audit (#110),
+  EVAL-6 agentic slice 1 (#111), GOV-1 drift guard (#112)
 
 ## Open PRs / branches
 
-- Open PRs: **none** (harness) · Upstream: pi-subagents **#1077 merged** (`a660ea3`) as per-tool-call timeout, issue **#1076** · Branches: `main` only · Remotes: `github` only
+- Open PRs: **none** (harness) · Upstream: pi-subagents **#1077 merged** (`a660ea3`) as per-tool-call timeout, issue **#1076** · Branches: `main` + 37 stale remote branches (prune per `docs/roadmap-workflow.md`) · Remotes: `github` only

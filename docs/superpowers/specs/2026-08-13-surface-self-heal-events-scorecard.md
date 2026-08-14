@@ -1,6 +1,6 @@
 # Spec — Surface `PI_SELF_HEAL` Events in the Scorecard + Enable in CI — W6
 
-**Date:** 2026-08-13 · **Status:** DRAFT (awaiting user approval at scope-lock gate)
+**Date:** 2026-08-13 · **Status:** SHIPPED — W6 (2026-08-14, PR #83)
 **Source:** BACKLOG #1 (RICE 1.40, Enabler, ~0.5 pw) — promoted to ROADMAP W6 by user decision.
 
 ## Goal

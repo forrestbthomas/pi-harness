@@ -1,7 +1,7 @@
 # Self-Healing Agent Runs (watchdog, process-group kill, git-state recovery, escalation) — Design
 
 **Date:** 2026-08-13
-**Status:** Proposed (from self-healing research brief `docs/self-healing-research-2026-08.md`, lanes 1–4)
+**Status:** SHIPPED — self-healing W1 (v0.9.1, PRs #59–#63)
 **Target release:** v0.9.1 (after #50–#58 fixes ship)
 **Depends on:** PR #59 (non-interactive env — the prevention layer, merged into this plan's baseline); ROADMAP W1 / BACKLOG items 1–3.
 **Skill workflow:** spec-plan (this doc), then scope-lock before implementation, spec-crlp on drift, spec-index for durable memory.

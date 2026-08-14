@@ -4,8 +4,8 @@ Two jobs:
 
 1. **Contract pins** (hard pass/fail): the seam's versioned surfaces must be
    present and self-consistent — tasks.json + datasetVersion, score_run
-   SCHEMA_VERSION, 50 live cases, grader/reference counts matching the
-   manifest, benchmark dirs.
+   SCHEMA_VERSION, >= 50 live cases, grader/reference count floors matching
+   the manifest, benchmark dirs.
 
 2. **Self-containment dry-run** (records, never fails): scan eval/ for
    harness-root coupling (repo_root() path assumptions, .pi/ reads,

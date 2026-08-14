@@ -7,6 +7,15 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **Project charter + boundary contract** (scope debate 2026-08-14):
+  [`CHARTER.md`](CHARTER.md) defines what this project is and explicitly what
+  it is not — one product, the harness; the eval suite is its measurement
+  layer, not a separate product today. North star adjusted: self-healing,
+  measurable; "distributable" is earned (macOS/Homebrew shipped; further
+  platforms or a pi-bench repo wait for a concrete consumer / second owner
+  team). README headline is now single-product; `AGENTS.md` and `.pi/SYSTEM.md`
+  carry the scope summary for agents. Decision record:
+  `docs/knowledge-base/decision/2026-08-14-persona-debate-scope.md`.
 - **Dataset growth — benchmark batch** (W10): +3 edit-based Docker
   benchmark tasks (fix-parse-dates, add-rate-limiter, fix-graceful-shutdown)
   — agents edit `src/`, hidden `tests/run.sh` grades the edited tree

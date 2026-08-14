@@ -568,7 +568,7 @@ agent loads the matching skill automatically. `enableSkillCommands` is on in
 .
 ├── AGENTS.md                  # Project instructions loaded by Pi
 ├── .gitignore
-├── go.mod                     # Go module github.com/forrestthomas1/pi-harness (pi-run CLI)
+├── go.mod                     # Go module github.com/forrestbthomas/pi-harness (pi-run CLI)
 ├── cmd/pi-run/                # CLI entry point
 ├── internal/cli/              # CLI implementation + unit tests
 ├── bin/                       # Git-ignored build output (bin/pi-run)

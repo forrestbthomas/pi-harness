@@ -11,7 +11,7 @@ if [ $# -ne 1 ]; then
 fi
 TAG="$1"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-LDFLAGS="-X github.com/forrestthomas1/pi-harness/internal/cli.Version=${TAG}"
+LDFLAGS="-X github.com/forrestbthomas/pi-harness/internal/cli.Version=${TAG}"
 
 cd "$ROOT"
 mkdir -p bin

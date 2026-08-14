@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/forrestthomas1/pi-harness/internal/cli"
+	"github.com/forrestbthomas/pi-harness/internal/cli"
 )
 
 func main() {

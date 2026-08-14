@@ -1,31 +1,34 @@
 # Scope Contract
-**Task:** Apply the maturity-scan change-set to the PM layer (EPICS.md + BACKLOG.md + STATUS.md) | **Plan:** `.pi/debate/maturity-scan/synthesis.md` (six-persona convergence, 2026-08-14) | **Date:** 2026-08-14 | **Status:** CLOSED — 0 changes logged
+**Task:** OSS-1 — Canonical module path + identity alignment + CI install check | **Plan:** BACKLOG OSS-1 (EPIC-6, RICE ~18, 0.25 pw) | **Date:** 2026-08-14 | **Status:** ACTIVE
 
 ## In Scope
+- **Ground truth (verified):** canonical identity is **`forrestbthomas/pi-harness`** (gh API `nameWithOwner`, git remote, README clone URL, CONTRIBUTING, update-homebrew-formula.sh all agree). The defect: go.mod + Go imports + ldflags + docs say `forrestthomas1` (extra `1`, missing `b`), and CODEOWNERS says `@forrestthomas` (missing `b`). `go install github.com/forrestthomas/pi-harness@latest` fails on module-path mismatch.
 - **Files:**
-  - `EPICS.md` — apply the converged epic shape: EPIC-1 trimmed (outcome "research-grade measurement", appetite in person-weeks, +EVAL-13..16, −EVAL-10, EVAL-7 parked, EVAL-6/12 updated); EPIC-2 (HEAL-1 demoted, HEAL-2 data-gated); EPIC-3 (COST-1 within-provider); EPIC-4 parked → PORT-0; EPIC-5 dissolved (DX-1/DX-2 → idea inbox); **EPIC-6 (new) "Repo maturity"** added.
-  - `BACKLOG.md` — rebuild the ranked queue: remove shipped EVAL-1..5 rows, remove EVAL-10, park EVAL-7/EPIC-4 items, demote HEAL-1 to a deferred section, add OSS-1/GOV-1/GOV-2/OSS-2/OWN-1/TAX-1/TAX-2/PORT-0/SECURITY-line + EVAL-13/14/15/16; update EVAL-6 (RICE 1.4), EVAL-12 (DoD), EVAL-5 (hold at 50), HEAL-2, COST-1; expand idea inbox (EVAL-10, DX-1, DX-2, HEAL-1 design question).
-  - `STATUS.md` — regenerate the one-screen snapshot to match the new epic/queue shape (EPIC-6 next; EPIC-4 parked; EPIC-5 dissolved).
-  - `SCOPE.md` — this contract, closed on completion.
+  - `go.mod` — `module github.com/forrestthomas1/pi-harness` → `github.com/forrestbthomas/pi-harness`
+  - Go imports: `cmd/pi-run/main.go`, `internal/cli/app.go`, `internal/cli/app_test.go`
+  - ldflags: `scripts/bootstrap.sh`, `scripts/build-release.sh`
+  - Docs: `README.md` (go.mod comment + any module-path mentions), `AGENTS.md`, `.pi/SYSTEM.md`, `docs/understand/structure.md`
+  - `.github/CODEOWNERS` — `@forrestthomas` → `@forrestbthomas` (canonical handle)
+  - `eval/tests/test_harness_config.py` — `test_go_module_path` asserts canonical path; **add identity/install contract check** (module path matches repo URL; CODEOWNERS handle matches canonical user)
 - **Features:**
-  1. Five epic rows: EPIC-1, 2, 3, 4 (parked: PORT-0 line), 6 (new); EPIC-5 dissolved; DX-1/DX-2/HEAL-1/EVAL-10/EVAL-7/PORT-1/PORT-2 in idea-inbox or deferred with recorded triggers.
-  2. EPIC-1 honest core ≈ 2.5–3 pw (EVAL-12 → EVAL-6 → EVAL-8 → EVAL-13/14/15/16); EVAL-5 held at 50.
-  3. EPIC-6 "Repo maturity" closes (DoD: OSS-1 + GOV-1 + GOV-2 + OSS-2 + OWN-1 + TAX-1 + TAX-2 + SECURITY line shipped/parked with recorded decisions; backlog ≤ ~12 active rows).
+  1. `go.mod` module path matches the canonical repo URL (`github.com/forrestbthomas/pi-harness`).
+  2. All imports/ldflags/docs reference the canonical path; CODEOWNERS uses the canonical handle.
+  3. Hermetic CI check: `go build` works with the new module path; a contract test pins module-path == repo identity (so it can't drift back).
 - **Boundaries:**
-  - PM docs only — no product code, no workflow changes, no eval/dataset changes.
-  - RICE values are the debate's converged rough scores; documented as such.
-  - GOV-2 ships before GOV-1 in execution order (can't guard a location that doesn't exist); RICE order governs the ranked queue.
+  - Historical dated docs (`.lore.md` frozen record, `docs/superpowers/plans/`, `docs/superpowers/specs/`) keep their old module-path mentions — they are history, not current-state (same precedent as the cut-list PR).
+  - `.pi-subagents/artifacts/`, `.pi/debate/` are gitignored runtime/process artifacts — untouched.
+  - No behavior change; no release/tag change (module path is a pre-1.x... actually module path change is a build-time concern; verified by `go build`/`go test`).
 
 ## Out of Scope
-- Executing any individual backlog item (each lands as a normal workstream later).
-- The OSS-1 module-path/identity fix itself (that's a backlog item to execute next, not part of this docs restructure).
-- Spec shelf-ware physical archive (that's GOV-2's execution, not this contract).
-- Any change to code, CI, or the eval suite.
+- GOV-2 (PM doc relocation + spec archive) — separate item, ships later.
+- GOV-1 (drift guard) — OSS-1's contract test is a *seed* of it, not the full guard.
+- OSS-2 (on-ramp v2: first-issue path, SLA, MIT-in/out, PR carve-out) — separate item.
+- Renaming the GitHub repo itself (the repo is already `forrestbthomas/pi-harness`; no rename needed).
+- Homebrew tap repo name (already canonical `forrestbthomas/homebrew-tap`).
 
 # Scope Change Log
 | # | Category | What | Why | Decision | Outcome |
 |---|----------|------|-----|----------|---------|
 
 # Follow-up Tasks
-- [ ] After merge: execute OSS-1 (canonical install/identity) as the highest-value next workstream.
-- [ ] After merge: bet the next ROADMAP workstream (EVAL-12 re-baseline pending tonight's nightly; then EPIC-6 GOV-2 relocation).
+- [ ] After merge: verify `go install github.com/forrestbthomas/pi-harness@<tag>` works on a clean checkout (needs a release tag; manual/CI).

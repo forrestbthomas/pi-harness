@@ -16,7 +16,7 @@ This repository is a **self-healing, measurable coding-agent harness** built aro
 
 - All Pi configuration lives in `.pi/`.
 - All evaluation code, datasets, and Python dependencies live in `eval/`.
-- The harness runtime is a single Go CLI: `pi-run` (module `github.com/forrestthomas1/pi-harness`, source under `cmd/pi-run` and `internal/cli/`).
+- The harness runtime is a single Go CLI: `pi-run` (module `github.com/forrestbthomas/pi-harness`, source under `cmd/pi-run` and `internal/cli/`).
 - Prefer deterministic, reproducible steps over ad-hoc commands.
 - Never commit API keys, tokens, or kubeconfig contents.
 - Keep changes minimal and focused; do not refactor unrelated code.
@@ -25,7 +25,7 @@ This repository is a **self-healing, measurable coding-agent harness** built aro
 
 | Path | What lives there |
 |---|---|
-| `cmd/pi-run/`, `internal/cli/` | The Go CLI (single module `github.com/forrestthomas1/pi-harness`): command dispatch + all logic (watchdog, self-heal, cost, provider routing, doctor, config-check) |
+| `cmd/pi-run/`, `internal/cli/` | The Go CLI (single module `github.com/forrestbthomas/pi-harness`): command dispatch + all logic (watchdog, self-heal, cost, provider routing, doctor, config-check) |
 | `eval/` | DeepEval suite: datasets (`datasets/`), tests (`tests/`), scripts (`scripts/`, incl. `score_run.py`), baselines (`baselines/`) |
 | `docs/` | Architecture, specs (`superpowers/specs/`), knowledge base (`knowledge-base/`), workflow (`roadmap-workflow.md`), research (`*.md`) |
 | `.pi/` | Pi runtime config: `settings.json` (project packages incl. pinned `pi-subagents`), `SYSTEM.md`, agent wrappers (`agents/`), npm workspace (`npm/`) |

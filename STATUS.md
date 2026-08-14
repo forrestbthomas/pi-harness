@@ -19,14 +19,15 @@
 | **GOV-2 — Governance relocation + spec archive** | **SHIPPED — 2026-08-14** — #119: 19 dated specs → `docs/governance/specs-archive/` + `decisions.md` index; `docs/governance/` = governance home; living PM docs stay at root (scope decision — session-entry contract + GOV-1 path reads + coding-054 grader); SCOPE.md archived to `docs/governance/scope-history/` |
 | **OSS-2 — Contributor on-ramp v2** | **SHIPPED — 2026-08-14** — #122: CONTRIBUTING first-issue path (`good first issue`) + 7-day review SLA + MIT-in/MIT-out; PR-template bugfix carve-out; LICENSE identity → `forrestbthomas` |
 | **GOV-3 — Wire drift guards into CI** | **SHIPPED — 2026-08-14** — #123: docs/pm drift guards run in python-quick on every push (tags fetched so tag↔changelog enforces); end-to-end drift caught in CI (#124); guard fresh-checkout false positive fixed |
+| **EVAL-16 — Harness-change eval gate (pilot)** | **SHIPPED — 2026-08-14** — #129: `score_delta.py` (classifier + delta renderer, 15 hermetic tests) + report-only eval-delta CI job + nightly delta artifact; **enforcement pending** (evidence-gated: first caught regression or validated delta-vs-noise) |
 | **W4 Project-management layer** | Active ritual — governance layer; now with EPIC-6 (repo maturity) owning governance/community/debt work |
 
 ## Next (shaped — next 1–2 cycles)
 
 | Item | RICE | Tag |
 |---|---|---|
-| **v0.11.0 — The gate that can't lie** (EVAL-12 re-baseline → EVAL-16 harness gate) | — | Release |
-| **EPIC-1 — Eval suite → research-grade measurement** (EVAL-12 standing trigger, EVAL-16 pilot, EVAL-17, EVAL-9, EVAL-11) | top EVAL-16 ~1.6 | EPIC-1 |
+| **v0.11.0 — The gate that can't lie** (EVAL-12 re-baseline → EVAL-16 enforcement) | — | Release |
+| **EPIC-1 — Eval suite → research-grade measurement** (EVAL-12 standing trigger, EVAL-17, EVAL-9, EVAL-11) | top EVAL-17 1.40 | EPIC-1 |
 | **EPIC-6 — Repo maturity** (OWN-1+SECURITY bundle, TAX-1, PORT-0) | top OWN-1 ~1.5 | EPIC-6 |
 | **EPIC-2 — Self-healing resilience** (HEAL-5, HEAL-2 data-gated, HEAL-3; HEAL-1 demoted) | top HEAL-5 1.20 | EPIC-2 |
 | **EPIC-3 — Cost intelligence & routing** (COST-2; COST-1 deferred) | top COST-2 0.50 | EPIC-3 |
@@ -57,7 +58,8 @@
   stabilization (#108), REL-3/4 release machinery (#109), TAX-2 audit (#110),
   EVAL-6 agentic slice 1 (#111), GOV-1 drift guard (#112), GOV-2 relocation +
   spec archive (#119), GOV-3 CI-wiring item + docs-drift cwd fix (#120), OSS-2
-  contributor on-ramp (#122), GOV-3 drift guards wired into CI (#123)
+  contributor on-ramp (#122), GOV-3 drift guards wired into CI (#123), EVAL-16
+  harness-change gate pilot (#129)
 
 ## Open PRs / branches
 

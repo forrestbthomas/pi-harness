@@ -7,6 +7,17 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **EVAL-16 — Harness-change eval gate, pilot** (EPIC-1, 2026-08-14): the
+  loop measures itself. New `eval/scripts/score_delta.py` (stdlib-only,
+  hermetic) provides (a) an eval-surface classifier for PR changes and (b) a
+  per-case scorecard-delta renderer reusing the nightly gate's tolerance model
+  (EVAL-2 flake-aware pass rate; EVAL-13 cost-variance) with JSON + markdown
+  output; 15 unit tests. Wiring is **report-only**: an `eval-delta` CI job
+  classifies every PR's changed paths and uploads `eval-delta-report.json`, and
+  the nightly emits `delta-<ts>.json/.md` into the always-uploaded artifact.
+  Promotion to an enforced gate is evidence-gated (first caught regression or
+  validated delta-vs-noise mechanics); the v1.0.0 "EVAL-16 enforced" gate stays
+  open until then. Pilot is independent of W5 Part C (orthogonal surfaces).
 - **GOV-3 — Wire drift guards into CI** (EPIC-6, 2026-08-14): the GOV-1
   drift guards (`test_docs_drift.py`, `test_pm_drift.py`) now run in the
   `python-quick` CI job on every push (they ran in zero workflows before,

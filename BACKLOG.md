@@ -13,37 +13,36 @@ one-screen snapshot, `EPICS.md` for the epic grouping layer, and
 
 | Rank | Item | RICE | Epic | Effort | DoD sketch |
 |---|---|---|---|---|---|
-| 1 | **EVAL-16 — Harness-change eval gate (pilot-first)** | ~1.6 | EPIC-1 | 0.3–0.5 pw | scorecard-delta on eval-touching PRs; **pilot independent of W5 Part C** (orthogonal surfaces — agent-output honesty vs tool-timeout telemetry); promote to enforced gate on first caught regression (zero-token silent-success class); Part C rides v0.12.0's completeness claim |
+| 1 | **EVAL-17 — Agentic case family slice 2** (multi-turn/subagent) | 1.40 | EPIC-1 | 1 pw | re-opened from EVAL-6 slice 2 with a guard-safe id (queue-visibility fix: `\bEVAL-6\b` collides with slice 1's CHANGELOG entry); multi-turn/subagent task surface + **chat-session runner named enabler**; **the data pump HEAL-2 is gated on** (print-mode cannot wedge → `self-heal events: 0`) |
 
-| 2 | **EVAL-17 — Agentic case family slice 2** (multi-turn/subagent) | 1.40 | EPIC-1 | 1 pw | re-opened from EVAL-6 slice 2 with a guard-safe id (queue-visibility fix: `\bEVAL-6\b` collides with slice 1's CHANGELOG entry); multi-turn/subagent task surface + **chat-session runner named enabler**; **the data pump HEAL-2 is gated on** (print-mode cannot wedge → `self-heal events: 0`) |
+| 2 | **OWN-1 — CODEOWNERS ownership matrix + fallback-to-lead** | ~1.5 | EPIC-6 | 0.25 pw | real matrix (Go core, /eval, .github, scripts/, docs/governance/) + explicit fallback; cheap EPIC-6-close interlude **bundled with SECURITY**; not parked (EPIC-6 DoD is a v1.0.0 gate input); seeds the charter's second-owner split trigger |
 
-| 3 | **OWN-1 — CODEOWNERS ownership matrix + fallback-to-lead** | ~1.5 | EPIC-6 | 0.25 pw | real matrix (Go core, /eval, .github, scripts/, docs/governance/) + explicit fallback; cheap EPIC-6-close interlude **bundled with SECURITY**; not parked (EPIC-6 DoD is a v1.0.0 gate input); seeds the charter's second-owner split trigger |
+| 3 | **SECURITY — supported-versions bump in release ritual** | ~1.0 | EPIC-6 | 0.25 pw | same PR as CHANGELOG entry bumps the supported-versions table (SECURITY.md); bundled with OWN-1 as the EPIC-6 close |
 
-| 4 | **SECURITY — supported-versions bump in release ritual** | ~1.0 | EPIC-6 | 0.25 pw | same PR as CHANGELOG entry bumps the supported-versions table (SECURITY.md); bundled with OWN-1 as the EPIC-6 close |
+| 4 | **HEAL-5 — `pi-run hooks` post-rebase hook** (auto-continue wedged rebase) | 1.20 | EPIC-2 | 0.5 pw | post-rebase hook invokes `pi-run self-heal` after agent timeout; hermetic test |
 
-| 5 | **HEAL-5 — `pi-run hooks` post-rebase hook** (auto-continue wedged rebase) | 1.20 | EPIC-2 | 0.5 pw | post-rebase hook invokes `pi-run self-heal` after agent timeout; hermetic test |
+| 5 | **EVAL-12 — Live re-baseline after W10** (standing trigger: fires on the 03:00 UTC nightly — not a pick) | 1.10 | EPIC-1 | 0.25 pw | pull live-results artifact, review the 54-case report, commit `--update-baseline`; **DoD: 0 unbaselined live cases** + standing re-baseline cadence (after every dataset/harness change; history in `eval/baselines/`); gate-safe verified (score_run records unbaselined, never fails) |
 
-| 6 | **EVAL-12 — Live re-baseline after W10** (standing trigger: fires on the 03:00 UTC nightly — not a pick) | 1.10 | EPIC-1 | 0.25 pw | pull live-results artifact, review the 54-case report, commit `--update-baseline`; **DoD: 0 unbaselined live cases** + standing re-baseline cadence (after every dataset/harness change; history in `eval/baselines/`); gate-safe verified (score_run records unbaselined, never fails) |
+| 6 | **TAX-1 — Opt-in usage evidence via cost ledger** | ~0.7 | EPIC-6 | 0.25 pw | per-provider/per-flag counts from `.pi/cost-ledger.jsonl` (local, opt-in, no keys) → RICE Reach becomes measured |
 
-| 7 | **TAX-1 — Opt-in usage evidence via cost ledger** | ~0.7 | EPIC-6 | 0.25 pw | per-provider/per-flag counts from `.pi/cost-ledger.jsonl` (local, opt-in, no keys) → RICE Reach becomes measured |
+| 7 | **EVAL-11 — Auto-open GitHub issue on N self-heals** | 0.50 | EPIC-1 | 0.5 pw | unblocked by W6; opens an issue when self-heal count crosses a threshold |
 
-| 8 | **EVAL-11 — Auto-open GitHub issue on N self-heals** | 0.50 | EPIC-1 | 0.5 pw | unblocked by W6; opens an issue when self-heal count crosses a threshold |
+| 8 | **COST-2 — Model-catalog auto-refresh in CI** | 0.50 | EPIC-3 | 0.5 pw | hermetic drift check so routing never targets a stale/removed model |
 
-| 9 | **COST-2 — Model-catalog auto-refresh in CI** | 0.50 | EPIC-3 | 0.5 pw | hermetic drift check so routing never targets a stale/removed model |
+| 9 | **EVAL-9 — Known-flaky quarantine mechanism** | 0.40 | EPIC-1 | 0.5 pw | managed flake triage with re-entry review |
 
-| 10 | **EVAL-9 — Known-flaky quarantine mechanism** | 0.40 | EPIC-1 | 0.5 pw | managed flake triage with re-entry review |
+| 10 | **HEAL-2 — Tune watchdog silent-window/restart-budget** | 0.35 | EPIC-2 | 0.25 pw | **data-gated**: ≥1 week non-zero `PI_SELF_HEAL` wedge coverage + W5 Part C verified (EVAL-17 is the pump) |
 
-| 11 | **HEAL-2 — Tune watchdog silent-window/restart-budget** | 0.35 | EPIC-2 | 0.25 pw | **data-gated**: ≥1 week non-zero `PI_SELF_HEAL` wedge coverage + W5 Part C verified (EVAL-17 is the pump) |
+| 11 | **HEAL-3 — Auto-resume decision** (decision ticket) | 0.30 | EPIC-2 | 0.25 pw | record ship-or-park rationale for auto-resume after clean git-state recovery |
 
-| 12 | **HEAL-3 — Auto-resume decision** (decision ticket) | 0.30 | EPIC-2 | 0.25 pw | record ship-or-park rationale for auto-resume after clean git-state recovery |
-
-| 13 | **PORT-0 — Quarterly park re-confirm ticket** (replaces EPIC-4 PORT-1/PORT-2) | ~0.1 | EPIC-6 | 0.1 pw/q | re-confirm "parked, local is enough today" OR unpark on a consumer issue; all EPIC-4's DoD actually demands |
+| 12 | **PORT-0 — Quarterly park re-confirm ticket** (replaces EPIC-4 PORT-1/PORT-2) | ~0.1 | EPIC-6 | 0.1 pw/q | re-confirm "parked, local is enough today" OR unpark on a consumer issue; all EPIC-4's DoD actually demands |
 
 | *(DEFERRED — recorded decisions)* | | | | | |
 | — | **COST-1 — Cost-aware router, within-provider tier choice only — DEFERRED 2026-08-14** | 0.80 | EPIC-3 | 2 pw | persona-debate consensus (whats-next): 2 pw / zero consumers; re-open on a consumer signal; COST-2 stays ranked (catalog-drift insurance); cross-provider routing still out of scope (charter NOT-6)
 
 
 | *(SHIPPED — see CHANGELOG)* | | | | | |
+| 1 | **EVAL-16 — Harness-change eval gate — pilot SHIPPED (#129)** | ~1.6 | EPIC-1 | 0.3–0.5 pw | score_delta.py (classifier + delta renderer) + 15 hermetic tests + report-only eval-delta CI job + nightly delta artifact; **enforcement pending** (evidence-gated: first caught regression or validated delta-vs-noise; v1.0.0 gate "EVAL-16 enforced" still open) |
 | 1 | **GOV-3 — Wire drift guards into CI — SHIPPED (#123)** | ~2.0 | EPIC-6 | 0.15 pw | `test_docs_drift.py` + `test_pm_drift.py` run in python-quick on every push + tags fetch so tag↔changelog invariants enforce (not skip); end-to-end verified: planted drift failed CI (PR #124 throwaway); fresh-checkout false positive fixed (scope change #1) |
 | 1 | **OSS-2 — Contributor on-ramp v2 — SHIPPED (#122)** | ~2.0 | EPIC-6 | 0.5 pw | CONTRIBUTING first-issue path (`good first issue` label) + 7-day review SLA mirroring SECURITY + MIT-in/MIT-out line; PR-template bugfix carve-out (no ROADMAP citation for in-scope fixes); LICENSE copyright name → canonical `forrestbthomas` |
 | 1 | **GOV-2 — Governance relocation + spec archive + BACKLOG table repair — SHIPPED (#119)** | ~2.5 | EPIC-6 | 0.25–0.5 pw | 19 dated specs → `docs/governance/specs-archive/` + `decisions.md` index; living PM docs stay at root (GOV-2 scope decision — session-entry contract + GOV-1 path reads + coding-054 grader); ranked-table repair landed #118; SCOPE.md archived to `docs/governance/scope-history/` |

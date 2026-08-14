@@ -1,5 +1,5 @@
 # Scope Contract
-**Task:** OSS-1 — Canonical module path + identity alignment + CI install check | **Plan:** BACKLOG OSS-1 (EPIC-6, RICE ~18, 0.25 pw) | **Date:** 2026-08-14 | **Status:** ACTIVE
+**Task:** OSS-1 — Canonical module path + identity alignment + CI install check | **Plan:** BACKLOG OSS-1 (EPIC-6, RICE ~18, 0.25 pw) | **Date:** 2026-08-14 | **Status:** CLOSED — 0 changes logged
 
 ## In Scope
 - **Ground truth (verified):** canonical identity is **`forrestbthomas/pi-harness`** (gh API `nameWithOwner`, git remote, README clone URL, CONTRIBUTING, update-homebrew-formula.sh all agree). The defect: go.mod + Go imports + ldflags + docs say `forrestthomas1` (extra `1`, missing `b`), and CODEOWNERS says `@forrestthomas` (missing `b`). `go install github.com/forrestthomas/pi-harness@latest` fails on module-path mismatch.

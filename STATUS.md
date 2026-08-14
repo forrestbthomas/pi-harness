@@ -22,12 +22,14 @@
 
 | Item | RICE | Tag |
 |---|---|---|
+| **v0.10.0 — Identity, boundary, truth** (ship NOW: main batch #98–#102 + REL-1 version stamp + REL-2 ledger repair + REL-5 baseline provenance + BREAKING banner; EVAL-12 rides as data release) | — | Release |
 | **EPIC-1 — Eval suite → research-grade measurement** (EVAL-6, 12, 13–16, 8, 9, 11) | top EVAL-15 1.50 / EVAL-6 1.40 | EPIC-1 |
-| **EPIC-6 — Repo maturity** (OSS-1, GOV-1, GOV-2, OSS-2, OWN-1, TAX-1/2, SECURITY, PORT-0) | top OSS-1 ~18 | EPIC-6 |
+| **EPIC-6 — Repo maturity** (OSS-1, GOV-1, GOV-2, OSS-2, OWN-1, TAX-1/2, REL-1..5, SECURITY, PORT-0) | top OSS-1 ~18 | EPIC-6 |
 | **EPIC-2 — Self-healing resilience** (HEAL-5, HEAL-2 data-gated, HEAL-3; HEAL-1 demoted) | top HEAL-5 1.20 | EPIC-2 |
 | **EPIC-3 — Cost intelligence & routing** (COST-2, COST-1 within-provider) | top COST-1 0.80 | EPIC-3 |
 | **EPIC-4 — Portability & distribution** | **PARKED** — PORT-0 quarterly re-confirm only (charter non-goal until a consumer asks) | EPIC-4 |
 | ~~EPIC-5 — Insight & DX~~ | **DISSOLVED** — DX-1/DX-2 → idea inbox | — |
+| **v1.0.0 — The contract release** (gates, not dates: EPIC-1+6 DoDs, ≥14 green nightlies, EVAL-16 enforced, install-path CI-proven, consumer OR recorded earned-bar decision) | — | Release |
 
 ## Later (raw — ideas worth exploring)
 

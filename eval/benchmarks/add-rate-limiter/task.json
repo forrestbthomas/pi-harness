@@ -1,0 +1,10 @@
+{
+  "id": "add-rate-limiter",
+  "category": "code-gen",
+  "difficulty": "medium",
+  "grader": "deterministic",
+  "prompt": "Add rate limiting to src/client.py so the APIClient never issues more than max_rps requests per second (the __init__ already accepts max_rps, default 2, but currently ignores it). Keep the public API and request() semantics otherwise identical: request(path) must still return the response body as a string, must still build the URL as base_url + path, must still send through the existing low-level mechanism (urllib.request.urlopen in _send), and must still propagate network errors. The hidden tests time bursts of requests, so the throttle must actually pace real calls (e.g. sleep when the previous request was too recent); a solution that ignores max_rps or never paces calls will fail. The verification script tests/run.sh must exit 0.",
+  "timeoutSecs": 300,
+  "testScript": "tests/run.sh",
+  "solution": "solution/client.py"
+}

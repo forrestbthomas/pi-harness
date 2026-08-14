@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "datasetVersion": "2026-08-14.3",
+  "datasetVersion": "2026-08-14.4",
   "categories": [
     "code-gen",
     "bug-fix",
@@ -676,6 +676,39 @@
         "harness-routing",
         "config-check",
         "regression-config-check-no-key"
+      ]
+    },
+    {
+      "id": "fix-parse-dates",
+      "surface": "benchmark",
+      "category": "bug-fix",
+      "difficulty": "medium",
+      "grader": "deterministic",
+      "tags": [
+        "bug-fix",
+        "benchmark"
+      ]
+    },
+    {
+      "id": "add-rate-limiter",
+      "surface": "benchmark",
+      "category": "code-gen",
+      "difficulty": "medium",
+      "grader": "deterministic",
+      "tags": [
+        "code-gen",
+        "benchmark"
+      ]
+    },
+    {
+      "id": "fix-graceful-shutdown",
+      "surface": "benchmark",
+      "category": "bug-fix",
+      "difficulty": "hard",
+      "grader": "deterministic",
+      "tags": [
+        "bug-fix",
+        "benchmark"
       ]
     }
   ]

@@ -94,3 +94,12 @@ def test_node_pin_matches_doctor_reference():
     doctor = _read("internal/cli/doctor.go")
     assert "PI_NODE_VERSION: 'v22.19.0'" in nightly, "nightly must pin Node 22.19.0"
     assert "v22." in doctor, "doctor drift guard must reference the Node 22 LTS line"
+
+
+def test_readme_env_table_documents_watchdog_env_vars():
+    """TAX-2: the watchdog env vars (PI_SELF_HEAL / PI_STALL_TIMEOUT_SECS /
+    PI_WATCHDOG_GRACE_SECS) are real, tested Go knobs — they must appear in the
+    README env table, not just prose (they silently were not, 2026-08-14)."""
+    readme = _read("README.md")
+    for var in ("PI_SELF_HEAL", "PI_STALL_TIMEOUT_SECS", "PI_WATCHDOG_GRACE_SECS"):
+        assert f"| `{var}` |" in readme, f"README env table must document {var}"

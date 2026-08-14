@@ -13,7 +13,8 @@ tags diverged from main twice). Follow it every session.
 | `EPICS.md` | Epic grouping layer: outcome, appetite, sequence, DoD, item index | The ranked queue (that is BACKLOG.md's job) |
 | `BACKLOG.md` | Ranked RICE queue, deferred, idea inbox | Workstream status |
 | `STATUS.md` | One-screen Now/Next/Later snapshot ("where are we?") | The detailed plans |
-| `SCOPE.md` | scope-lock boundary contract for the current workstream (superseded contracts stay as history) | Roadmap decisions |
+| `SCOPE.md` | scope-lock boundary contract for the current workstream (superseded contracts archive to `docs/governance/scope-history/`) | Roadmap decisions |
+| `docs/governance/` | Governance home: `decisions.md` (archived-spec index), `specs-archive/` (dated planning specs), `scope-history/` | The living ritual docs (those stay at root) |
 | `CHANGELOG.md` | **Shipped has exactly one spelling**: dated `## [x.y.z]` entries | Future plans |
 
 ## Cycle cadence (weekly, at cycle start — not ad hoc)

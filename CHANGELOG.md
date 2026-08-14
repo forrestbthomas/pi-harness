@@ -7,6 +7,18 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **GOV-2 — Governance relocation + spec archive** (EPIC-6, 2026-08-14): 19
+  dated planning specs moved from `docs/superpowers/specs/` →
+  `docs/governance/specs-archive/` (git history intact) with a
+  `docs/governance/decisions.md` index (status + decision per spec);
+  `docs/governance/` is now the internal-governance home (CHARTER clause 3);
+  superseded SCOPE.md contracts archive to `docs/governance/scope-history/`
+  (docs-audit contract archived). Living PM docs
+  (ROADMAP/BACKLOG/STATUS/EPICS) stay at the repo root — GOV-2 scope decision:
+  they are the session-entry contract, path-read by the GOV-1 drift guard, and
+  a live eval grader (`coding-054`) tests for `ROADMAP.md`. Spec-path citations
+  updated repo-wide (README, ROADMAP W5–W10, workflows, KB decision, research
+  + plan docs).
 - **Documentation audit Wave 3+4 (P2/P3)** (docs-audit, 2026-08-14): README
   Skills section rewritten to the real 5 auto-discovered collections (was
   "two curated via skills array"); Project Layout tree refreshed (real

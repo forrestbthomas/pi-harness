@@ -22,7 +22,7 @@ Watchdog in pi-run (zero upstream): process-group kill + output-stall detection 
 
 ## Context
 
-Research synthesis docs/self-healing-research-2026-08.md; spec docs/superpowers/specs/2026-08-13-self-healing-design.md; incident: git rebase --continue spawned vi, hung 10min silently
+Research synthesis docs/self-healing-research-2026-08.md; spec docs/governance/specs-archive/2026-08-13-self-healing-design.md; incident: git rebase --continue spawned vi, hung 10min silently
 
 ## Applies When
 

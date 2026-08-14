@@ -4,7 +4,7 @@
 > as W1 (v0.9.1, PRs #59–#63) and per-tool timeout is W5 (Part B merged
 > upstream `a660ea3`). Figures quoted here (pi-subagents 0.45.1 unpinned,
 > direct-child-only kill) are pre-implementation. See
-> `docs/superpowers/specs/2026-08-13-self-healing-design.md` and ROADMAP W1/W5.
+> `docs/governance/specs-archive/2026-08-13-self-healing-design.md` and ROADMAP W1/W5.
 
 **Date:** 2026-08-13
 **Status:** Research input for the self-healing design spec

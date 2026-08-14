@@ -60,10 +60,12 @@ your machine or silently lie about results.
    today's scope.
 3. **Not a PM system or spec library as a product surface** — project
    management artifacts (roadmap ritual, RICE, EPICS, scope-lock) are internal
-   governance, not contributor-facing product features; they currently live at
-   the repo root (`ROADMAP.md`, `BACKLOG.md`, `EPICS.md`, `STATUS.md`) and are
-   slated to move under `docs/governance/` (relocation is a follow-up). Dated
-   planning specs are archived to one decisions file.
+   governance, not contributor-facing product features. The living ritual docs
+   (`ROADMAP.md`, `BACKLOG.md`, `EPICS.md`, `STATUS.md`) stay at the repo root
+   because they are the session-entry contract, are path-read by the GOV-1
+   drift guard, and a live eval grader tests for `ROADMAP.md`; dated planning
+   specs are archived under `docs/governance/` (`specs-archive/` + `decisions.md`
+   index — GOV-2, 2026-08-14).
 4. **Not an observability platform** — no OTel exporter or metrics backend is
    product scope (the consumerless OTel exporter was cut 2026-08-14).
 5. **Not a general MCP platform** — the read-only MCP server was a harness

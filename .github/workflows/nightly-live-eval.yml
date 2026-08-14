@@ -1,5 +1,5 @@
 # Nightly live agent evaluation — two-speed pipeline (spec §4.3 of
-# docs/superpowers/specs/2026-08-12-live-agent-eval-v2-design.md).
+# docs/governance/specs-archive/2026-08-12-live-agent-eval-v2-design.md).
 #
 #   deterministic: hermetic suite that ALWAYS runs — no provider key needed.
 #   live: real agent runs (pi-run print + DeepEval judge metrics) gated by a

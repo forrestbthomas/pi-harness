@@ -88,6 +88,62 @@ func TestDoctorNoKeyExitsZero(t *testing.T) {
 	if !strings.Contains(string(output), "non-interactive launch env present (hang prevention)") {
 		t.Fatalf("runDoctor output missing the non-interactive env check: %s", output)
 	}
+	// REL-4 Node-drift guard: the fake nvm resolves v24.0.0 (no PI_NODE_VERSION
+	// set), which must surface the informational drift warning.
+	if !strings.Contains(string(output), "CI pins Node 22 LTS") {
+		t.Fatalf("runDoctor output missing Node-drift warning for v24 resolved node: %s", output)
+	}
+}
+
+// TestDoctorNodeDriftNoWarningOnPinnedNode: with PI_NODE_VERSION set to the
+// CI reference (v22.x), the drift warning must NOT appear (REL-4).
+func TestDoctorNodeDriftNoWarningOnPinnedNode(t *testing.T) {
+	home := t.TempDir()
+	root := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("HARNESS_ROOT", root)
+	t.Setenv("PI_RUN_PERSONAL", "")
+	t.Setenv("PI_SECRET_BACKEND", "env-only")
+	t.Setenv("PI_NODE_VERSION", "v22.19.0")
+	for _, key := range supportedProviderKeyEnvs {
+		t.Setenv(key, "")
+	}
+	nodeBin := filepath.Join(home, ".nvm", "versions", "node", "v22.19.0", "bin")
+	if err := os.MkdirAll(nodeBin, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"node", "pi"} {
+		if err := os.WriteFile(filepath.Join(nodeBin, name), []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	venv := filepath.Join(root, "eval", ".venv", "bin")
+	if err := os.MkdirAll(venv, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(venv, "python"), []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	oldStdout := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stdout = w
+	code := runDoctor()
+	w.Close()
+	os.Stdout = oldStdout
+	output, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code != 0 {
+		t.Fatalf("runDoctor() = %d, want 0", code)
+	}
+	if strings.Contains(string(output), "CI pins Node 22 LTS") {
+		t.Fatalf("runDoctor should NOT warn when PI_NODE_VERSION=v22.x: %s", output)
+	}
 }
 
 // TestMissingNonInteractiveEnv locks the regression-guard helper: it reports

@@ -40,6 +40,17 @@ All notable changes to this project are documented here. Format follows
   `test_live_metrics` nodeids are collected too, and the metrics layer only
   judges the 5 judge-graded cases (was all 50 — deterministic cases are
   double-counted otherwise).
+- **REL-3 — Post-release brew verify** (EPIC-6, v0.11.0): new
+  `scripts/verify-homebrew-formula.sh` + release.yml step installs the
+  released formula into a temp prefix and asserts `pi-run version` == the
+  tag — a tag shipped with a broken brew install now fails the release job
+  (closes the fire-and-forget `TAP_PUSH_TOKEN` silent-distribution-break
+  class).
+- **REL-4 — Node-drift guard** (EPIC-6, v0.11.0): `pi-run doctor` now emits
+  an informational warning when the resolved nvm Node major differs from the
+  CI-pinned Node 22 LTS line (user machines running a Node CI never tested
+  become visible); hermetic tests for the drift warning + no-warning-on-pin;
+  docs-drift guard keeps the CI pin and the doctor reference in sync.
 
 ## [0.10.0] - 2026-08-14
 

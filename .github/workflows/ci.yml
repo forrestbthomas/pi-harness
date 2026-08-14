@@ -48,8 +48,45 @@ jobs:
         # the v0.7.0-gap class would skip silently instead of failing CI.
         run: git fetch --tags --force origin
       - name: Run quick eval
-        run: .venv/bin/python -m pytest tests/test_code_quality.py tests/test_agent_task_completion.py::test_dataset_expected_outputs_are_non_empty tests/test_docs_drift.py tests/test_pm_drift.py -v
+        run: .venv/bin/python -m pytest tests/test_code_quality.py tests/test_agent_task_completion.py::test_dataset_expected_outputs_are_non_empty tests/test_docs_drift.py tests/test_pm_drift.py tests/test_score_delta.py -v
         working-directory: eval
+
+  eval-delta:
+    # EVAL-16 pilot (report-only): classify a PR's eval-surface changes and
+    # emit a delta report artifact. Never gates the PR in the pilot — the
+    # promotion decision is evidence-gated (first caught regression or
+    # validated delta-vs-noise mechanics). score_delta.py is stdlib-only, so
+    # this job needs no pip install.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      # actions/checkout@v7 — full history so the base sha is resolvable.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      # actions/setup-python@v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.11'
+      - name: Classify eval-surface changes (report-only)
+        # Report-only by design: continue-on-error so pilot infra hiccups
+        # never block a PR; score_delta.py correctness is guarded by its
+        # hermetic unit tests in python-quick.
+        continue-on-error: true
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          git diff --name-only "$BASE...HEAD" > /tmp/eval-delta-changed.txt
+          python eval/scripts/score_delta.py --classify - < /tmp/eval-delta-changed.txt > eval-delta-report.json
+          echo "eval-delta report:"
+          cat eval-delta-report.json
+      - name: Upload eval-delta report
+        if: always()
+        # actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: eval-delta-report
+          path: eval-delta-report.json
+          retention-days: 30
 
   python-contract:
     runs-on: ubuntu-latest

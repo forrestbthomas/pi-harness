@@ -73,3 +73,29 @@ Python test surface that does **not** require the Go binary. The harness keeps
 `internal/cli/` (including the Go scorecard), the workflows that orchestrate
 the nightly/weekly runs, and the seam contract itself (this doc moves with the
 eval side).
+
+---
+
+## Harness-change delta (EVAL-16 pilot, report-only)
+
+The loop must measure changes to itself: a change to the eval/harness surface
+can silently shift every scorecard (the zero-token silent-success class) with
+nothing measuring the delta. The EVAL-16 pilot ships two hermetic mechanics
+(`eval/scripts/score_delta.py`, stdlib-only, no keys/network/live runs):
+
+1. **Eval-surface classifier** (`--classify`) — classifies a PR's changed
+   paths into surfaces (dataset / grader / gate / baseline / benchmark /
+   eval-tests / harness-scorecard / workflow / other) and flags
+   `needsNightlyVerification`. The surface inventory above (§5) is the source;
+   the classifier mirrors it.
+2. **Scorecard-delta renderer** (`--diff <candidate> <baseline>`) — per-case
+   pass-rate/cost deltas using the same tolerance model as the nightly gate
+   (EVAL-2 flake-aware, EVAL-13 cost-variance), emitting JSON + markdown.
+
+CI wiring: `eval-delta` job in `ci.yml` runs the classifier on every PR and
+uploads `eval-delta-report.json`; `test_score_delta.py` runs in python-quick.
+The nightly writes a `delta-<ts>.json/.md` into `live-results/` (rides the
+artifact). **Report-only by design** — neither surface gates anything in the
+pilot. Promotion to an enforced gate is evidence-gated: on the first caught
+regression, or once delta-vs-noise mechanics are validated against real
+nightlies.

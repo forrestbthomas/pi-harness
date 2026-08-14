@@ -51,6 +51,12 @@ All notable changes to this project are documented here. Format follows
   CI-pinned Node 22 LTS line (user machines running a Node CI never tested
   become visible); hermetic tests for the drift warning + no-warning-on-pin;
   docs-drift guard keeps the CI pin and the doctor reference in sync.
+- **TAX-2 — Flag/env-var prune audit** (EPIC-6, v0.11.0): audited every
+  README-documented flag and env var against actual usage. Outcome: **no dead
+  flags or env vars** — but the watchdog env vars (`PI_SELF_HEAL`,
+  `PI_STALL_TIMEOUT_SECS`, `PI_WATCHDOG_GRACE_SECS`) were real, tested Go
+  knobs missing from the README env table (prose-only). Added the three rows +
+  a docs-drift guard so future env vars can't silently miss the table.
 
 ## [0.10.0] - 2026-08-14
 

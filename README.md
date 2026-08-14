@@ -193,6 +193,9 @@ no DEEPSEEK_API_KEY available: export it, or check your secret manager
 | `PI_PERMISSION_MODE` | Default permission tier for `chat`/`print` when `--permission-mode` is omitted |
 | `PI_MODEL_TIER` | Default model tier (`fast`/`balanced`/`cheap`) for `chat`/`print` when `--model-tier` is omitted; ignored by `resume` |
 | `DEEPEVAL_MODEL` | Select a non-OpenAI DeepEval judge model |
+| `PI_SELF_HEAL` | Set `1` to record watchdog stall/group-kill/recovery events to `.pi/heal/events.jsonl` (scorecard observability) |
+| `PI_STALL_TIMEOUT_SECS` | Watchdog silent-window: terminate a non-interactive run with no stdout after N seconds (default 300; 0 disables) |
+| `PI_WATCHDOG_GRACE_SECS` | Process-group-kill grace between SIGTERM and SIGKILL (default 10; 0 = immediate) |
 
 ## Running Evaluations
 

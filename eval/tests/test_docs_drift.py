@@ -65,3 +65,11 @@ def test_roadmap_shipped_workstreams_not_stale():
 def test_agents_md_has_repository_navigation():
     agents = _read("AGENTS.md")
     assert "Repository navigation" in agents, "AGENTS.md must contain the navigation map"
+
+
+def test_eval_workflows_upload_on_any_outcome():
+    """Upload steps must run on every gate outcome (EVAL-1), not just success."""
+    for rel in (".github/workflows/nightly-live-eval.yml", ".github/workflows/provider-scorecard.yml"):
+        text = _read(rel)
+        assert "actions/upload-artifact" in text, f"{rel} lost its artifact upload"
+        assert "if: always()" in text, f"{rel} upload step must carry if: always()"

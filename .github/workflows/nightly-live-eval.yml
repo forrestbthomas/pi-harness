@@ -66,7 +66,7 @@ jobs:
     needs: deterministic
     timeout-minutes: 30
     env:
-      EVAL_RUNS_PER_CASE: '3'
+      EVAL_RUNS_PER_CASE: '5'
       PI_MAX_BUDGET_USD: '2'               # nightly spend cap (cheap agent tier)
       PI_MODEL_TIER: 'cheap'               # matches the suite's --model-tier cheap; score_run records it as baseline agentModel
       PI_SELF_HEAL: '1'                    # record watchdog/group-kill/recovery events to .pi/heal/events.jsonl for the scorecard (BACKLOG #1)
@@ -161,11 +161,16 @@ jobs:
         # the run; the total budget cap is enforced by PI_MAX_BUDGET_USD (exit
         # 6 surfaced as a gate failure). Baseline is deliberate and reviewed —
         # the nightly never updates its own baseline.
-        run: eval/.venv/bin/python eval/scripts/score_run.py --report eval/live-results/report.json --baseline eval/baselines/live-baseline.json --tolerance 0.05 --runs 3 --budget-usd 2.0 --out eval/live-results/live-$(date +%Y%m%dT%H%M%S).json
+        run: eval/.venv/bin/python eval/scripts/score_run.py --report eval/live-results/report.json --baseline eval/baselines/live-baseline.json --tolerance 0.05 --runs 5 --budget-usd 2.0 --out eval/live-results/live-$(date +%Y%m%dT%H%M%S).json
       - name: Upload live results
+        # Upload on EVERY gate outcome (EVAL-1): a failed gate is exactly when
+        # the evidence (report, summary, heal events) matters most.
+        if: always()
         # actions/upload-artifact@v7
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: live-eval-results
-          path: eval/live-results/
+          path: |
+            eval/live-results/
+            .pi/heal/events.jsonl
           retention-days: 90

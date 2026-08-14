@@ -231,6 +231,7 @@ Rules:
 | OSS-1 | Canonical module path + identity alignment + CI install check | ~18 | 0.25 pw |
 | GOV-1 | PM drift + charter-conformance + data-driven guard (hermetic) | ~3.0 | 0.5 pw |
 | GOV-2 | Governance relocation + spec archive + BACKLOG table repair (GOV-1 shipped first #112; GOV-2 next) | ~2.5 | 0.25–0.5 pw |
+| GOV-3 | Wire drift guards into CI (enforce GOV-1; today hermetic-only — found 2026-08-14) | ~2.0 | 0.15 pw |
 | OSS-2 | Contributor on-ramp v2: first-issue path, bugfix carve-out, SLA, MIT-in/out | ~2.0 | 0.5 pw |
 | OWN-1 | CODEOWNERS ownership matrix + fallback-to-lead | ~1.5 | 0.25 pw |
 | TAX-1 | Opt-in usage evidence via cost ledger (measured RICE Reach) | ~0.7 | 0.25 pw |

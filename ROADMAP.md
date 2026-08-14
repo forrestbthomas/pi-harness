@@ -1,11 +1,11 @@
 # pi-harness — Product Roadmap
 
-**Owner:** forrestthomas · **Last updated:** 2026-08-13
-**How this doc is used:** every workstream decision is ranked against this roadmap. If a proposed change does not serve a roadmap item (or a new item that earns its way in via the backlog), it is out of scope. See `BACKLOG.md` for the ranked queue and `STATUS.md` for the one-screen snapshot. The full workflow (cycle cadence, ownership, traceability) lives in `docs/roadmap-workflow.md`.
+**Owner:** forrestthomas · **Last updated:** 2026-08-14
+**How this doc is used:** every workstream decision is ranked against this roadmap. If a proposed change does not serve a roadmap item (or a new item that earns its way in via the backlog), it is out of scope. See `BACKLOG.md` for the ranked queue, `STATUS.md` for the one-screen snapshot, and [`CHARTER.md`](CHARTER.md) for the project's boundary contract (what we are, and explicitly what we are not). The full workflow (cycle cadence, ownership, traceability) lives in `docs/roadmap-workflow.md`.
 
 ## North star
 
-A **self-healing, measurable, distributable coding-agent harness**: you point `pi-run` at a provider, get a real agent, get an honest pass-rate and cost, and trust it not to hang your machine or silently lie about results.
+A **self-healing, measurable coding-agent harness**: point `pi-run` at a provider, get a real agent, get an honest pass-rate and cost over a versioned contract (`tasks.json` → `score_run.py` → scorecard, including the harness's own health events), and trust it not to hang your machine or silently lie. **We do not** own a benchmark, a PM system, a spec library, an observability platform, or a general MCP platform. **Distributable is earned**: macOS / Homebrew is the shipped leg; any further platform or benchmark repo (pi-bench) waits for a concrete consumer or a second owner team. (Adjusted 2026-08-14 per the six-persona scope debate; see `docs/knowledge-base/decision/2026-08-14-persona-debate-scope.md`.)
 
 ## Guiding principles
 

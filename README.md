@@ -1,12 +1,14 @@
-> **pi-harness** — a provider-agnostic coding-agent harness + evaluation suite that keeps you out of AI-vendor lock-in.
+> **pi-harness** — a self-healing, measurable, provider-agnostic coding-agent harness that keeps you out of AI-vendor lock-in.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Version](https://img.shields.io/badge/Go-1.26-blue.svg)](https://golang.org/dl/)
 [![CI](https://github.com/forrestbthomas/pi-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/forrestbthomas/pi-harness/actions/workflows/ci.yml)
 
-# Pi Coding Agent Harness + DeepEval Evaluation Suite
+# Pi Coding Agent Harness
 
-A ready-to-use coding agent harness built around the [Pi coding agent](https://pi.dev/) and the open-source [DeepEval](https://github.com/confident-ai/deepeval) LLM evaluation framework. The harness runtime is driven by a single Go CLI, **`pi-run`** — the one source of truth for provider routing, API key resolution, Pi launching, evaluation, setup, and health checks.
+A self-healing, measurable coding-agent harness built around the [Pi coding agent](https://pi.dev/) and the open-source [DeepEval](https://github.com/confident-ai/deepeval) LLM evaluation framework. The harness runtime is driven by a single Go CLI, **`pi-run`** — the one source of truth for provider routing, API key resolution, Pi launching, evaluation, setup, and health checks.
+
+> **What this project is, and what it is not** — see [`CHARTER.md`](CHARTER.md) for the boundary contract. One product: the harness. The eval suite is its measurement layer (the "measurable" in the star), not a separate product today; a standalone benchmark repo (pi-bench) is a triggered future split, not current scope. We do not build a PM system, a spec library, an observability platform, or a general MCP platform as product surface.
 
 ## What You Get
 

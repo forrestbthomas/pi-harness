@@ -10,6 +10,7 @@ tags diverged from main twice). Follow it every session.
 | File | Owns | Does NOT own |
 |---|---|---|
 | `ROADMAP.md` | Active workstreams + DoD, parked items, recurring rituals | Shipped history, per-item detail |
+| `EPICS.md` | Epic grouping layer: outcome, appetite, sequence, DoD, item index | The ranked queue (that is BACKLOG.md's job) |
 | `BACKLOG.md` | Ranked RICE queue, deferred, idea inbox | Workstream status |
 | `STATUS.md` | One-screen Now/Next/Later snapshot ("where are we?") | The detailed plans |
 | `SCOPE.md` | scope-lock boundary contract for the current workstream (superseded contracts stay as history) | Roadmap decisions |
@@ -33,6 +34,11 @@ tags diverged from main twice). Follow it every session.
 4. **Re-rank RICE** in `BACKLOG.md` (from `productskills/feature-prioritization`).
 5. **Regenerate `STATUS.md`** from the reconciled ROADMAP/BACKLOG/CHANGELOG so
    the one-screen snapshot is never stale.
+
+Epics (`EPICS.md`) are the grouping layer: they roll up backlog items to one
+measurable outcome and are bet on/closed like workstreams. An epic has an
+outcome (measurable), an appetite (time-box; scope is cut, not extended), a
+dependency-ordered sequence, and a DoD; its items stay ranked in BACKLOG.md.
 
 Limit "Now" to 1–3 items (roadmap-planning). If more than three workstreams are
 active, stop and cut scope before continuing.

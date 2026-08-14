@@ -15,9 +15,9 @@
 
 | Item | RICE | Tag |
 |---|---|---|
-| **BACKLOG #1 — post-rebase hook** (auto-continue wedged rebase) | 1.20 | Enabler |
-| **BACKLOG #2 — nightly archives watchdog/git-state events** | 1.00 | Enabler |
-| **BACKLOG #3 — model-catalog auto-refresh in CI** | 0.50 | Enabler |
+| **EPIC-1 — Eval suite → research-grade benchmark** (EVAL-1..11 in BACKLOG, dependency-ordered) | top EVAL-5 1.60 | EPIC-1 |
+| **BACKLOG — post-rebase hook** (auto-continue wedged rebase) | 1.20 | Enabler |
+| **BACKLOG — model-catalog auto-refresh in CI** | 0.50 | Enabler |
 
 ## Later (raw — ideas worth exploring)
 

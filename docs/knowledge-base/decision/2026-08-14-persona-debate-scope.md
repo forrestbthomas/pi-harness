@@ -103,5 +103,5 @@ outcome; `CHARTER.md` is the enforceable boundary contract.
 - [ ] EVAL-12 live re-baseline after tonight's 03:00 UTC nightly (0 unbaselined
       DoD + standing cadence).
 - [ ] Execute OSS-1 follow-up verify (go install @v0.10.0 on clean checkout).
-- [ ] Execute GOV-2 (governance relocation + spec archive) — ships before GOV-1.
+- [x] GOV-1 shipped first (#112) per SCOPE.md scope change #1 — GOV-2 (relocation) is the next EPIC-6 item.
 - [ ] GOV-1 (drift guard) after GOV-2.

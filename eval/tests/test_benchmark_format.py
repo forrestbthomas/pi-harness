@@ -172,6 +172,40 @@ def test_manifest_schema_and_taxonomy():
     assert not problems, "manifest problems:\n" + "\n".join(problems)
 
 
+def test_manifest_live_rows_match_jsonl():
+    """docs-audit P1-4: the manifest's live-task rows must mirror the JSONL
+    (the grading truth) on category/difficulty/grader. 26 mismatches shipped
+    with no guard (2026-08-14); the manifest was regenerated from the JSONL.
+    """
+    import json as _json
+    manifest = _load_manifest()
+    jsonl_by_id = {}
+    with open(DATASET, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            d = _json.loads(line)
+            jsonl_by_id[d["id"]] = d
+    problems = []
+    for task in _manifest_tasks(manifest):
+        if task.get("surface") != "live":
+            continue
+        row = jsonl_by_id.get(task["id"])
+        if row is None:
+            problems.append(f"{task['id']}: manifest live row missing from jsonl")
+            continue
+        for field in ("category", "difficulty", "grader"):
+            if task.get(field) != row.get(field):
+                problems.append(
+                    f"{task['id']}: manifest {field} {task.get(field)!r} != jsonl {row.get(field)!r}"
+                )
+    for cid in jsonl_by_id:
+        if not any(t.get("id") == cid and t.get("surface") == "live" for t in _manifest_tasks(manifest)):
+            problems.append(f"{cid}: jsonl case missing from manifest live rows")
+    assert not problems, "manifest<->jsonl parity problems:\n" + "\n".join(problems)
+
+
 def test_manifest_no_duplicate_ids():
     manifest = _load_manifest()
     ids = [task.get("id") for task in _manifest_tasks(manifest)]

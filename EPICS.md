@@ -205,7 +205,7 @@ Rules:
 
 **Sequence (dependency-ordered):**
 
-1. GOV-2 — governance relocation + spec archive (ship FIRST: you cannot guard a location that doesn't exist)
+1. GOV-2 — governance relocation + spec archive (GOV-1 shipped first per SCOPE.md scope change #1 — the guard is path-independent; GOV-2 is next)
 2. OSS-1 — canonical install & identity (the single highest-value item in the scan: RICE ~18, 0.25 pw)
 3. GOV-1 — drift + charter-conformance + data-driven guard (hermetic; extends `test_docs_drift.py`)
 4. OSS-2 — contributor on-ramp v2 + SECURITY supported-versions ritual line
@@ -218,7 +218,7 @@ Rules:
 
 - [ ] GOV-2 relocation + spec archive merged (PM docs under `docs/governance/`; specs archived; BACKLOG ranked-table repair).
 - [ ] OSS-1 shipped: canonical module path + identity + CI install check (documented install path works).
-- [ ] GOV-1 shipped (or dropped after a month of CI proving non-noisy — keep the mechanical core).
+- [x] GOV-1 shipped (#112); GOV-2 is the next EPIC-6 item.
 - [ ] OSS-2/OWN-1/SECURITY-line shipped; TAX-1/TAX-2 shipped or parked with recorded decisions.
 - [ ] Backlog ≤ ~12 active rows; EPIC-6 row closed in ROADMAP; CHANGELOG entries per shipped item.
 
@@ -228,7 +228,7 @@ Rules:
 |---|---|---|---|
 | OSS-1 | Canonical module path + identity alignment + CI install check | ~18 | 0.25 pw |
 | GOV-1 | PM drift + charter-conformance + data-driven guard (hermetic) | ~3.0 | 0.5 pw |
-| GOV-2 | Governance relocation + spec archive + BACKLOG table repair (ships before GOV-1) | ~2.5 | 0.25–0.5 pw |
+| GOV-2 | Governance relocation + spec archive + BACKLOG table repair (GOV-1 shipped first #112; GOV-2 next) | ~2.5 | 0.25–0.5 pw |
 | OSS-2 | Contributor on-ramp v2: first-issue path, bugfix carve-out, SLA, MIT-in/out | ~2.0 | 0.5 pw |
 | OWN-1 | CODEOWNERS ownership matrix + fallback-to-lead | ~1.5 | 0.25 pw |
 | TAX-1 | Opt-in usage evidence via cost ledger (measured RICE Reach) | ~0.7 | 0.25 pw |

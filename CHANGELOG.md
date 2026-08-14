@@ -7,6 +7,15 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **Documentation audit Wave 2 (P1)** (docs-audit, 2026-08-14): canonical
+  release procedure (CONTRIBUTING + README point at `scripts/tag-release.sh`;
+  versioning policy now actually codified in CONTRIBUTING; commit prefixes
+  match `git log` reality); Surface-E drift guards (commit-prefix set,
+  AGENTS.md step-3 target exists, SYSTEM.md no phantom `kind`); Superseded
+  banners on p2-research-synthesis / self-healing-research /
+  launch-announcement; **manifest↔jsonl parity lint** (regenerated live rows
+  from the JSONL — 26 mismatches fixed) in test_benchmark_format.py;
+  GOV-2/GOV-1 sequencing resolved to shipped reality (#112 first).
 - **Documentation audit change-set (docs-audit, 2026-08-14)**: five Technical
   Writer subagents audited all doc surfaces; converged 4-wave plan executed.
   Wave 1 (P0): dataset-count sweep to `tasks.json` authority (54 live cases —

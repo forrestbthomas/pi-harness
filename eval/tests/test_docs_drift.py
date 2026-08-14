@@ -120,3 +120,35 @@ def test_readme_live_dataset_count_matches_manifest():
         f"README Nightly section must state the live dataset count ({live_count}) "
         f"from tasks.json — the '20-task' lie class (EPICS.md:204)"
     )
+
+
+def test_contributing_commit_prefixes_match_practice():
+    """docs-audit P1-2 (Surface E): CONTRIBUTING's commit-prefix set must match
+    actual practice (the old feat(oss)/chore(oss) prefixes matched zero of the
+    last 60 commits). Every documented prefix must appear in recent history, and
+    the release type must be documented."""
+    contributing = _read("CONTRIBUTING.md")
+    assert "feat(" in contributing and "release(v" in contributing, (
+        "CONTRIBUTING must document the real feat(<workstream-id>): and release(vX.Y.Z): types"
+    )
+    assert "chore(oss)" not in contributing, (
+        "CONTRIBUTING must not document the obsolete chore(oss) prefix"
+    )
+
+
+def test_agents_workflow_target_exists():
+    """docs-audit P1-2 (Surface E): AGENTS.md step 3 pointed at phantom
+    eval/outputs/; the documented capture target must exist and be the real
+    consumer (eval/live-results/)."""
+    agents = _read("AGENTS.md")
+    assert "eval/live-results/" in agents, "AGENTS.md must point at the real live-results output dir"
+    assert "eval/outputs/" not in agents, "AGENTS.md phantom eval/outputs/ dir must be gone"
+    assert Path("eval/live-results").is_dir(), "eval/live-results/ must exist (score_run consumer)"
+
+
+def test_system_commands_are_real():
+    """docs-audit P1-2 (Surface E): .pi/SYSTEM.md must not reference phantom
+    tooling (the 'kind' Kubernetes residue) in its validation commands."""
+    system = _read(".pi/SYSTEM.md")
+    assert "kind" not in system, "SYSTEM.md must not mention the phantom kind tool"
+    assert "go test" in system and "pytest" in system

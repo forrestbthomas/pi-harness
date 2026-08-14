@@ -16,6 +16,8 @@
 # Scope Change Log
 | # | Category | What | Why | Decision | Outcome |
 |---|----------|------|-----|----------|---------|
+| 1 | Wave 1 | P0 truth-restoration sweep (counts, guards, ghost, spec statuses, PM reconciliation) | docs-audit synthesis | Permit | PR #113 merged |
+| 2 | Wave 2 | P1 status/sequencing truth (release procedure, Surface-E guards, banners, parity lint, GOV-2/GOV-1) | docs-audit synthesis | Permit | PR landing this change |
 
 # Follow-up Tasks
 - [ ] After PR 1: verify the data-vs-prose guard catches a deliberate count regression.

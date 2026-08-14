@@ -241,7 +241,7 @@ pi-run eval
 ### Self-healing agent runs
 
 `pi-run` can detect and recover wedged agent runs so a hang never needs a human
-nudge (spec `docs/superpowers/specs/2026-08-13-self-healing-design.md`):
+nudge (spec `docs/governance/specs-archive/2026-08-13-self-healing-design.md`):
 
 - **`pi-run self-heal`** — detect in-progress git state (a wedged rebase) and
   recover it: `GIT_EDITOR=true git rebase --continue` when conflicts are

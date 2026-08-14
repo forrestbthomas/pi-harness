@@ -3,7 +3,7 @@
 # every push; providers run sequentially for clean per-provider cost
 # attribution; provider keys come from repo secrets only and are never echoed
 # or logged (the CLI only logs key names). See
-# docs/superpowers/specs/2026-08-11-ci-benchmark-scorecard-design.md §4.6.
+# docs/governance/specs-archive/2026-08-11-ci-benchmark-scorecard-design.md §4.6.
 name: provider-scorecard
 
 permissions:

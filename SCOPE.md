@@ -1,25 +1,28 @@
 # Scope Contract
-**Task:** Execute the documentation-audit change-set (5 Technical Writer subagents' converged 4-wave plan) | **Plan:** `.pi/debate/docs-audit/synthesis.md` | **Date:** 2026-08-14 | **Status:** CLOSED — 3 changes logged
+**Task:** GOV-2 — Governance relocation + spec archive (narrow) | **Plan:** BACKLOG #1 (GOV-2), EPIC-6 sequence, `docs/knowledge-base/decision/2026-08-14-persona-debate-scope.md` | **Date:** 2026-08-14 | **Status:** ACTIVE
 
-## In Scope (the 4 waves, as 3 PRs to avoid a git mess)
-- **PR 1 — Wave 1 (P0): Truth restoration.** Dataset-count sweep to `tasks.json` authority (README/seam-doc/PM docs/test docstrings/nightly header → 62/54/49/54, datasetVersion .7) + restore the data-vs-prose drift guard in `test_docs_drift.py`; purge mcp-server ghost (plugins.md:54, gap-analysis banner, hardening spec); spec-status SHIPPED convention on 10 eval specs; PM reconciliation (13 backlog rows SHIPPED, STATUS regen, extend `test_pm_drift.py` "CHANGELOG entry ⇒ not open row").
-- **PR 2 — Wave 2 (P1): Status & sequencing truth.** Canonical release procedure (tag-release.sh as CONTRIBUTING step 2; commit prefixes from git log); extend drift guards to Surface E (CONTRIBUTING prefixes, AGENTS.md step-3 target, SYSTEM.md commands ⊆ help); "Superseded" banners repo-wide; manifest↔jsonl parity lint + fix 13 records; GOV-2/GOV-1 sequencing + KB index row.
-- **PR 3 — Wave 3+4 (P2/P3): Hygiene.** Template-residue purge (kind/CRD), AGENTS.md phantom eval/outputs → live-results, README Nightly/Skills/Layout refresh, spec citation hygiene, stamps (EPICS/anti-lockin/understand banner), CODEOWNERS/CoC defer notes.
-- **Files (PR 1):** README.md, docs/benchmark-seam.md, docs/plugins.md, docs/competitive-gap-analysis-2026-08.md, ROADMAP.md, EPICS.md, STATUS.md, BACKLOG.md, eval/tests/test_live_suite.py, eval/tests/test_benchmark_seam.py, eval/tests/test_docs_drift.py, eval/tests/test_pm_drift.py, docs/superpowers/specs/2026-08-1[1-4]-*.md (10 specs), CHANGELOG.md, SCOPE.md, decision record.
-- **Boundaries:** No product code changes (except test guards which are hermetic test files — those are the "guards" the audit restores). No docs deleted. CHARTER/SECURITY/benchmarks.md/anti-lockin.md/score_run docstrings protected from churn. Each PR verified (go build/test, hermetic pytest, docs-drift + pm-drift guards green).
+## In Scope
+- Create `docs/governance/` as the internal-governance home (CHARTER clause 3: PM artifacts are internal governance, not contributor-facing product features).
+- Move the 19 dated planning specs from `docs/superpowers/specs/` → `docs/governance/specs-archive/` via `git mv` (full text preserved, git history intact, no content rewrites).
+- Create `docs/governance/decisions.md` — the one decisions file: index of the 19 archived specs (date, title, status as archived, decision / superseded-by, archive path), pointer to `docs/knowledge-base/decision/` for durable decision records, and the going-forward convention (new dated planning specs land in `specs-archive/`).
+- Archive the closed docs-audit SCOPE.md → `docs/governance/scope-history/2026-08-14-docs-audit.md`; write this active GOV-2 SCOPE.md at the repo root (the superseded-contracts-stay-as-history convention).
+- Update forward-pointing spec citations to the archive path in: `README.md`, `ROADMAP.md` (W5–W10 rows), `.github/workflows/nightly-live-eval.yml`, `.github/workflows/provider-scorecard.yml`, `docs/knowledge-base/decision/self-healing-w1-design-decisions.md`, `docs/self-healing-research-2026-08.md`, `docs/superpowers/plans/2026-08-02-pi-run-cli.md`, `AGENTS.md` navigation table.
+- Governance pointer updates: `AGENTS.md` nav table (`docs/governance/` row), `docs/roadmap-workflow.md` sources-of-truth table, `CHARTER.md` clause 3 truth fix (living PM docs stay at root; dated specs archived).
+- PM reconciliation (cycle ritual): `BACKLOG.md` GOV-2 → SHIPPED; `ROADMAP.md` EPIC-6 / v0.11.0 text; `EPICS.md` GOV-2 DoD checkbox; `STATUS.md` regenerate; `CHANGELOG.md` dated entry.
+- Verify: `go build ./...`, `go vet ./...`, `go test ./...` (unchanged), hermetic pytest incl. `test_docs_drift.py` + `test_pm_drift.py` green.
 
 ## Out of Scope
-- The coupling-count "11 vs 6 vs 13" dispute (resolved by mechanizing the count into seam-report — done in EVAL-15; PR 1 only cites the artifact).
-- Content rewrites of dated research docs (banners only).
-- Actual relocation GOV-2 (deferred; only sequencing text fixed).
+- **Moving `ROADMAP.md` / `BACKLOG.md` / `STATUS.md` / `EPICS.md` to `docs/governance/` — DECLINED (narrow-relocation boundary, user-approved 2026-08-14).** Rationale: these are the session-entry contract (AGENTS.md ritual), path-read by the GOV-1 drift guard (`eval/tests/test_pm_drift.py`, `test_docs_drift.py`), and a live eval grader (`eval/datasets/graders/coding-054/grade.py`) tests for `ROADMAP.md` — full relocation would change the measurement surface and churn every guard for zero external consumers (the GOV-1 "presentation-only churn" caution). Recorded here so the charter's "slated to move" line is corrected to reality.
+- Content rewrites of dated specs / research / decision docs (path citations + index only).
+- Moving `docs/superpowers/plans/` (not part of the 19-spec DoD; citation update only).
+- GOV-1 guard changes (shipped #112; path-independence is its design).
+- EVAL-12 live re-baseline (separate backlog item, time-blocked on the 03:00 UTC nightly).
+- No product code changes.
 
 # Scope Change Log
 | # | Category | What | Why | Decision | Outcome |
 |---|----------|------|-----|----------|---------|
-| 1 | Wave 1 | P0 truth-restoration sweep (counts, guards, ghost, spec statuses, PM reconciliation) | docs-audit synthesis | Permit | PR #113 merged |
-| 2 | Wave 2 | P1 status/sequencing truth (release procedure, Surface-E guards, banners, parity lint, GOV-2/GOV-1) | docs-audit synthesis | Permit | PR #114 merged |
-| 3 | Wave 3+4 | P2/P3 hygiene (README Skills/Layout, requirements comment, stamps, PR template, AGENTS polish) | docs-audit synthesis | Permit | PR landing this change |
 
 # Follow-up Tasks
-- [ ] After PR 1: verify the data-vs-prose guard catches a deliberate count regression.
-- [ ] After PR 3: confirm no Surface E drift guard failures.
+- [ ] After PR merge: confirm `test_pm_drift.py` + `test_docs_drift.py` stay green with the archive in place.
+- [ ] GOV-2 DoD "ranks 8–23 repaired" — already landed in #118 (re-rank); verified, no further action.

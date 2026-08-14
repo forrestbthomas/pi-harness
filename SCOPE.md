@@ -27,6 +27,7 @@
 # Scope Change Log
 | # | Category | What | Why | Decision | Outcome |
 |---|----------|------|-----|----------|---------|
+| 1 | emergent | `.gitignore` + `paths_test.go`: ignore/skip `.pi/subagents/` runtime artifacts | Subagent lanes write runtime artifacts under `.pi/subagents/` (new upstream path); `TestNoHardcodedUserPaths` walked them and failed CI | **Permit** (repo hygiene, same class as `.pi/sessions/`) | Logged; included in Batch A PR |
 
 # Follow-up Tasks
 - [ ] — (none yet)

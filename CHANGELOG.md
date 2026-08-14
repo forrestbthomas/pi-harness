@@ -19,6 +19,13 @@ All notable changes to this project are documented here. Format follows
   shipped leg).
 
 ### Added
+- **OSS-1 — Canonical install & identity alignment** (EPIC-6, 2026-08-14):
+  Go module path `github.com/forrestthomas1/pi-harness` →
+  `github.com/forrestbthomas/pi-harness` (matches the canonical repo URL —
+  `go install github.com/forrestbthomas/pi-harness@latest` now resolves for
+  a stranger); all imports/ldflags/current-state docs updated; CODEOWNERS
+  handle → `@forrestbthomas`; new hermetic `test_canonical_identity` pins
+  module-path == README URL == CODEOWNERS handle so it cannot drift back.
 - **EPIC-6 — Repo maturity** (maturity-scan convergence 2026-08-14): new
   epic owning governance/community/debt work — OSS-1 canonical install+
   identity (~18), GOV-1 drift+charter-conformance guard, GOV-2 relocation+

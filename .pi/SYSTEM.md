@@ -34,7 +34,7 @@ contract) and `AGENTS.md` (project instructions). Key scope facts:
 
 ## Conventions
 
-- The harness runtime is a single Go CLI: `pi-run` (module `github.com/forrestthomas1/pi-harness`, source under `cmd/pi-run` and `internal/cli/`).
+- The harness runtime is a single Go CLI: `pi-run` (module `github.com/forrestbthomas/pi-harness`, source under `cmd/pi-run` and `internal/cli/`).
 - Provider routing is data-driven (`providers.json`): each provider has a key env var, a `pi --provider` value, and a default model. There is **no automatic cross-provider fallback** — the provider is explicit (`--provider` / `PI_PROVIDER`).
 - API keys are resolved env-first, then from an optional secret store (`BW_GET` override; Bitwarden is a documented example). **Never log, echo, or persist key material.**
 - All evaluation code, datasets, and Python dependencies live in `eval/`.

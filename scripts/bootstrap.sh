@@ -55,7 +55,7 @@ fi
 
 # 2. Build pi-run
 echo "  Building bin/pi-run ..."
-(cd "$ROOT" && go build -ldflags "-X github.com/forrestthomas1/pi-harness/internal/cli.Version=dev" -o bin/pi-run ./cmd/pi-run)
+(cd "$ROOT" && go build -ldflags "-X github.com/forrestbthomas/pi-harness/internal/cli.Version=dev" -o bin/pi-run ./cmd/pi-run)
 
 # 3. Python venv + deps
 echo "  Setting up eval/.venv ..."

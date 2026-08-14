@@ -1,9 +1,9 @@
 # Code ownership for review routing.
-# @forrestthomas owns the whole repo; add teams/individuals per path as the
+# @forrestbthomas owns the whole repo; add teams/individuals per path as the
 # project grows.
 
-*       @forrestthomas
+*       @forrestbthomas
 
 # The Python eval suite has its own dependency surface; a maintainer focused
 # on evaluation should own these.
-/eval/  @forrestthomas
+/eval/  @forrestbthomas

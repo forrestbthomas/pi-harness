@@ -9,7 +9,7 @@ import (
 )
 
 // Version is the build-time version, injected via -ldflags
-// "-X github.com/forrestthomas1/pi-harness/internal/cli.Version=<tag>".
+// "-X github.com/forrestbthomas/pi-harness/internal/cli.Version=<tag>".
 // Defaults to "dev" for local builds.
 var Version = "dev"
 
@@ -427,7 +427,7 @@ func runInstall(force bool) int {
 		return 1
 	}
 	target := filepath.Join(binDir, "pi-run")
-	ldflags := "-X github.com/forrestthomas1/pi-harness/internal/cli.Version=" + buildVersion()
+	ldflags := "-X github.com/forrestbthomas/pi-harness/internal/cli.Version=" + buildVersion()
 	code, err := runCmd("go", []string{"build", "-ldflags", ldflags, "-o", target, "./cmd/pi-run"}, root)
 	if err != nil || code != 0 {
 		return code

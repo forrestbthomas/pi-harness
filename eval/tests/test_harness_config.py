@@ -41,7 +41,31 @@ def test_makefile_removed():
 
 def test_go_module_path():
     go_mod = (HARNESS / "go.mod").read_text(encoding="utf-8")
-    assert "module github.com/forrestthomas1/pi-harness" in go_mod
+    # OSS-1 (canonical install/identity): the Go module path must match the
+    # canonical repo URL so `go install github.com/forrestbthomas/pi-harness@latest`
+    # works for a stranger. Historical docs may keep the old path, but go.mod
+    # is the install contract.
+    assert "module github.com/forrestbthomas/pi-harness" in go_mod
+
+
+def test_canonical_identity():
+    """OSS-1: the documented repo identity must be one spelling everywhere a
+    stranger sees it — go.mod module path, README clone URL, CODEOWNERS handle.
+    The old drift (go.mod `forrestthomas1` vs remote `forrestbthomas` vs
+    CODEOWNERS `@forrestthomas`) broke `go install` against the README URL.
+    """
+    go_mod = (HARNESS / "go.mod").read_text(encoding="utf-8")
+    readme = (HARNESS / "README.md").read_text(encoding="utf-8")
+    codeowners = (HARNESS / ".github" / "CODEOWNERS").read_text(encoding="utf-8")
+    canonical = "github.com/forrestbthomas/pi-harness"
+    assert "module " + canonical in go_mod, "go.mod module path must match canonical repo URL"
+    assert "git clone https://" + canonical + ".git" in readme, (
+        "README clone URL must match canonical repo URL"
+    )
+    assert "@forrestbthomas" in codeowners, "CODEOWNERS must use the canonical handle"
+    assert "forrestthomas1/" not in go_mod and "forrestthomas1/" not in readme, (
+        "no stale forrestthomas1 module path in current-state install docs"
+    )
 
 
 def test_project_defaults_unchanged():

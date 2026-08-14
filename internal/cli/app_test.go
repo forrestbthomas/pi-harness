@@ -102,7 +102,7 @@ func TestUsageMentionsProviders(t *testing.T) {
 }
 
 func TestModulePath(t *testing.T) {
-	// The public module path must be github.com/forrestthomas1/pi-harness.
+	// The public module path must be github.com/forrestbthomas/pi-harness.
 	// Tests run with CWD = the package dir and os.Executable() = the temp test
 	// binary, so derive the repo root from this source file's own path.
 	_, file, _, ok := runtime.Caller(0)
@@ -115,8 +115,8 @@ func TestModulePath(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(b), "module github.com/forrestthomas1/pi-harness") {
-		t.Fatalf("go.mod must declare module github.com/forrestthomas1/pi-harness, got:\n%s", b)
+	if !strings.Contains(string(b), "module github.com/forrestbthomas/pi-harness") {
+		t.Fatalf("go.mod must declare module github.com/forrestbthomas/pi-harness, got:\n%s", b)
 	}
 }
 

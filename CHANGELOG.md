@@ -14,6 +14,13 @@ All notable changes to this project are documented here. Format follows
   single-run cost-spike false-fail class; a median over 2× baseline OR ≥2
   over-threshold runs still fails as a real regression. Scorecard JSON +
   markdown surface `costFlakes`. Hermetic tests: 48 score_run tests pass.
+- **EVAL-14 — Benchmark provenance parity** (EPIC-1, v0.11.0): the
+  ci-benchmark scorecard now carries a `provenance` block
+  (`datasetVersion` / `agentModel` / `judgeModel` / `piVersion`) matching the
+  live nightly surface (EVAL-3 schema) — closing the "provenance in **every**
+  scorecard" DoD on both surfaces. Best-effort (missing env/tasks.json →
+  "unknown", never a crash); provider-scorecard workflow records `PI_VERSION`;
+  docs-drift guard pins both workflows. Golden fixture + 2 hermetic Go tests.
 
 ## [0.10.0] - 2026-08-14
 

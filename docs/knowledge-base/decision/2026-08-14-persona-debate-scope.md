@@ -86,7 +86,9 @@ outcome; `CHARTER.md` is the enforceable boundary contract.
       EPIC-4 parked, EPIC-5 dissolved, EVAL-10 removed, HEAL-1 demoted,
       +EVAL-13..16, GOV-1/2, OSS-1/2, OWN-1, TAX-1/2, PORT-0) — PR #101.
 - [x] Release milestones + v0.10.0 shipped (PRs #103/#104, tag v0.10.0).
-- [x] EVAL-13 cost-variance gate (flake-aware cost) — PR landing this change.
+- [x] EVAL-13 cost-variance gate (flake-aware cost) — PR #105.
+- [x] EVAL-14 benchmark provenance parity (ci-benchmark provenance block) —
+      PR landing this change.
 - [ ] EVAL-12 live re-baseline after tonight's 03:00 UTC nightly (0 unbaselined
       DoD + standing cadence).
 - [ ] Execute OSS-1 follow-up verify (go install @v0.10.0 on clean checkout).

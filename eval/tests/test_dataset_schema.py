@@ -160,3 +160,16 @@ def test_deterministic_references_provably_pass_their_grader(rows):
         if not passed:
             failures.append(f"{row['id']}: reference failed its grader: {detail}")
     assert not failures, "oracle validation failures:\n" + "\n".join(failures)
+
+
+DATASET_VERSION_RE = re.compile(r"^\d{4}-\d{2}-\d{2}\.\d+$")
+
+
+def test_tasks_manifest_has_dataset_version():
+    """Every dataset content change must bump datasetVersion (EVAL-3)."""
+    tasks = json.loads((EVAL_DIR / "datasets" / "tasks.json").read_text(encoding="utf-8"))
+    version = tasks.get("datasetVersion")
+    assert version is not None, "tasks.json must carry a datasetVersion (bump on every dataset change)"
+    assert DATASET_VERSION_RE.match(version), (
+        f"datasetVersion {version!r} must match YYYY-MM-DD.N"
+    )

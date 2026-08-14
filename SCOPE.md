@@ -1,31 +1,30 @@
 # Scope Contract
-**Task:** W7 — EVAL-1 + EVAL-2: evidence artifacts on every outcome + flake-aware gate | **Plan:** `docs/superpowers/specs/2026-08-14-flake-aware-gate-and-evidence-artifacts.md` | **Date:** 2026-08-14 | **Status:** CLOSED — 0 changes logged (shipped #87, next live nightly verifies end-to-end)
+**Task:** W8 — EVAL-3: dataset versioning + scorecard provenance | **Plan:** `docs/superpowers/specs/2026-08-14-dataset-versioning-and-provenance.md` | **Date:** 2026-08-14 | **Status:** ACTIVE (approved 2026-08-14)
 
-> Supersedes the W6 scorecard self-heal contract (CLOSED 2026-08-14; record preserved in git history). W5 Part C remains tracked in ROADMAP (upstream release gate).
+> Supersedes the W7 flake-aware gate contract (CLOSED 2026-08-14; record preserved in git history). W5 Part C remains tracked in ROADMAP (upstream release gate).
 
 ## In Scope
 - **Files — harness:**
-  - `.github/workflows/nightly-live-eval.yml` — `if: always()` on "Upload live results"; add `.pi/heal/events.jsonl` to artifact path; `EVAL_RUNS_PER_CASE` 3→5; `--runs 5`
-  - `.github/workflows/provider-scorecard.yml` — `if: always()` on "Upload scorecard"
-  - `eval/scripts/score_run.py` — `nFailed` in `aggregate_case`; `flake` in `compare_case` (`regressed` only when `nFailed >= 2`); `flakes` in summary + compact + markdown; stderr flake line
-  - `eval/tests/test_score_run.py` — nFailed, flake-vs-regression, flakes in summary/compact/markdown, cost-regression-unchanged
-  - `eval/tests/test_docs_drift.py` — invariant: both workflows' upload steps carry `if: always()`
-  - `CHANGELOG.md`, `ROADMAP.md` (W7 row), `STATUS.md`, `BACKLOG.md` (EVAL-1/2 → active), `SCOPE.md`, spec
+  - `eval/datasets/tasks.json` — add `datasetVersion` (`YYYY-MM-DD.N`); `schemaVersion` unchanged
+  - `eval/scripts/score_run.py` — `provenance { datasetVersion, agentModel, judgeModel, piVersion }` in summary + compact (env-driven for models/pi; tasks.json for dataset; defaults `"unknown"`)
+  - `eval/tests/test_dataset_schema.py` — guard: tasks.json must carry a well-formed `datasetVersion`
+  - `eval/tests/test_score_run.py` — provenance tests (real datasetVersion, env models/pi, `"unknown"` defaults, summary + compact)
+  - `.github/workflows/nightly-live-eval.yml` — capture `pi-run version` into `PI_VERSION` (`$GITHUB_ENV`) before the score_run step
+  - `CHANGELOG.md`, `ROADMAP.md` (W8 row), `STATUS.md`, `BACKLOG.md` (EVAL-3 → active), `SCOPE.md`, spec
 - **Features:**
-  1. EVAL-1: eval evidence (results + heal events) is uploaded on every gate outcome, nightly and weekly.
-  2. EVAL-2: single-run flake warns (never fails); ≥2 failed runs = regression; cost regression unchanged; flakes reported in the scorecard; n=5 runs.
-  3. Hermetic tests for both + the workflow invariant.
+  1. Dataset carries an explicit, guarded content version.
+  2. Every scorecard (summary + compact) records dataset/agent/judge/pi provenance.
+  3. Hermetic tests + the schema lint enforce both.
 - **Boundaries:**
-  - Flake rule fixed at 1-of-N = flake, ≥2 = regression; no configurable threshold; no "fail after N flakes".
-  - No auto-quarantine (EVAL-9), no re-baseline in this PR, no change to `ci-benchmark` gate logic.
-  - Upload events.jsonl only — not escalation packets (goal/ledger sensitivity).
+  - Provenance is informational; gate math unchanged.
+  - Dataset content is NOT changed (only the version field added).
+  - Missing file/env → `"unknown"`, never fatal.
 
 ## Out of Scope
-- Flake thresholds / quarantine registry / auto-quarantine (EVAL-9).
-- Baseline re-baseline (live-run act; runsPerCase informational).
-- `ci-benchmark` scorecard gate semantics (Go; only the upload `if:` changes).
-- Uploading `.pi/heal/*-report.json` escalation packets.
-- Any change to cost-regression or incomplete-run gate behavior.
+- EVAL-5 dataset growth.
+- Per-case provenance.
+- Re-baselining / baseline-math changes.
+- `ci-benchmark` (Go) provenance.
 
 # Scope Change Log
 | # | Category | What | Why | Decision | Outcome |

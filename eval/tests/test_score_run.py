@@ -676,3 +676,67 @@ def test_flake_note_on_stderr(tmp_path):
     baseline = make_baseline({"coding-001": {"passRate": 1.0, "costPerTaskUsd": 0.01}})
     result = run_cli(tmp_path, report, baseline)
     assert "flake" in result.stderr
+
+
+# ---------------------------------------------------------------------------
+# Scorecard provenance (W8 — EVAL-3)
+# ---------------------------------------------------------------------------
+
+
+def _tasks_dataset_version():
+    tasks_path = REPO_ROOT / "eval" / "datasets" / "tasks.json"
+    return json.loads(tasks_path.read_text(encoding="utf-8"))["datasetVersion"]
+
+
+def _one_case_report():
+    return make_report(
+        {"coding-001": [std_run(True)] * 5},
+        nodeid_fn=lambda case_id, index: f"tests/test_live_suite.py::test_case[{case_id}]",
+    )
+
+
+def test_summary_records_dataset_version(tmp_path):
+    baseline = make_baseline({"coding-001": {"passRate": 1.0, "costPerTaskUsd": 0.01}})
+    result = run_cli(tmp_path, _one_case_report(), baseline)
+    assert result.returncode == 0
+    summary = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))
+    assert summary["provenance"]["datasetVersion"] == _tasks_dataset_version()
+
+
+def test_summary_records_env_provenance(tmp_path):
+    baseline = make_baseline({"coding-001": {"passRate": 1.0, "costPerTaskUsd": 0.01}})
+    result = run_cli(
+        tmp_path, _one_case_report(), baseline,
+        env={"PI_MODEL_TIER": "cheap", "OPENAI_MODEL_NAME": "gpt-4.1-mini", "PI_VERSION": "v0.9.2"},
+    )
+    assert result.returncode == 0
+    summary = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))
+    assert summary["provenance"]["agentModel"] == "cheap"
+    assert summary["provenance"]["judgeModel"] == "gpt-4.1-mini"
+    assert summary["provenance"]["piVersion"] == "v0.9.2"
+
+
+def test_provenance_defaults_to_unknown_when_unset(tmp_path):
+    baseline = make_baseline({"coding-001": {"passRate": 1.0, "costPerTaskUsd": 0.01}})
+    result = run_cli(
+        tmp_path, _one_case_report(), baseline,
+        env={"PI_MODEL_TIER": "", "OPENAI_MODEL_NAME": "", "PI_VERSION": ""},
+    )
+    assert result.returncode == 0
+    summary = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))
+    assert summary["provenance"]["agentModel"] == "unknown"
+    assert summary["provenance"]["judgeModel"] == "unknown"
+    assert summary["provenance"]["piVersion"] == "unknown"
+
+
+def test_compact_summary_records_provenance(tmp_path):
+    baseline = make_baseline({"coding-001": {"passRate": 1.0, "costPerTaskUsd": 0.01}})
+    compact_path = tmp_path / "compact.json"
+    result = run_cli(
+        tmp_path, _one_case_report(), baseline, "--json-summary", str(compact_path),
+        env={"PI_MODEL_TIER": "cheap", "PI_VERSION": "v0.9.2"},
+    )
+    assert result.returncode == 0
+    compact = json.loads(compact_path.read_text(encoding="utf-8"))
+    assert compact["provenance"]["datasetVersion"] == _tasks_dataset_version()
+    assert compact["provenance"]["agentModel"] == "cheap"

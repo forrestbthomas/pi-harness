@@ -90,7 +90,9 @@ outcome; `CHARTER.md` is the enforceable boundary contract.
 - [x] EVAL-14 benchmark provenance parity (ci-benchmark provenance block) —
       PR #106.
 - [x] EVAL-15 split-seam verification (docs/benchmark-seam.md + hermetic
-      dry-run; 70 couplings inventoried) — PR landing this change.
+      dry-run; 70 couplings inventoried) — PR #107.
+- [x] EVAL-8 judge stabilization (3 cases → deterministic; majority-of-3;
+      bugfix: judge passes now reach the gate) — PR landing this change.
 - [ ] EVAL-12 live re-baseline after tonight's 03:00 UTC nightly (0 unbaselined
       DoD + standing cadence).
 - [ ] Execute OSS-1 follow-up verify (go install @v0.10.0 on clean checkout).

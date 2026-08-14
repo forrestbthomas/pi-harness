@@ -72,6 +72,7 @@ jobs:
     timeout-minutes: 60
     env:
       EVAL_RUNS_PER_CASE: '5'
+      EVAL_JUDGE_RUNS: '3'               # EVAL-8: majority-of-3 judge passes (bound judge variance)
       PI_MAX_BUDGET_USD: '2'               # nightly spend cap (cheap agent tier)
       PI_MODEL_TIER: 'cheap'               # matches the suite's --model-tier cheap; score_run records it as baseline agentModel
       PI_SELF_HEAL: '1'                    # record watchdog/group-kill/recovery events to .pi/heal/events.jsonl for the scorecard (BACKLOG #1)

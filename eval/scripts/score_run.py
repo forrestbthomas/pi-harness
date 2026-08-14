@@ -53,6 +53,14 @@ DEFAULT_BUDGET_USD = 2.0
 BASELINE_REL = Path("eval/baselines/live-baseline.json")
 LIVE_RESULTS_REL = Path("eval/live-results")
 LIVE_SUITE_FILE = "test_live_suite.py"
+# EVAL-8 bugfix: the metrics layer (judge-graded cases) also emits per-case
+# pass/judgeCostUsd/judgeRuns via record_property. extract_case_id must accept
+# its nodeids too, or judge passes never reach the gate (they were silently
+# dropped — judge cases contributed cost but no pass signal, and because they
+# were also unbaselined, nothing failed). The agent-task-completion file emits
+# no per-case live-suite properties and is excluded.
+LIVE_METRICS_FILE = "test_live_metrics.py"
+LIVE_CASE_FILES = (LIVE_SUITE_FILE, LIVE_METRICS_FILE)
 
 # The scorer only consumes parametrized nodeids from the live suite
 # (tests/test_live_suite.py::test_case[coding-001] -> coding-001). Nodeids
@@ -171,12 +179,13 @@ def _zip_runs(props: dict[str, list], outcome: str) -> list[dict]:
 
 
 def extract_case_id(nodeid: str) -> str | None:
-    """Recover the case id from a live-suite parametrized nodeid.
+    """Recover the case id from a live-suite/live-metrics parametrized nodeid.
 
     tests/test_live_suite.py::test_case[coding-001] -> "coding-001"
-    Returns None for nodeids that are not live-suite parametrized cases.
+    tests/test_live_metrics.py::test_case[coding-002] -> "coding-002"
+    Returns None for nodeids that are not live case parametrizations.
     """
-    if not nodeid or LIVE_SUITE_FILE not in nodeid:
+    if not nodeid or not any(f in nodeid for f in LIVE_CASE_FILES):
         return None
     match = NODEID_CASE_RE.search(nodeid)
     return match.group(1) if match else None

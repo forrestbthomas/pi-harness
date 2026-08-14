@@ -86,6 +86,7 @@ Rules:
 | EVAL-9 | Known-flaky quarantine mechanism | 0.40 | 0.5 pw |
 | EVAL-10 | Eval output gallery / human-readable baseline diff (was BACKLOG #8) | 0.20 | 1 pw |
 | EVAL-11 | Auto-open GitHub issue on N self-heals (was BACKLOG #5; unblocked by W6) | 0.50 | 0.5 pw |
+| EVAL-12 | Live re-baseline after W10 (scheduled: tomorrow after the 03:00 UTC nightly; deliberate + reviewed) | 1.10 | 0.25 pw |
 
 ---
 

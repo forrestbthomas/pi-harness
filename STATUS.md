@@ -12,7 +12,7 @@
 | **W7 — Flake-aware gate + evidence artifacts** (EVAL-1/EVAL-2) | **SHIPPED — 2026-08-14** — merged #87; next live nightly confirms end-to-end (upload on failure + flake warn-not-fail) |
 | **W8 — Dataset versioning + scorecard provenance** (EVAL-3) | **SHIPPED — 2026-08-14** — merged #89; guarded `datasetVersion` + `provenance` in scorecard |
 | **W9 — Self-heal events in provider scorecard** (EVAL-4) | **SHIPPED — 2026-08-14** — merged #91; `selfHeal` block on ci-benchmark scorecard + `PI_SELF_HEAL=1` |
-| **W10 — Dataset growth 20 → 50** (EVAL-5) | Active — contract approved; content batches landing (stratified, regression twins, edit-based benchmarks) |
+| **W10 — Dataset growth 20 → 50** (EVAL-5) | Active — Batch A + Batch B landed (50 cases); benchmark batch next |
 | **W4 Project-management layer** (roadmap workflow, STATUS, RICE cycle) | Active ritual — the governance layer that keeps everything else true |
 
 ## Next (shaped — next 1–2 cycles)

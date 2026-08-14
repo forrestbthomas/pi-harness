@@ -1,0 +1,1 @@
+pi-run config-check — it runs deterministic harness-config checks (project and global settings.json, the providers.json tier table, dotfiles, skills, and more) with no API keys and no network access. Exit code 0 means all checks passed; exit code 1 means failures were found.

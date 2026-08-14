@@ -15,6 +15,7 @@ A self-healing, measurable coding-agent harness built around the [Pi coding agen
 - **`pi-run` CLI** — a compiled Go binary (repo `bin/pi-run`) that owns the harness runtime: `chat`, `print`, `resume`, `cost`, `ci-benchmark`, `eval`, `config-check`, `doctor`, `setup`, `install`, `clean`, `project-understand`, `self-heal`, `providers`, `hooks`, `version`.
 - **Pi CLI** installed globally (via nvm) and configured for this project.
 - **Curated Pi packages** installed project-locally:
+  - `pi-mcp-adapter` — token-efficient MCP adapter (Pi-side; distinct from the harness's `mcp-server` command, which was removed in v0.10.0).
   - `pi-web-access` — web fetch/search for agents.
   - `@demigodmode/pi-web-agent` — reliable web search/fetch with explicit boundaries.
   - `@loreai/pi` — Lore memory engine.
@@ -207,6 +208,10 @@ no DEEPSEEK_API_KEY available: export it, or check your secret manager
 | `PI_SELF_HEAL` | Set `1` to record watchdog stall/group-kill/recovery events to `.pi/heal/events.jsonl` (scorecard observability) |
 | `PI_STALL_TIMEOUT_SECS` | Watchdog silent-window: terminate a non-interactive run with no stdout after N seconds (default 300; 0 disables) |
 | `PI_WATCHDOG_GRACE_SECS` | Process-group-kill grace between SIGTERM and SIGKILL (default 10; 0 = immediate) |
+| `EVAL_RUNS_PER_CASE` | Live-suite agent runs per case (nightly sets 5; the flake-aware gate, EVAL-2) |
+| `EVAL_JUDGE_RUNS` | LLM-judge repeats per case, pass = majority (default 3; EVAL-8 judge stabilization) |
+| `PI_EVAL_REPORT` | Path (relative to `eval/`) where the conftest hook writes the pytest report for `score_run.py` |
+| `OPENAI_MODEL_NAME` | Judge model pin for the LLM-judged metrics (nightly sets `gpt-4.1-mini`) |
 
 ## Running Evaluations
 
@@ -303,7 +308,7 @@ Each task lives in `eval/benchmarks/<name>/` and ships a `task.json` plus a
 
 ```
 eval/benchmarks/fix-divide-by-zero/
-├── task.json             # id, prompt (or instruction.md), optional setupCmd/repo/timeoutSecs
+├── task.json             # id, prompt, testScript, timeoutSecs, solution, category, difficulty, grader
 ├── environment/Dockerfile  # optional; default base is python:3.12-slim
 ├── src/                  # task workspace the agent edits
 ├── tests/run.sh          # exit 0 = pass, anything else = fail

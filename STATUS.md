@@ -8,15 +8,16 @@
 | Item | Status |
 |---|---|
 | **W5 — Upstream per-tool-call timeout** (upstream #1076/#1077; run-level trace #978/#979) | Part A (pin 0.48.0) landed; **Part B MERGED upstream** (`a660ea3`, 2026-08-13); Part C (observe via `PI_SELF_HEAL`) pending a release carrying `toolTimeoutMs` |
+| **W6 — Scorecard self-heal observability** (surface `PI_SELF_HEAL` events + enable in CI) | In progress — implementation done, PR landing; informational `selfHeal` block in scorecard |
 | **W4 Project-management layer** (roadmap workflow, STATUS, RICE cycle) | Active ritual — the governance layer that keeps everything else true |
 
 ## Next (shaped — next 1–2 cycles)
 
 | Item | RICE | Tag |
 |---|---|---|
-| **BACKLOG #1 — surface PI_SELF_HEAL events in scorecard + enable in CI** | 1.40 | Enabler |
-| **BACKLOG #2 — post-rebase hook** (auto-continue wedged rebase) | 1.20 | Enabler |
-| **BACKLOG #3 — nightly archives watchdog/git-state events** | 1.00 | Enabler |
+| **BACKLOG #1 — post-rebase hook** (auto-continue wedged rebase) | 1.20 | Enabler |
+| **BACKLOG #2 — nightly archives watchdog/git-state events** | 1.00 | Enabler |
+| **BACKLOG #3 — model-catalog auto-refresh in CI** | 0.50 | Enabler |
 
 ## Later (raw — ideas worth exploring)
 
@@ -33,4 +34,4 @@
 
 ## Open PRs / branches
 
-- Open PRs: **none** (harness) · Upstream: pi-subagents **#1077 merged** (`a660ea3`) as per-tool-call timeout, issue **#1076** · Branches: `main` only · Remotes: `github` only
+- Open PRs: **W6 PR** (scorecard self-heal observability) · Upstream: pi-subagents **#1077 merged** (`a660ea3`) as per-tool-call timeout, issue **#1076** · Branches: `main` + `feat/w6-self-heal-scorecard` · Remotes: `github` only

@@ -383,8 +383,39 @@ def merge_case_entries(case_aggs: dict[str, dict], case_comps: dict[str, dict]) 
     return entries
 
 
+def parse_self_heal_events(path) -> dict:
+    """Read .pi/heal/events.jsonl (best-effort) and count events by kind.
+
+    Missing files and malformed lines are tolerated (0 events): this is
+    observability data for the scorecard and must never change the gate.
+    """
+    by_kind: dict[str, int] = {}
+    n_events = 0
+    try:
+        with Path(path).open("r", encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(event, dict):
+                    continue
+                kind = event.get("kind")
+                if not isinstance(kind, str) or not kind:
+                    continue
+                n_events += 1
+                by_kind[kind] = by_kind.get(kind, 0) + 1
+    except OSError:
+        return {"nEvents": 0, "byKind": {}}
+    return {"nEvents": n_events, "byKind": by_kind}
+
+
 def build_summary(args, totals: dict, gate: dict,
-                  case_entries: dict[str, dict], exit_code: int) -> dict:
+                  case_entries: dict[str, dict], exit_code: int,
+                  self_heal: dict | None = None) -> dict:
     return {
         "schemaVersion": SCHEMA_VERSION,
         "generated": utc_now(),
@@ -402,6 +433,7 @@ def build_summary(args, totals: dict, gate: dict,
             case_id for case_id, entry in case_entries.items() if entry["unbaselined"]
         ),
         "cases": case_entries,
+        "selfHeal": self_heal if self_heal is not None else {"nEvents": 0, "byKind": {}},
     }
 
 
@@ -414,10 +446,12 @@ def build_compact_summary(summary: dict) -> dict:
         "totals": summary["totals"],
         "gate": summary["gate"],
         "unbaselined": summary["unbaselined"],
+        "selfHeal": summary["selfHeal"],
     }
 
 
-def render_markdown(case_entries: dict[str, dict], totals: dict, gate: dict) -> str:
+def render_markdown(case_entries: dict[str, dict], totals: dict, gate: dict,
+                    self_heal: dict | None = None) -> str:
     """Markdown table for GITHUB_STEP_SUMMARY: current / baseline / delta."""
     lines = ["## Live eval gate", ""]
     lines.append(f"- gate: **{'PASS' if gate['passed'] else 'FAIL'}**")
@@ -430,6 +464,10 @@ def render_markdown(case_entries: dict[str, dict], totals: dict, gate: dict) -> 
         f"cost/task: ${totals['costPerTaskUsd']:.4f} · "
         f"cost/successful task: ${totals['costPerSuccessfulTaskUsd']:.4f}"
     )
+    if self_heal is not None:
+        by_kind = self_heal.get("byKind") or {}
+        detail = ", ".join(f"{kind}: {count}" for kind, count in sorted(by_kind.items()))
+        lines.append(f"- self-heal events: {self_heal.get('nEvents', 0)}" + (f" ({detail})" if detail else ""))
     lines.append("")
     lines.append("| Case | passRate | baseline | Δ pass | cost/task | baseline cost | Δ cost | status |")
     lines.append("|---|---|---|---|---|---|---|---|")
@@ -547,6 +585,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--json-summary", default=None,
         help="optional compact machine-readable summary (totals + gate, no per-case detail)",
     )
+    parser.add_argument(
+        "--heal-events", default=str(repo_root() / ".pi" / "heal" / "events.jsonl"),
+        help="self-heal events JSONL to surface in the scorecard (default: <repo>/.pi/heal/events.jsonl)",
+    )
     return parser
 
 
@@ -582,7 +624,8 @@ def main(argv=None) -> int:
     gate = evaluate_gate(case_comps, totals, args.budget_usd, report.get("exitcode", 0))
     exit_code = 0 if gate["passed"] else 1
 
-    summary = build_summary(args, totals, gate, case_entries, exit_code)
+    summary = build_summary(args, totals, gate, case_entries, exit_code,
+                            parse_self_heal_events(args.heal_events))
 
     try:
         out_path = Path(args.out) if args.out else default_out_path()
@@ -594,7 +637,7 @@ def main(argv=None) -> int:
         step_summary = os.environ.get("GITHUB_STEP_SUMMARY")
         if step_summary:
             with open(step_summary, "a", encoding="utf-8") as handle:
-                handle.write(render_markdown(case_entries, totals, gate))
+                handle.write(render_markdown(case_entries, totals, gate, summary["selfHeal"]))
     except OSError as exc:
         print(f"score_run: cannot write outputs: {exc}", file=sys.stderr)
         return 1

@@ -450,3 +450,133 @@ def test_markdown_step_summary(tmp_path):
     assert "| Case | passRate | baseline |" in table
     assert "coding-001" in table and "coding-002" in table
     assert ":x: REGRESSED" in table  # coding-002 flagged
+
+
+# ---------------------------------------------------------------------------
+# Self-heal event surfacing (W6 — BACKLOG #1)
+# ---------------------------------------------------------------------------
+
+
+def write_events(tmp_path, lines):
+    path = tmp_path / "events.jsonl"
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
+
+
+def test_parse_self_heal_events_counts_by_kind(tmp_path):
+    path = write_events(
+        tmp_path,
+        [
+            json.dumps({"ts": "2026-08-13T00:00:00Z", "kind": "group-kill", "detail": "wall-clock timeout"}),
+            json.dumps({"ts": "2026-08-13T00:00:01Z", "kind": "group-kill", "detail": "output stall"}),
+            json.dumps({"ts": "2026-08-13T00:00:02Z", "kind": "recovery", "detail": "rebase continued"}),
+        ],
+    )
+    assert score_run.parse_self_heal_events(path) == {
+        "nEvents": 3,
+        "byKind": {"group-kill": 2, "recovery": 1},
+    }
+
+
+def test_parse_self_heal_events_missing_file_is_empty(tmp_path):
+    assert score_run.parse_self_heal_events(tmp_path / "does-not-exist.jsonl") == {
+        "nEvents": 0,
+        "byKind": {},
+    }
+
+
+def test_parse_self_heal_events_skips_malformed_lines(tmp_path):
+    path = write_events(
+        tmp_path,
+        [
+            "not json",
+            json.dumps({"ts": "2026-08-13T00:00:00Z", "kind": "group-kill", "detail": "ok"}),
+            "{broken",
+            "",
+            json.dumps({"ts": "2026-08-13T00:00:01Z", "kind": "recovery", "detail": "ok"}),
+        ],
+    )
+    assert score_run.parse_self_heal_events(path) == {
+        "nEvents": 2,
+        "byKind": {"group-kill": 1, "recovery": 1},
+    }
+
+
+def test_summary_includes_self_heal_block(tmp_path):
+    report = make_report({"coding-001": [std_run(True)] * 3})
+    baseline = make_baseline({"coding-001": {"passRate": 1.0, "costPerTaskUsd": 0.01}})
+    events = write_events(
+        tmp_path,
+        [json.dumps({"ts": "2026-08-13T00:00:00Z", "kind": "group-kill", "detail": "stall"})],
+    )
+    result = run_cli(tmp_path, report, baseline, "--heal-events", str(events))
+    assert result.returncode == 0
+    summary = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))
+    assert summary["selfHeal"] == {"nEvents": 1, "byKind": {"group-kill": 1}}
+
+
+def test_compact_summary_includes_self_heal_block(tmp_path):
+    report = make_report({"coding-001": [std_run(True)] * 3})
+    baseline = make_baseline({"coding-001": {"passRate": 1.0, "costPerTaskUsd": 0.01}})
+    events = write_events(
+        tmp_path,
+        [json.dumps({"ts": "2026-08-13T00:00:00Z", "kind": "recovery", "detail": "rebase"})],
+    )
+    compact_path = tmp_path / "compact.json"
+    result = run_cli(
+        tmp_path, report, baseline,
+        "--heal-events", str(events), "--json-summary", str(compact_path),
+    )
+    assert result.returncode == 0
+    compact = json.loads(compact_path.read_text(encoding="utf-8"))
+    assert compact["selfHeal"] == {"nEvents": 1, "byKind": {"recovery": 1}}
+
+
+def test_self_heal_events_do_not_affect_gate(tmp_path):
+    report = make_report(
+        {
+            "coding-001": [std_run(True)] * 3,
+            "coding-002": [std_run(True), std_run(False), std_run(False)],
+        }
+    )
+    baseline = make_baseline(
+        {
+            "coding-001": {"passRate": 1.0, "costPerTaskUsd": 0.01},
+            "coding-002": {"passRate": 1.0, "costPerTaskUsd": 0.01},
+        }
+    )
+    events = write_events(
+        tmp_path,
+        [
+            json.dumps({"ts": "2026-08-13T00:00:00Z", "kind": "group-kill", "detail": "stall"}),
+            json.dumps({"ts": "2026-08-13T00:00:01Z", "kind": "group-kill", "detail": "stall"}),
+        ],
+    )
+    with_events = run_cli(tmp_path, report, baseline, "--heal-events", str(events))
+    assert with_events.returncode == 1  # coding-002 regression still fails the gate
+    with_summary = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))
+    assert with_summary["gate"]["passed"] is False
+    assert with_summary["selfHeal"] == {"nEvents": 2, "byKind": {"group-kill": 2}}
+
+    without_events = run_cli(tmp_path, report, baseline)
+    assert without_events.returncode == 1
+    without_summary = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))
+    assert without_summary["selfHeal"] == {"nEvents": 0, "byKind": {}}
+
+
+def test_markdown_step_summary_includes_self_heal_line(tmp_path):
+    report = make_report({"coding-001": [std_run(True)] * 3})
+    baseline = make_baseline({"coding-001": {"passRate": 1.0, "costPerTaskUsd": 0.01}})
+    events = write_events(
+        tmp_path,
+        [json.dumps({"ts": "2026-08-13T00:00:00Z", "kind": "group-kill", "detail": "stall"})],
+    )
+    markdown_path = tmp_path / "summary.md"
+    result = run_cli(
+        tmp_path, report, baseline,
+        "--heal-events", str(events), env={"GITHUB_STEP_SUMMARY": str(markdown_path)},
+    )
+    assert result.returncode == 0
+    table = markdown_path.read_text(encoding="utf-8")
+    assert "self-heal events" in table
+    assert "group-kill" in table

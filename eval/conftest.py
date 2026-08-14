@@ -178,7 +178,6 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 _HERMETIC_ENV_VARS = (
     "PI_SECRET_BACKEND",
     "BW_GET",
-    "PI_OTLP_ENDPOINT",
     "PI_MODEL_TIER",
     "PI_RUN_PROVIDERS_FILE",
     "PI_NODE_VERSION",
@@ -197,7 +196,7 @@ def pi_run_bin(tmp_path_factory):
     Resolution order: PI_RUN_BIN env override, then pi-run on PATH, then a
     one-time `go build` into the session tmp dir. After resolution the binary
     is PROBED: `--exit-codes` must exit 0 and print the '8  scorecard gate
-    failed' row, and usage must document mcp-server. A stale/mismatched binary
+    failed' row, and usage must list the documented commands. A stale/mismatched binary
     FAILS here (never skips, unlike test_benchmark_format.py's skip probe): a
     stale binary is a broken contract, and the CI python-contract job always
     builds fresh.
@@ -235,8 +234,8 @@ def pi_run_bin(tmp_path_factory):
         f"{rebuild_hint}\n{codes.stdout}"
     )
     usage = subprocess.run([binary, "help"], capture_output=True, text=True, timeout=60)
-    assert usage.returncode == 0 and "mcp-server" in usage.stdout, (
-        f"usage text does not document mcp-server — {rebuild_hint}\n{usage.stdout}"
+    assert usage.returncode == 0 and "providers" in usage.stdout, (
+        f"usage text does not document providers — {rebuild_hint}\n{usage.stdout}"
     )
     return binary
 

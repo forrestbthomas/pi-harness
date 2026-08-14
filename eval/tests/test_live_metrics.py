@@ -63,7 +63,7 @@ _CATEGORY_CRITERIA = {
     ),
     "harness-routing": (
         "Assess whether the output correctly describes the pi-harness mechanism "
-        "in question (model-tier resolution, MCP contract, OTel best-effort)."
+        "in question (model-tier resolution, cost attribution, self-healing)."
     ),
 }
 _DEFAULT_CRITERIA = (

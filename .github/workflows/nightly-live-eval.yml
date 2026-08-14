@@ -55,7 +55,7 @@ jobs:
         # lane) + the dataset lint and the score_run unit tests (both fully
         # hermetic). test_score_run.py MUST run here, not just in the live
         # job, so its unit tests execute in CI without a provider key.
-        run: .venv/bin/python -m pytest tests/test_harness_config.py tests/test_secret_resolution.py tests/test_dataset_schema.py tests/test_benchmark_format.py tests/test_code_quality.py tests/test_grader_realistic_output.py tests/test_contract_mcp.py tests/test_contract_otel.py tests/test_contract_launch.py tests/test_contract_project_understand.py tests/test_score_run.py -v
+        run: .venv/bin/python -m pytest tests/test_harness_config.py tests/test_secret_resolution.py tests/test_dataset_schema.py tests/test_benchmark_format.py tests/test_code_quality.py tests/test_grader_realistic_output.py tests/test_contract_launch.py tests/test_contract_project_understand.py tests/test_score_run.py -v
         working-directory: eval
 
   live:

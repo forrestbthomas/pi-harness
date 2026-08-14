@@ -6,6 +6,18 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+### Removed
+- **MCP server + OTel exporter (cut list, 2026-08-14)**: removed
+  `pi-run mcp-server` and the `PI_OTLP_ENDPOINT` OTLP telemetry export —
+  consumerless surfaces (zero external callers found in repo search per the
+  persona debate). Deleted `internal/cli/mcp.go` (+ tests),
+  `internal/cli/otel.go` (+ tests), Python contract tests
+  (`test_contract_mcp.py`, `test_contract_otel.py`), and `scripts/pdf2txt.sh`.
+  README/architecture/docs updated; dataset `coding-020` prompt rewritten to
+  generic MCP protocol (case + grader kept), `datasetVersion` → `2026-08-14.5`.
+  Homebrew/release machinery intentionally kept (CHARTER: macOS/Homebrew is the
+  shipped leg).
+
 ### Added
 - **Project charter + boundary contract** (scope debate 2026-08-14):
   [`CHARTER.md`](CHARTER.md) defines what this project is and explicitly what

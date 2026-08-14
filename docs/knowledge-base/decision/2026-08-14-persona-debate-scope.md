@@ -79,9 +79,10 @@ outcome; `CHARTER.md` is the enforceable boundary contract.
 
 ## Follow-ups
 
-- [ ] Charter + north star + README headline landed (PR — this change).
-- [ ] Cut list decision (MCP/OTel/pdf2txt/Homebrew) — separate PR, pending
-      explicit user approval per the debate ("decide the cut list separately").
+- [x] Charter + north star + README headline landed (PR #98/#99).
+- [x] Cut list decision (MCP/OTel/pdf2txt cut; Homebrew kept per charter;
+      specs deferred) — PR landing this change.
 - [ ] Move PM artifacts under `docs/governance/`.
+- [ ] Spec shelf-ware consolidation (deferred 2026-08-14; separate decision).
 - [ ] Record split triggers in BACKLOG so EPIC-1's DoD doubles as pi-bench's
       maturity gate.

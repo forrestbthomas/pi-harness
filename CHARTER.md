@@ -65,10 +65,9 @@ your machine or silently lie about results.
    slated to move under `docs/governance/` (relocation is a follow-up). Dated
    planning specs are archived to one decisions file.
 4. **Not an observability platform** — no OTel exporter or metrics backend is
-   product scope until a consumer exists (currently consumerless; cut
-   candidate).
-5. **Not a general MCP platform** — the MCP server is a harness feature, not a
-   platform; a consumerless MCP surface is a cut candidate.
+   product scope (the consumerless OTel exporter was cut 2026-08-14).
+5. **Not a general MCP platform** — the read-only MCP server was a harness
+   feature with no external consumer and was cut 2026-08-14.
 6. **No automatic cross-provider fallback** — the provider is explicit
    (`--provider` / `PI_PROVIDER`); unknown or unmapped tiers fail loudly.
 7. **No multi-platform packaging beyond the shipped leg** — macOS/Homebrew is

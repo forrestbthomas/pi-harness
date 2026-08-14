@@ -17,6 +17,7 @@
 | **W10 — Dataset growth 20 → 50** (EVAL-5) | **SHIPPED — 2026-08-14** — 50 live cases + 3 edit-based benchmark tasks; EVAL-12 re-baseline is the follow-up (tonight) |
 | **Live-suite timeout sizing** (EVAL-12 enabler) | **SHIPPED — 2026-08-14** — #97: per-test 120→600s, job 30→60m so the 54-case nightly can finish |
 | **GOV-2 — Governance relocation + spec archive** | **SHIPPED — 2026-08-14** — #119: 19 dated specs → `docs/governance/specs-archive/` + `decisions.md` index; `docs/governance/` = governance home; living PM docs stay at root (scope decision — session-entry contract + GOV-1 path reads + coding-054 grader); SCOPE.md archived to `docs/governance/scope-history/` |
+| **OSS-2 — Contributor on-ramp v2** | **SHIPPED — 2026-08-14** — #122: CONTRIBUTING first-issue path (`good first issue`) + 7-day review SLA + MIT-in/MIT-out; PR-template bugfix carve-out; LICENSE identity → `forrestbthomas` |
 | **W4 Project-management layer** | Active ritual — governance layer; now with EPIC-6 (repo maturity) owning governance/community/debt work |
 
 ## Next (shaped — next 1–2 cycles)
@@ -25,7 +26,7 @@
 |---|---|---|
 | **v0.11.0 — The gate that can't lie** (EVAL-12 re-baseline → EVAL-16 harness gate; EVAL-6 slice 2) | — | Release |
 | **EPIC-1 — Eval suite → research-grade measurement** (EVAL-12, EVAL-16, EVAL-6 slice 2, EVAL-9, EVAL-11) | top EVAL-15 1.50 (shipped) / EVAL-16 1.20 | EPIC-1 |
-| **EPIC-6 — Repo maturity** (OSS-2, OWN-1, TAX-1, SECURITY, PORT-0) | top OSS-2 ~2.0 | EPIC-6 |
+| **EPIC-6 — Repo maturity** (OWN-1, TAX-1, SECURITY, PORT-0) | top OWN-1 ~1.5 | EPIC-6 |
 | **EPIC-2 — Self-healing resilience** (HEAL-5, HEAL-2 data-gated, HEAL-3; HEAL-1 demoted) | top HEAL-5 1.20 | EPIC-2 |
 | **EPIC-3 — Cost intelligence & routing** (COST-2, COST-1 within-provider) | top COST-1 0.80 | EPIC-3 |
 | **EPIC-4 — Portability & distribution** | **PARKED** — PORT-0 quarterly re-confirm only (charter non-goal until a consumer asks) | EPIC-4 |
@@ -53,7 +54,8 @@
   provenance parity (#106), EVAL-15 split-seam (#107), EVAL-8 judge
   stabilization (#108), REL-3/4 release machinery (#109), TAX-2 audit (#110),
   EVAL-6 agentic slice 1 (#111), GOV-1 drift guard (#112), GOV-2 relocation +
-  spec archive (#119)
+  spec archive (#119), GOV-3 CI-wiring item + docs-drift cwd fix (#120), OSS-2
+  contributor on-ramp (#122)
 
 ## Open PRs / branches
 

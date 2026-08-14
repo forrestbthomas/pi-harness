@@ -239,6 +239,7 @@ def aggregate_case(runs: list[dict], expected_runs: int) -> dict:
 
     return {
         "nRuns": len(completed),
+        "nFailed": sum(1 for r in completed if not _run_pass(r)),
         "errored": errored,
         "incomplete": errored or len(completed) < expected_runs,
         "passRate": round(pass_rate, 6),
@@ -317,15 +318,22 @@ def compare_case(case_id: str, agg: dict, baseline_cases: dict, tolerance: float
     if base is None:
         return {
             "unbaselined": True,
+            "flake": False,
             "regressed": False,
             "costRegressed": False,
             "incomplete": agg["incomplete"],
         }
     base_pass = _as_float(base.get("passRate"))
     base_cost = _as_float(base.get("costPerTaskUsd"))
+    n_failed = int(agg.get("nFailed", 0))
+    # Flake-aware gate (EVAL-2): a single failed run is a flake, not a
+    # regression; recurring failure (>= 2 runs) is a real signal. Flakes are
+    # reported in the scorecard but never fail the gate.
+    below_tolerance = agg["passRate"] < base_pass - tolerance
     return {
         "unbaselined": False,
-        "regressed": agg["passRate"] < base_pass - tolerance,
+        "flake": below_tolerance and n_failed == 1,
+        "regressed": below_tolerance and n_failed >= 2,
         "costRegressed": agg["costPerTaskUsd"] > 2.0 * base_cost,
         "incomplete": agg["incomplete"],
         "baselinePassRate": base_pass,
@@ -432,6 +440,9 @@ def build_summary(args, totals: dict, gate: dict,
         "unbaselined": sorted(
             case_id for case_id, entry in case_entries.items() if entry["unbaselined"]
         ),
+        "flakes": sorted(
+            case_id for case_id, entry in case_entries.items() if entry.get("flake")
+        ),
         "cases": case_entries,
         "selfHeal": self_heal if self_heal is not None else {"nEvents": 0, "byKind": {}},
     }
@@ -446,6 +457,7 @@ def build_compact_summary(summary: dict) -> dict:
         "totals": summary["totals"],
         "gate": summary["gate"],
         "unbaselined": summary["unbaselined"],
+        "flakes": summary["flakes"],
         "selfHeal": summary["selfHeal"],
     }
 
@@ -468,6 +480,9 @@ def render_markdown(case_entries: dict[str, dict], totals: dict, gate: dict,
         by_kind = self_heal.get("byKind") or {}
         detail = ", ".join(f"{kind}: {count}" for kind, count in sorted(by_kind.items()))
         lines.append(f"- self-heal events: {self_heal.get('nEvents', 0)}" + (f" ({detail})" if detail else ""))
+    flakes = sorted(case_id for case_id, entry in case_entries.items() if entry.get("flake"))
+    if flakes:
+        lines.append(f"- flakes: {len(flakes)} — single-run failures (not regressions): {', '.join(flakes)}")
     lines.append("")
     lines.append("| Case | passRate | baseline | Δ pass | cost/task | baseline cost | Δ cost | status |")
     lines.append("|---|---|---|---|---|---|---|---|")
@@ -483,6 +498,8 @@ def render_markdown(case_entries: dict[str, dict], totals: dict, gate: dict,
             delta_cost = f"${entry['deltaCostPerTaskUsd']:+.4f}"
             if entry["regressed"] or entry["costRegressed"]:
                 status = ":x: REGRESSED"
+            elif entry.get("flake"):
+                status = ":warning: flake"
             elif entry["incomplete"]:
                 status = "incomplete"
             else:
@@ -652,6 +669,15 @@ def main(argv=None) -> int:
     )
     for failure in gate["failures"]:
         print(f"score_run: gate failure: {failure}", file=sys.stderr)
+    for case_id in sorted(case_entries):
+        entry = case_entries[case_id]
+        if entry.get("flake"):
+            base = entry.get("baselinePassRate", 0.0)
+            print(
+                f"score_run: flake (not gate failure): case {case_id}: "
+                f"passRate {entry['passRate']:.3f} vs baseline {base:.3f} (single failed run)",
+                file=sys.stderr,
+            )
     return exit_code
 
 

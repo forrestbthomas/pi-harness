@@ -7,6 +7,14 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **Flake-aware gate + evidence artifacts** (W7): nightly/provider-scorecard
+  upload steps now run on every gate outcome (`if: always()`) and the nightly
+  artifact includes `.pi/heal/events.jsonl` (EVAL-1); the gate treats a
+  single failed run (1-of-N) as a flake — reported in the scorecard's
+  `flakes` section, never a failure — while ≥2 failed runs still fail as a
+  regression, and the nightly bumps to 5 runs per case (EVAL-2). Hermetic
+  tests in `tests/test_score_run.py` + a workflow invariant in
+  `tests/test_docs_drift.py`.
 - **Scorecard self-heal observability** (W6): `nightly-live-eval.yml` live job
   sets `PI_SELF_HEAL=1` so watchdog/group-kill/recovery events are recorded
   to `.pi/heal/events.jsonl`; `score_run.py` surfaces `selfHeal {nEvents,

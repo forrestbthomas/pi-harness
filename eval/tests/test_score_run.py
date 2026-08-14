@@ -580,3 +580,99 @@ def test_markdown_step_summary_includes_self_heal_line(tmp_path):
     table = markdown_path.read_text(encoding="utf-8")
     assert "self-heal events" in table
     assert "group-kill" in table
+
+
+# ---------------------------------------------------------------------------
+# Flake-aware gate (W7 — EVAL-2)
+# ---------------------------------------------------------------------------
+
+
+def test_aggregate_case_reports_failed_run_count():
+    runs = [std_run(True), std_run(False), std_run(True), std_run(True), std_run(False)]
+    agg = score_run.aggregate_case(runs, expected_runs=5)
+    assert agg["nFailed"] == 2
+    assert agg["nRuns"] == 5
+    assert agg["passRate"] == round(3 / 5, 6)
+
+
+def test_single_failed_run_is_flake_not_regression():
+    # 1 of 5 failed: passRate 0.8 vs baseline 1.0 -> below tolerance, but a
+    # single failure is a flake, not a regression.
+    runs = [std_run(True), std_run(False), std_run(True), std_run(True), std_run(True)]
+    agg = score_run.aggregate_case(runs, expected_runs=5)
+    comp = score_run.compare_case("coding-001", agg, {"coding-001": {"passRate": 1.0}}, 0.05)
+    assert comp["flake"] is True
+    assert comp["regressed"] is False
+
+
+def test_two_failed_runs_is_regression():
+    runs = [std_run(True), std_run(False), std_run(True), std_run(False), std_run(True)]
+    agg = score_run.aggregate_case(runs, expected_runs=5)
+    comp = score_run.compare_case("coding-001", agg, {"coding-001": {"passRate": 1.0}}, 0.05)
+    assert comp["flake"] is False
+    assert comp["regressed"] is True
+
+
+def test_flake_does_not_fail_gate(tmp_path):
+    report = make_report(
+        {"coding-001": [std_run(True), std_run(False), std_run(True), std_run(True), std_run(True)]},
+        nodeid_fn=lambda case_id, index: f"tests/test_live_suite.py::test_case[{case_id}]",
+    )
+    baseline = make_baseline({"coding-001": {"passRate": 1.0, "costPerTaskUsd": 0.01}})
+    result = run_cli(tmp_path, report, baseline)
+    assert result.returncode == 0, result.stderr
+    summary = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))
+    assert summary["gate"]["passed"] is True
+    assert summary["flakes"] == ["coding-001"]
+
+
+def test_two_failed_runs_still_fails_gate(tmp_path):
+    report = make_report(
+        {"coding-001": [std_run(True), std_run(False), std_run(True), std_run(False), std_run(True)]},
+        nodeid_fn=lambda case_id, index: f"tests/test_live_suite.py::test_case[{case_id}]",
+    )
+    baseline = make_baseline({"coding-001": {"passRate": 1.0, "costPerTaskUsd": 0.01}})
+    result = run_cli(tmp_path, report, baseline)
+    assert result.returncode == 1
+    summary = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))
+    assert summary["gate"]["passed"] is False
+    assert summary["flakes"] == []
+
+
+def test_flake_listed_in_compact_summary(tmp_path):
+    report = make_report(
+        {"coding-001": [std_run(True), std_run(False), std_run(True), std_run(True), std_run(True)]},
+        nodeid_fn=lambda case_id, index: f"tests/test_live_suite.py::test_case[{case_id}]",
+    )
+    baseline = make_baseline({"coding-001": {"passRate": 1.0, "costPerTaskUsd": 0.01}})
+    compact_path = tmp_path / "compact.json"
+    result = run_cli(tmp_path, report, baseline, "--json-summary", str(compact_path))
+    assert result.returncode == 0
+    compact = json.loads(compact_path.read_text(encoding="utf-8"))
+    assert compact["flakes"] == ["coding-001"]
+
+
+def test_markdown_marks_flake_not_regressed(tmp_path):
+    report = make_report(
+        {"coding-001": [std_run(True), std_run(False), std_run(True), std_run(True), std_run(True)]},
+        nodeid_fn=lambda case_id, index: f"tests/test_live_suite.py::test_case[{case_id}]",
+    )
+    baseline = make_baseline({"coding-001": {"passRate": 1.0, "costPerTaskUsd": 0.01}})
+    markdown_path = tmp_path / "summary.md"
+    result = run_cli(
+        tmp_path, report, baseline, env={"GITHUB_STEP_SUMMARY": str(markdown_path)}
+    )
+    assert result.returncode == 0
+    table = markdown_path.read_text(encoding="utf-8")
+    assert "flake" in table
+    assert ":x: REGRESSED" not in table
+
+
+def test_flake_note_on_stderr(tmp_path):
+    report = make_report(
+        {"coding-001": [std_run(True), std_run(False), std_run(True), std_run(True), std_run(True)]},
+        nodeid_fn=lambda case_id, index: f"tests/test_live_suite.py::test_case[{case_id}]",
+    )
+    baseline = make_baseline({"coding-001": {"passRate": 1.0, "costPerTaskUsd": 0.01}})
+    result = run_cli(tmp_path, report, baseline)
+    assert "flake" in result.stderr

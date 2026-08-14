@@ -18,7 +18,9 @@ Gate math (spec §4.3/§4.4):
     agentCostPerTaskUsd reported separately; costPerSuccessfulTaskUsd guards
     division by zero (0.0 when nPassed == 0); tokensPerTask = total / nCases
   * per-case regression: passRate < baseline - tolerance
-  * cost regression: costPerTaskUsd > 2 * baseline costPerTaskUsd
+  * cost regression: median costPerTaskUsd > 2 * baseline OR >= 2 runs over
+    2 * baseline (EVAL-13: a single run over 2x is a cost flake, reported not
+    failed — kills the single-run cost-spike false-fail class)
   * unbaselined cases are recorded, never failed
   * incomplete runs (fewer than --runs completed per case, or any errored run)
     fail the gate; exceeding --budget-usd fails the gate
@@ -246,6 +248,7 @@ def aggregate_case(runs: list[dict], expected_runs: int) -> dict:
         "agentCostUsd": round(_median(agent_costs), 9),
         "judgeCostUsd": round(_median(judge_costs), 9),
         "costPerTaskUsd": round(_median(cost_per_run), 9),
+        "costsPerRun": [round(c, 9) for c in cost_per_run],  # EVAL-13: per-run costs for flake-aware cost gate
         "tokensPerTask": _as_int(round(_median(tokens))),
         "latencyMs": round(_median(latencies), 3),
     }
@@ -319,6 +322,7 @@ def compare_case(case_id: str, agg: dict, baseline_cases: dict, tolerance: float
         return {
             "unbaselined": True,
             "flake": False,
+            "costFlake": False,
             "regressed": False,
             "costRegressed": False,
             "incomplete": agg["incomplete"],
@@ -330,11 +334,21 @@ def compare_case(case_id: str, agg: dict, baseline_cases: dict, tolerance: float
     # regression; recurring failure (>= 2 runs) is a real signal. Flakes are
     # reported in the scorecard but never fail the gate.
     below_tolerance = agg["passRate"] < base_pass - tolerance
+    # Cost-variance gate (EVAL-13): mirror the pass-rate logic for cost. A
+    # single run over 2x baseline is a cost flake (report, never fail); a
+    # median over 2x baseline OR >= 2 over-threshold runs is a real cost
+    # regression. This kills the single-run cost-spike false-fail class
+    # (2026-08-14 nightly: coding-010 cost spike failed the gate at n=5).
+    n_cost_over = 0
+    if base_cost > 0:
+        n_cost_over = sum(1 for c in agg.get("costsPerRun", []) if c > 2.0 * base_cost)
+    median_over = agg["costPerTaskUsd"] > 2.0 * base_cost if base_cost > 0 else False
     return {
         "unbaselined": False,
         "flake": below_tolerance and n_failed == 1,
+        "costFlake": (not median_over) and n_cost_over == 1,
         "regressed": below_tolerance and n_failed >= 2,
-        "costRegressed": agg["costPerTaskUsd"] > 2.0 * base_cost,
+        "costRegressed": median_over or n_cost_over >= 2,
         "incomplete": agg["incomplete"],
         "baselinePassRate": base_pass,
         "baselineCostPerTaskUsd": base_cost,
@@ -342,6 +356,7 @@ def compare_case(case_id: str, agg: dict, baseline_cases: dict, tolerance: float
         "baselineLatencyMs": _as_float(base.get("latencyMs")),
         "deltaPassRate": round(agg["passRate"] - base_pass, 6),
         "deltaCostPerTaskUsd": round(agg["costPerTaskUsd"] - base_cost, 9),
+        "nCostOver": n_cost_over,
     }
 
 
@@ -468,6 +483,9 @@ def build_summary(args, totals: dict, gate: dict,
         "flakes": sorted(
             case_id for case_id, entry in case_entries.items() if entry.get("flake")
         ),
+        "costFlakes": sorted(
+            case_id for case_id, entry in case_entries.items() if entry.get("costFlake")
+        ),
         "provenance": build_provenance(),
         "cases": case_entries,
         "selfHeal": self_heal if self_heal is not None else {"nEvents": 0, "byKind": {}},
@@ -484,6 +502,7 @@ def build_compact_summary(summary: dict) -> dict:
         "gate": summary["gate"],
         "unbaselined": summary["unbaselined"],
         "flakes": summary["flakes"],
+        "costFlakes": summary["costFlakes"],
         "provenance": summary["provenance"],
         "selfHeal": summary["selfHeal"],
     }
@@ -510,6 +529,9 @@ def render_markdown(case_entries: dict[str, dict], totals: dict, gate: dict,
     flakes = sorted(case_id for case_id, entry in case_entries.items() if entry.get("flake"))
     if flakes:
         lines.append(f"- flakes: {len(flakes)} — single-run failures (not regressions): {', '.join(flakes)}")
+    cost_flakes = sorted(case_id for case_id, entry in case_entries.items() if entry.get("costFlake"))
+    if cost_flakes:
+        lines.append(f"- cost flakes: {len(cost_flakes)} — single-run cost spikes (not regressions): {', '.join(cost_flakes)}")
     lines.append("")
     lines.append("| Case | passRate | baseline | Δ pass | cost/task | baseline cost | Δ cost | status |")
     lines.append("|---|---|---|---|---|---|---|---|")
@@ -525,7 +547,7 @@ def render_markdown(case_entries: dict[str, dict], totals: dict, gate: dict,
             delta_cost = f"${entry['deltaCostPerTaskUsd']:+.4f}"
             if entry["regressed"] or entry["costRegressed"]:
                 status = ":x: REGRESSED"
-            elif entry.get("flake"):
+            elif entry.get("flake") or entry.get("costFlake"):
                 status = ":warning: flake"
             elif entry["incomplete"]:
                 status = "incomplete"

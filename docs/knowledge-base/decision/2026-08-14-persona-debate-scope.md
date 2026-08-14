@@ -95,7 +95,9 @@ outcome; `CHARTER.md` is the enforceable boundary contract.
       bugfix: judge passes now reach the gate) — PR #108.
 - [x] REL-3 post-release brew verify + REL-4 Node-drift guard — PR #109.
 - [x] TAX-2 flag/env-var prune audit (no dead surfaces; 3 watchdog env vars
-      added to the README table + drift guard) — PR landing this change.
+      added to the README table + drift guard) — PR #110.
+- [x] EVAL-6 slice 1 — agentic tool-using case family (4 cases, new category,
+      taxonomy in Python+Go+manifest) — PR landing this change.
 - [ ] EVAL-12 live re-baseline after tonight's 03:00 UTC nightly (0 unbaselined
       DoD + standing cadence).
 - [ ] Execute OSS-1 follow-up verify (go install @v0.10.0 on clean checkout).

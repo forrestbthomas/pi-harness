@@ -57,6 +57,17 @@ All notable changes to this project are documented here. Format follows
   `PI_STALL_TIMEOUT_SECS`, `PI_WATCHDOG_GRACE_SECS`) were real, tested Go
   knobs missing from the README env table (prose-only). Added the three rows +
   a docs-drift guard so future env vars can't silently miss the table.
+- **EVAL-6 slice 1 — Agentic (tool-using) case family** (EPIC-1, v0.11.0):
+  new `agentic` dataset category with 4 tool-using cases (coding-051..054) —
+  the agent must use read-only tools (`--permission-mode plan`:
+  read/grep/find/ls) to gather repo facts (go.mod version, grader count,
+  provider count, Release-Milestones heading), graded deterministically on
+  the tool-grounded value (a hallucinated answer fails). This is the first
+  surface that can produce real `PI_SELF_HEAL` wedge observability (the data
+  pump HEAL-2 is gated on) and it exercises harness differentiators, not just
+  print mode. The 50-cap lint became "≥50 + per-category budgets" (new
+  `agentic` (3,8) budget); taxonomy updated in Python + Go benchmark parser +
+  tasks.json manifest. Oracle rule holds (references provably pass).
 
 ## [0.10.0] - 2026-08-14
 

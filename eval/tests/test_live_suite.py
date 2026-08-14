@@ -89,9 +89,16 @@ def _run_agent_once(sample: dict) -> dict:
     """
     before = len(_ledger_entries())
     start = time.monotonic()
-    output = run_pi_print(
-        sample["input"], extra_args=["--model-tier", "cheap", "--cost-mode", "live-eval"]
-    )
+    # EVAL-6 slice 1: agentic (tool-using) cases run with --permission-mode
+    # plan so the agent has read-only tools (read,grep,find,ls) — the eval
+    # measures tool-grounded facts, not just print-mode knowledge. Existing
+    # cases keep the default no-tools invocation so their grading semantics
+    # are unchanged.
+    extra = ["--model-tier", "cheap", "--cost-mode", "live-eval"]
+    if sample.get("category") == "agentic":
+        extra.append("--permission-mode")
+        extra.append("plan")
+    output = run_pi_print(sample["input"], extra_args=extra)
     latency_ms = (time.monotonic() - start) * 1000.0
 
     added = _ledger_entries()[before:]

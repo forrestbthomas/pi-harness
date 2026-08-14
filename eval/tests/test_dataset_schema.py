@@ -38,6 +38,7 @@ CATEGORIES = {
     "concept",
     "negative-edge",
     "harness-routing",
+    "agentic",  # EVAL-6: tool-using cases that exercise the harness tool surface
 }
 DIFFICULTIES = {"easy", "medium", "hard"}
 GRADERS = {"deterministic", "judge"}
@@ -49,6 +50,7 @@ CATEGORY_BUDGET = {
     "concept": (8, 10),
     "negative-edge": (7, 10),
     "harness-routing": (5, 10),
+    "agentic": (3, 8),
 }
 ID_RE = re.compile(r"^coding-\d{3}$")
 REGRESSION_RE = re.compile(r"^regression-.+")
@@ -70,8 +72,13 @@ def rows():
         return [json.loads(line) for line in f if line.strip()]
 
 
-def test_dataset_has_exactly_50_records(rows):
-    assert len(rows) == 50, f"expected exactly 50 records, found {len(rows)}"
+def test_dataset_has_at_least_50_records(rows):
+    # EVAL-5 capped the six original categories at 50 (growth only on a
+    # consumer or regression-catch signal). EVAL-6 adds the `agentic`
+    # category (tool-using cases) as a NEW axis with its own budget — the
+    # cap is now "at least the 50-case benchmark floor", with per-category
+    # budgets enforced by test_category_budget.
+    assert len(rows) >= 50, f"expected >= 50 records, found {len(rows)}"
 
 
 def test_required_fields_and_enum_values(rows):

@@ -1,0 +1,1 @@
+providers.json lists 17 providers.

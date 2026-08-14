@@ -1,13 +1,14 @@
 {
   "schemaVersion": 1,
-  "datasetVersion": "2026-08-14.6",
+  "datasetVersion": "2026-08-14.7",
   "categories": [
     "code-gen",
     "bug-fix",
     "shell/ops",
     "concept",
     "negative-edge",
-    "harness-routing"
+    "harness-routing",
+    "agentic"
   ],
   "surfaces": {
     "live": {
@@ -709,6 +710,54 @@
       "tags": [
         "bug-fix",
         "benchmark"
+      ]
+    },
+    {
+      "id": "coding-051",
+      "surface": "live",
+      "category": "agentic",
+      "difficulty": "easy",
+      "grader": "deterministic",
+      "tags": [
+        "agentic",
+        "tool-using",
+        "regression-tool-read-go-mod"
+      ]
+    },
+    {
+      "id": "coding-052",
+      "surface": "live",
+      "category": "agentic",
+      "difficulty": "easy",
+      "grader": "deterministic",
+      "tags": [
+        "agentic",
+        "tool-using",
+        "regression-tool-ls-graders"
+      ]
+    },
+    {
+      "id": "coding-053",
+      "surface": "live",
+      "category": "agentic",
+      "difficulty": "easy",
+      "grader": "deterministic",
+      "tags": [
+        "agentic",
+        "tool-using",
+        "regression-tool-read-providers"
+      ]
+    },
+    {
+      "id": "coding-054",
+      "surface": "live",
+      "category": "agentic",
+      "difficulty": "easy",
+      "grader": "deterministic",
+      "tags": [
+        "agentic",
+        "tool-using",
+        "regression-tool-grep-milestones"
       ]
     }
   ]

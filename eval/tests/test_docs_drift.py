@@ -83,3 +83,14 @@ def test_scorecard_surfaces_record_pi_version():
     assert "PI_VERSION=$(pi-run version" in nightly, "nightly must record PI_VERSION"
     provider = _read(".github/workflows/provider-scorecard.yml")
     assert "PI_VERSION=$(pi-run version" in provider, "provider-scorecard must record PI_VERSION (EVAL-14)"
+
+
+def test_node_pin_matches_doctor_reference():
+    """REL-4: the CI Node pin (PI_NODE_VERSION in the nightly) must stay in
+    sync with the doctor drift-guard reference — a silent CI pin bump that
+    didn't update the doctor parity check is exactly the drift class this
+    guard exists to catch."""
+    nightly = _read(".github/workflows/nightly-live-eval.yml")
+    doctor = _read("internal/cli/doctor.go")
+    assert "PI_NODE_VERSION: 'v22.19.0'" in nightly, "nightly must pin Node 22.19.0"
+    assert "v22." in doctor, "doctor drift guard must reference the Node 22 LTS line"

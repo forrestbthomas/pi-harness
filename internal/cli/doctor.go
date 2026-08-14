@@ -36,6 +36,14 @@ func runDoctor() int {
 
 		piPath := filepath.Join(home, ".nvm", "versions", "node", nodeVersion, "bin", "pi")
 		check("pi CLI present", pathExists(piPath))
+
+		// REL-4 Node-drift guard: CI pins Node 22 LTS (PI_NODE_VERSION=v22.19.0
+		// in the workflows); a user machine resolving a different major runs pi on
+		// a Node CI never tested. Informational, not a failure — user machines
+		// legitimately vary — but the drift must be visible.
+		if !strings.HasPrefix(nodeVersion, "v22.") {
+			fmt.Printf("  [info] node %s resolved — CI pins Node 22 LTS; set PI_NODE_VERSION=v22.x for parity\n", nodeVersion)
+		}
 	}
 
 	// Secret backend status is informational: users may supply a key directly

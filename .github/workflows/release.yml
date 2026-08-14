@@ -43,3 +43,9 @@ jobs:
           GH_TOKEN: ${{ secrets.TAP_PUSH_TOKEN }}
         run: |
           bash scripts/update-homebrew-formula.sh "${GITHUB_REF_NAME}"
+      - name: Verify Homebrew install (REL-3)
+        # A tag shipped with a broken brew install is a silent distribution lie
+        # (the formula push was fire-and-forget). Install into a temp prefix and
+        # assert `pi-run version` == the tag.
+        run: |
+          bash scripts/verify-homebrew-formula.sh "${GITHUB_REF_NAME}"

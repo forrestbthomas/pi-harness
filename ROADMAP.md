@@ -30,9 +30,9 @@ A **self-healing, measurable, distributable coding-agent harness**: you point `p
 
 | Item | Why parked | Unpark trigger |
 |---|---|---|
-| Cloud eval backend (design doc) | Deferred to backlog per user; local eval is the current target | A second machine/CI-with-keys pattern emerges; local baseline matures |
-| context-engine workstream | User parked pre-implementation ("treat context as a separate feature") | User re-prioritizes; separate `pi-run context` session-stats feature also deferred |
-| Upstream pi-subagents release watch | Waiting on upstream async-timeout fix release (our #978/#979 merged) | New upstream release; re-verify pinned version in `.pi/settings.json` (BACKLOG #2) |
+| Cloud eval backend (design doc) | Deferred to backlog per user; local eval is the current target | EPIC-4 (PORT-2): a second machine/CI-with-keys pattern emerges; local baseline matures |
+| context-engine workstream | User parked pre-implementation ("treat context as a separate feature") | EPIC-5 (DX-2): user re-prioritizes; separate `pi-run context` session-stats feature also deferred |
+| Upstream pi-subagents release watch | Waiting on upstream async-timeout fix release (our #978/#979 merged) | New upstream release carrying `toolTimeoutMs`; re-verify pinned version in `.pi/settings.json` (W5 Part C) |
 | Docker weekly eval | Kept weekly (not nightly) by design decision | If nightly signal degrades without container isolation |
 
 ## Recurring rituals (how this doc stays true)

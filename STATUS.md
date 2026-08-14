@@ -15,9 +15,11 @@
 
 | Item | RICE | Tag |
 |---|---|---|
-| **EPIC-1 — Eval suite → research-grade benchmark** (EVAL-1..11 in BACKLOG, dependency-ordered) | top EVAL-5 1.60 | EPIC-1 |
-| **BACKLOG — post-rebase hook** (auto-continue wedged rebase) | 1.20 | Enabler |
-| **BACKLOG — model-catalog auto-refresh in CI** | 0.50 | Enabler |
+| **EPIC-1 — Eval suite → research-grade benchmark** (EVAL-1..11) | top EVAL-5 1.60 | EPIC-1 |
+| **EPIC-2 — Self-healing resilience** (HEAL-1..5; heartbeat user-deferred) | top HEAL-5 1.20 | EPIC-2 |
+| **EPIC-3 — Cost intelligence & routing** (COST-1..2) | top COST-1 0.80 | EPIC-3 |
+| **EPIC-4 — Portability & distribution** (PORT-1..2; research-first) | top PORT-2 0.20 | EPIC-4 |
+| **EPIC-5 — Insight & DX** (DX-1..2) | top DX-1 0.25 | EPIC-5 |
 
 ## Later (raw — ideas worth exploring)
 

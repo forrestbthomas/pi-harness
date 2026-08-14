@@ -133,38 +133,46 @@ def test_extract_case_id_from_nodeid():
         score_run.extract_case_id("tests/test_live_suite.py::TestLiveSuite::test_case[coding-020]")
         == "coding-020"
     )
+    # EVAL-8 bugfix: the metrics layer (judge-graded cases) emits per-case
+    # test_case nodeids that must reach the gate too.
+    assert (
+        score_run.extract_case_id("tests/test_live_metrics.py::test_case[coding-002]")
+        == "coding-002"
+    )
 
 
 def test_extract_case_id_ignores_other_files():
-    # Metric parametrization and the legacy E2E test must never count as cases.
-    assert (
-        score_run.extract_case_id("tests/test_live_metrics.py::test_metrics[coding-001-AnswerRelevancyMetric]")
-        is None
-    )
+    # The legacy E2E test and unrelated files must never count as cases.
     assert (
         score_run.extract_case_id("tests/test_agent_task_completion.py::test_agent_produces_expected_factorial")
         is None
     )
+    assert score_run.extract_case_id("tests/test_harness_config.py::test_go_module_path") is None
     assert score_run.extract_case_id("") is None
 
 
-def test_collect_cases_only_consumes_live_suite_nodeids():
+def test_collect_cases_consumes_live_suite_and_live_metrics_nodeids():
     report = make_report(
         {
-            # metrics nodeid is NOT a live-suite case -> ignored entirely
-            "coding-001-AnswerRelevancyMetric": [std_run(True)],
-            # live-suite nodeid -> kept
-            "coding-002": [std_run(True), std_run(True)],
+            # live-suite nodeid -> kept (deterministic case)
+            "coding-001": [std_run(True), std_run(True)],
+            # live-metrics nodeid -> kept (judge case, EVAL-8 fix)
+            "coding-002": [std_run(True, judge=0.05), std_run(False, judge=0.05)],
         },
         nodeid_fn=lambda case_id, index: (
-            "tests/test_live_metrics.py::test_metrics[coding-001-AnswerRelevancyMetric]"
-            if case_id.startswith("coding-001-")
-            else f"tests/test_live_suite.py::test_case[{case_id}]"
+            f"tests/test_live_suite.py::test_case[{case_id}]"
+            if case_id == "coding-001"
+            else f"tests/test_live_metrics.py::test_case[{case_id}]"
         ),
     )
     cases = score_run.collect_cases(report)
-    assert list(cases) == ["coding-002"]
-    assert len(cases["coding-002"]) == 2  # both repeats zipped from user_properties
+    assert sorted(cases) == ["coding-001", "coding-002"]
+    assert len(cases["coding-001"]) == 2  # both repeats zipped from user_properties
+    assert len(cases["coding-002"]) == 2
+    # Judge case passes are now visible to the gate (were silently dropped).
+    passes = [r["pass"] for r in cases["coding-002"]]
+    assert passes == [True, False]
+    assert cases["coding-002"][0]["judgeCostUsd"] == 0.05
 
 
 # ---------------------------------------------------------------------------

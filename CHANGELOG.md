@@ -30,6 +30,16 @@ All notable changes to this project are documented here. Format follows
   `eval/live-results/seam-report.json` (recorded honestly: 70 couplings / 14
   files today — the seam is real but not yet self-contained, which is exactly
   the handoff-kit fact the pi-bench split trigger needs).
+- **EVAL-8 — Judge stabilization** (EPIC-1, v0.11.0): 3 easy concept cases
+  (coding-002/004/013) converted judge→deterministic (new graders, oracle
+  rule holds — references provably pass); judge-graded cases 8 → 5; remaining
+  judge cases run **majority-of-3** (`EVAL_JUDGE_RUNS=3`). **Bugfix (scope
+  change #1): judge-case passes never reached the gate** — `score_run` only
+  collected `test_live_suite.py` nodeids, silently dropping the metrics
+  layer's judge passes (they were unbaselined so nothing failed); now
+  `test_live_metrics` nodeids are collected too, and the metrics layer only
+  judges the 5 judge-graded cases (was all 50 — deterministic cases are
+  double-counted otherwise).
 
 ## [0.10.0] - 2026-08-14
 

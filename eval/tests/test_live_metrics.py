@@ -38,6 +38,13 @@ from test_code_quality import CodeQualityMetric
 # documented format); a sane local default keeps no-env runs deterministic.
 _JUDGE_MODEL = os.environ.get("OPENAI_MODEL_NAME") or "gpt-4.1-mini"
 
+# EVAL-8 (judge stabilization): run the judge stack EVAL_JUDGE_RUNS times per
+# case and pass on MAJORITY — bounding single-run judge variance the same way
+# EVAL-2 bounds pass-rate flake. Default 3; the nightly sets it explicitly for
+# cost control (3 judge calls per case). record_property emits one judgeRuns
+# value so the scorer can see the repeat count.
+_JUDGE_RUNS = int(os.environ.get("EVAL_JUDGE_RUNS", "3"))
+
 # Per-category G-Eval rubric criteria (spec §4.7: code-gen correctness +
 # idiomatic; bug-fix root-cause + no regression; shell/ops behaves per prompt).
 _CATEGORY_CRITERIA = {
@@ -81,7 +88,11 @@ _EVALUATION_STEPS = [
 # for lacking a Python code block.
 _CODE_CATEGORIES = {"code-gen", "bug-fix"}
 
-_DATASET = load_dataset()
+# EVAL-8: only judge-graded cases belong in the LLM-judged metrics layer.
+# Deterministic cases are graded by test_live_suite.py (hidden-test graders);
+# running the judge stack on them too would double-count their runs in the
+# scorecard (score_run now collects BOTH files' nodeids) and corrupt passRate.
+_DATASET = [s for s in load_dataset() if s.get("grader") == "judge"]
 
 
 def _rubric_for(sample: dict) -> GEval:
@@ -115,7 +126,8 @@ if _DATASET:
         real agent output, then measure. Judge cost per case comes from
         metric.evaluation_cost (accrued only when the judge model has pricing
         config; otherwise it is 0 and the scorer must treat that as a config
-        gap, spec §4.5).
+        gap, spec §4.5). EVAL-8: the stack runs EVAL_JUDGE_RUNS (default 3)
+        times and the case passes on majority, bounding judge variance.
         """
         sample = _DATASET[idx]
         case = sample_cases[idx]  # the sample_cases fixture (conftest)
@@ -126,25 +138,39 @@ if _DATASET:
             extra_args=["--model-tier", "cheap", "--cost-mode", "live-eval"],
         )
 
-        metrics = [
-            TaskCompletionMetric(async_mode=False, model=_JUDGE_MODEL),  # pinned explicitly
-            _rubric_for(sample),
-        ]
-        for metric in metrics:
-            metric.measure(case)
+        runs = max(1, _JUDGE_RUNS)
+        outcomes = []
+        judge_costs = []
+        for _ in range(runs):
+            metrics = [
+                TaskCompletionMetric(async_mode=False, model=_JUDGE_MODEL),  # pinned explicitly
+                _rubric_for(sample),
+            ]
+            for metric in metrics:
+                metric.measure(case)
 
-        quality_pass = True
-        if sample.get("category") in _CODE_CATEGORIES:
-            quality = CodeQualityMetric(threshold=0.5)
-            quality.measure(case.actual_output)
-            quality_pass = quality.is_successful()
+            quality_pass = True
+            if sample.get("category") in _CODE_CATEGORIES:
+                quality = CodeQualityMetric(threshold=0.5)
+                quality.measure(case.actual_output)
+                quality_pass = quality.is_successful()
 
-        passed = all(metric.is_successful() for metric in metrics) and quality_pass
-        judge_cost = sum(float(metric.evaluation_cost or 0.0) for metric in metrics)
+            passed = all(metric.is_successful() for metric in metrics) and quality_pass
+            outcomes.append(bool(passed))
+            judge_costs.append(
+                sum(float(metric.evaluation_cost or 0.0) for metric in metrics)
+            )
+
+        # Majority vote over the repeat runs (EVAL-8): ties break to pass for
+        # odd N defaults; a strict minority (>= half failed) is a fail.
+        n_pass = sum(1 for o in outcomes if o)
+        passed = n_pass > runs // 2
+        judge_cost = sum(judge_costs)
 
         record_property("pass", bool(passed))
         record_property("costUsd", 0.0)  # agent spend: attributed in test_live_suite.py
         record_property("judgeCostUsd", round(judge_cost, 6))
+        record_property("judgeRuns", runs)
         record_property("tokens", 0)
         record_property("latencyMs", round((time.monotonic() - start) * 1000.0, 1))
 

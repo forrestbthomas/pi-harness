@@ -9,7 +9,7 @@
 |---|---|
 | **W5 — Upstream per-tool-call timeout** (upstream #1076/#1077; run-level trace #978/#979) | Part A (pin 0.48.0) landed; **Part B MERGED upstream** (`a660ea3`, 2026-08-13); Part C (observe via `PI_SELF_HEAL`) pending a release carrying `toolTimeoutMs` |
 | **W6 — Scorecard self-heal observability** (surface `PI_SELF_HEAL` events + enable in CI) | **SHIPPED — 2026-08-14** — merged #83; manual nightly verified `self-heal events: 0` on a healthy run (gate failed on unrelated coding-005/010 variance) |
-| **W7 — Flake-aware gate + evidence artifacts** (EVAL-1/EVAL-2) | In progress — implementation done, PR landing; uploads survive failures; single-run flake warns, not fails; n=5 |
+| **W7 — Flake-aware gate + evidence artifacts** (EVAL-1/EVAL-2) | **SHIPPED — 2026-08-14** — merged #87; next live nightly confirms end-to-end (upload on failure + flake warn-not-fail) |
 | **W4 Project-management layer** (roadmap workflow, STATUS, RICE cycle) | Active ritual — the governance layer that keeps everything else true |
 
 ## Next (shaped — next 1–2 cycles)
@@ -37,4 +37,4 @@
 
 ## Open PRs / branches
 
-- Open PRs: **W7 PR** (flake-aware gate + evidence artifacts) · Upstream: pi-subagents **#1077 merged** (`a660ea3`) as per-tool-call timeout, issue **#1076** · Branches: `main` + W7 branch · Remotes: `github` only
+- Open PRs: **none** (harness) · Upstream: pi-subagents **#1077 merged** (`a660ea3`) as per-tool-call timeout, issue **#1076** · Branches: `main` only · Remotes: `github` only

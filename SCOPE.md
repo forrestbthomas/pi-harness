@@ -1,5 +1,5 @@
 # Scope Contract
-**Task:** W7 — EVAL-1 + EVAL-2: evidence artifacts on every outcome + flake-aware gate | **Plan:** `docs/superpowers/specs/2026-08-14-flake-aware-gate-and-evidence-artifacts.md` | **Date:** 2026-08-14 | **Status:** ACTIVE (approved 2026-08-14)
+**Task:** W7 — EVAL-1 + EVAL-2: evidence artifacts on every outcome + flake-aware gate | **Plan:** `docs/superpowers/specs/2026-08-14-flake-aware-gate-and-evidence-artifacts.md` | **Date:** 2026-08-14 | **Status:** CLOSED — 0 changes logged (shipped #87, next live nightly verifies end-to-end)
 
 > Supersedes the W6 scorecard self-heal contract (CLOSED 2026-08-14; record preserved in git history). W5 Part C remains tracked in ROADMAP (upstream release gate).
 

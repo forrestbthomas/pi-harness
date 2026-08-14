@@ -21,6 +21,15 @@ All notable changes to this project are documented here. Format follows
   scorecard" DoD on both surfaces. Best-effort (missing env/tasks.json →
   "unknown", never a crash); provider-scorecard workflow records `PI_VERSION`;
   docs-drift guard pins both workflows. Golden fixture + 2 hermetic Go tests.
+- **EVAL-15 — Split-seam verification** (EPIC-1, v0.11.0): `docs/
+  benchmark-seam.md` pins the harness↔eval versioned contract (tasks.json +
+  datasetVersion, score_run SCHEMA_VERSION, scorecard JSON shape, dataset/
+  grader/reference/benchmark layout, known coupling, split trigger); new
+  hermetic `test_benchmark_seam.py` (7 tests) pins the contract and runs a
+  **self-containment dry-run** that inventories harness-root coupling into
+  `eval/live-results/seam-report.json` (recorded honestly: 70 couplings / 14
+  files today — the seam is real but not yet self-contained, which is exactly
+  the handoff-kit fact the pi-bench split trigger needs).
 
 ## [0.10.0] - 2026-08-14
 

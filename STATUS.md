@@ -25,11 +25,11 @@
 
 | Item | RICE | Tag |
 |---|---|---|
-| **v0.11.0 — The gate that can't lie** (EVAL-12 re-baseline → EVAL-16 harness gate; EVAL-6 slice 2) | — | Release |
-| **EPIC-1 — Eval suite → research-grade measurement** (EVAL-12, EVAL-16, EVAL-6 slice 2, EVAL-9, EVAL-11) | top EVAL-15 1.50 (shipped) / EVAL-16 1.20 | EPIC-1 |
-| **EPIC-6 — Repo maturity** (OWN-1, TAX-1, SECURITY, PORT-0) | top OWN-1 ~1.5 | EPIC-6 |
+| **v0.11.0 — The gate that can't lie** (EVAL-12 re-baseline → EVAL-16 harness gate) | — | Release |
+| **EPIC-1 — Eval suite → research-grade measurement** (EVAL-12 standing trigger, EVAL-16 pilot, EVAL-17, EVAL-9, EVAL-11) | top EVAL-16 ~1.6 | EPIC-1 |
+| **EPIC-6 — Repo maturity** (OWN-1+SECURITY bundle, TAX-1, PORT-0) | top OWN-1 ~1.5 | EPIC-6 |
 | **EPIC-2 — Self-healing resilience** (HEAL-5, HEAL-2 data-gated, HEAL-3; HEAL-1 demoted) | top HEAL-5 1.20 | EPIC-2 |
-| **EPIC-3 — Cost intelligence & routing** (COST-2, COST-1 within-provider) | top COST-1 0.80 | EPIC-3 |
+| **EPIC-3 — Cost intelligence & routing** (COST-2; COST-1 deferred) | top COST-2 0.50 | EPIC-3 |
 | **EPIC-4 — Portability & distribution** | **PARKED** — PORT-0 quarterly re-confirm only (charter non-goal until a consumer asks) | EPIC-4 |
 | ~~EPIC-5 — Insight & DX~~ | **DISSOLVED** — DX-1/DX-2 → idea inbox | — |
 | **v1.0.0 — The contract release** (gates, not dates: EPIC-1+6 DoDs, ≥14 green nightlies, EVAL-16 enforced, install-path CI-proven, consumer OR recorded earned-bar decision) | — | Release |
@@ -40,7 +40,8 @@
   eval output gallery (EVAL-10; parked) · sandbox live runs (EVAL-7; parked) ·
   dataset growth 50 → 100 (capped until consumer/regression-catch signal) ·
   cloud eval backend · context-engine un-park (DX-2) · Windows support
-  (PORT-1; charter non-goal) · model-catalog auto-refresh in CI
+  (PORT-1; charter non-goal) · model-catalog auto-refresh in CI · cost-aware
+  routing (COST-1; deferred — re-open on a consumer signal)
 
 ## Shipped recently (one spelling: CHANGELOG)
 

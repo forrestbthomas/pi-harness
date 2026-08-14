@@ -1,7 +1,7 @@
 # `pi-run eval --benchmark` — Docker-Isolated Task Runner — Design
 
 **Date:** 2026-08-11
-**Status:** Proposed (from competitive gap analysis, docs/competitive-gap-analysis-2026-08.md)
+**Status:** SHIPPED — benchmark runner landed in v0.5.0 (PR #25)
 **Target release:** v0.5.0 (feature)
 
 ## 1. Context & Motivation

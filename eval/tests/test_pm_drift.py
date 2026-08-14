@@ -150,3 +150,43 @@ def test_status_now_refers_to_shipped_work():
     # Sanity: the two docs share workstream vocabulary (W5/W6... present).
     for w in ("W5", "W6", "W7", "W8", "W9", "W10"):
         assert w in roadmap, f"ROADMAP missing {w} row"
+
+
+def test_shipped_items_not_ranked_open():
+    """GOV-1 extension (2026-08-14, docs-audit P0-4): an item that has a
+    CHANGELOG [Unreleased] entry must not appear as an OPEN ranked BACKLOG row
+    or in STATUS 'Next' — the reconciliation blind spot that let the 9-PR
+    v0.11.0 batch rot past green CI (13/28 rows described shipped work).
+
+    The guard reads BACKLOG/STATUS for rows whose id also appears in the
+    CHANGELOG's [Unreleased] 'Added/Changed' entries. It is intentionally
+    coarse (id-prefix match) and keyless.
+    """
+    import re as _re
+    changelog = _read("CHANGELOG.md")
+    unreleased = changelog.split("## [Unreleased]", 1)[1].split("\n## [", 1)[0] if "## [Unreleased]" in changelog else ""
+    # Ids mentioned in Unreleased: EVAL-13/14/15, EVAL-6, REL-1..5, GOV-1, TAX-2, OSS-1
+    shipped_ids = set(_re.findall(r"\b(?:EVAL-1[3-6]|EVAL-6|REL-[1-5]|GOV-1|TAX-2|OSS-1)\b", unreleased))
+
+    backlog = _read("BACKLOG.md")
+    for cid in shipped_ids:
+        # An OPEN ranked row OWNS this id (title `**ID — ...**`) with no SHIPPED marker.
+        # Substring match would false-positive on mentions in other rows' DoD text
+        # (e.g. HEAL-2's "EVAL-6 is the pump"), so match the row's own id slot.
+        for line in backlog.splitlines():
+            if _re.match(r"^\|\s*\d+\s*\|\s*\*\*" + cid + r"\b", line) and "SHIPPED" not in line:
+                raise AssertionError(
+                    f"{cid} has a CHANGELOG [Unreleased] entry but is an open ranked "
+                    f"BACKLOG row (docs-audit P0-4): {line.strip()[:80]}"
+                )
+
+    status = _read("STATUS.md")
+    for cid in shipped_ids:
+        if cid in status and "SHIPPED" not in status.split("## Next")[0]:
+            # Allow the id in 'Now' (shipped) — only flag it in 'Next' (future).
+            next_sec = status.split("## Next", 1)[1] if "## Next" in status else ""
+            if cid in next_sec and "SHIPPED" not in next_sec:
+                raise AssertionError(
+                    f"{cid} has a CHANGELOG [Unreleased] entry but appears in STATUS "
+                    f"'Next' (docs-audit P0-4): {next_sec.strip()[:120]}"
+                )

@@ -1,7 +1,7 @@
 # Deterministic Eval Hardening (Go scorecard tests + Python contract tests) — Design
 
 **Date:** 2026-08-12
-**Status:** Proposed (from scorecard/CI research briefs, artifacts `15e9c3d8`, `00fb1c89`)
+**Status:** SHIPPED — deterministic eval hardening (v0.9.0, PRs #40/#42–#44); NOTE: mcp-server/OTel contract-test sections superseded by the v0.10.0 cut-list removal (see CHANGELOG)
 **Target release:** v0.8.0 (test & CI hardening — no user-facing features)
 
 ## 1. Context & Motivation

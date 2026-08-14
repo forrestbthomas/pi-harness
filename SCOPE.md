@@ -1,31 +1,22 @@
 # Scope Contract
-**Task:** GOV-1 (mechanical core) — PM-layer drift guard: EPICS↔BACKLOG↔STATUS consistency + changelog-never-skips-tag | **Plan:** BACKLOG GOV-1 (EPIC-6, RICE ~3.0, 0.5 pw); ROADMAP §Release Milestones v0.11.0 | **Date:** 2026-08-14 | **Status:** CLOSED — 1 change logged
+**Task:** Execute the documentation-audit change-set (5 Technical Writer subagents' converged 4-wave plan) | **Plan:** `.pi/debate/docs-audit/synthesis.md` | **Date:** 2026-08-14 | **Status:** ACTIVE
 
-## In Scope
-- **Files:**
-  - `eval/tests/test_pm_drift.py` (NEW) — hermetic PM-layer drift guards (extends the `test_docs_drift.py` pattern; runs keyless in the deterministic suite):
-    1. **EPICS↔BACKLOG consistency**: every BACKLOG ranked-row id with an Epic column exists in the EPICS.md item tables, and every EPICS.md item-table id appears in BACKLOG. (The "BACKLOG is the single ranked source of truth; the epic item table is an index" invariant.)
-    2. **Changelog-never-skips-tag**: every `[Unreleased]` + released version section in CHANGELOG.md has a matching `vX.Y.Z` git tag, and (the class that burned us) every tag has a changelog section — checked via `git tag --list` (the repo is a git checkout in CI, so this is available; the test asserts the v0.7.0 gap class is closed).
-    3. **STATUS↔ROADMAP**: STATUS "Now" rows reference shipped workstreams that exist in ROADMAP's active table or CHANGELOG (light sanity; the exact "In design after shipping" class).
-  - `CHANGELOG.md`, `SCOPE.md`, decision record — updates.
-- **Features:**
-  1. The planning layer self-audits mechanically — the drift classes that burned us (EPIC-4/5 surviving the charter, the v0.7.0 changelog gap, STATUS stale after shipping) become CI failures instead of ritual reminders.
-  2. Deterministic, hermetic (except `git tag` which is available in CI), runs in the deterministic job.
-- **Boundaries:**
-  - GOV-1 mechanical core only — the charter-citation / RICE-floor semantic layer (Purist's half) is deferred to GOV-1 slice 2 (avoid noise until the mechanical core is proven).
-  - **Sequencing deviation (scope change #1):** GOV-1 ships BEFORE GOV-2 (relocation). The debate said GOV-2 first ("you can't guard a location that doesn't exist"), but the mechanical guard checks file *contents* (ids, sections, tags) — path-independent. GOV-2 (relocation) is deferred; when it lands, only the guard's path constants change.
-  - No change to ROADMAP/BACKLOG/EPICS/STATUS content (the guard *checks* them; fixing any drift it finds is a follow-up if the test fails).
+## In Scope (the 4 waves, as 3 PRs to avoid a git mess)
+- **PR 1 — Wave 1 (P0): Truth restoration.** Dataset-count sweep to `tasks.json` authority (README/seam-doc/PM docs/test docstrings/nightly header → 62/54/49/54, datasetVersion .7) + restore the data-vs-prose drift guard in `test_docs_drift.py`; purge mcp-server ghost (plugins.md:54, gap-analysis banner, hardening spec); spec-status SHIPPED convention on 10 eval specs; PM reconciliation (13 backlog rows SHIPPED, STATUS regen, extend `test_pm_drift.py` "CHANGELOG entry ⇒ not open row").
+- **PR 2 — Wave 2 (P1): Status & sequencing truth.** Canonical release procedure (tag-release.sh as CONTRIBUTING step 2; commit prefixes from git log); extend drift guards to Surface E (CONTRIBUTING prefixes, AGENTS.md step-3 target, SYSTEM.md commands ⊆ help); "Superseded" banners repo-wide; manifest↔jsonl parity lint + fix 13 records; GOV-2/GOV-1 sequencing + KB index row.
+- **PR 3 — Wave 3+4 (P2/P3): Hygiene.** Template-residue purge (kind/CRD), AGENTS.md phantom eval/outputs → live-results, README Nightly/Skills/Layout refresh, spec citation hygiene, stamps (EPICS/anti-lockin/understand banner), CODEOWNERS/CoC defer notes.
+- **Files (PR 1):** README.md, docs/benchmark-seam.md, docs/plugins.md, docs/competitive-gap-analysis-2026-08.md, ROADMAP.md, EPICS.md, STATUS.md, BACKLOG.md, eval/tests/test_live_suite.py, eval/tests/test_benchmark_seam.py, eval/tests/test_docs_drift.py, eval/tests/test_pm_drift.py, docs/superpowers/specs/2026-08-1[1-4]-*.md (10 specs), CHANGELOG.md, SCOPE.md, decision record.
+- **Boundaries:** No product code changes (except test guards which are hermetic test files — those are the "guards" the audit restores). No docs deleted. CHARTER/SECURITY/benchmarks.md/anti-lockin.md/score_run docstrings protected from churn. Each PR verified (go build/test, hermetic pytest, docs-drift + pm-drift guards green).
 
 ## Out of Scope
-- GOV-2 (relocation + spec archive) — deferred (15-file churn for zero-consumer presentation value; the Skeptic's tax rule).
-- GOV-1 semantic layer (charter-citation / RICE floor) — GOV-1 slice 2, after the mechanical core is proven non-noisy.
-- EVAL-6 slice 2 (multi-turn/subagent — needs a chat-session runner), EVAL-12 (pending nightly), COST-2.
+- The coupling-count "11 vs 6 vs 13" dispute (resolved by mechanizing the count into seam-report — done in EVAL-15; PR 1 only cites the artifact).
+- Content rewrites of dated research docs (banners only).
+- Actual relocation GOV-2 (deferred; only sequencing text fixed).
 
 # Scope Change Log
 | # | Category | What | Why | Decision | Outcome |
 |---|----------|------|-----|----------|---------|
-| 1 | user-expansion | GOV-1 ships before GOV-2 (debate sequenced GOV-2 first) | The mechanical guard checks file contents (ids/sections/tags), not locations — path-independent; GOV-2's relocation is presentation-only churn with zero consumers today | **Permit** — GOV-1 mechanical core first; GOV-2 deferred with its own backlog item; when GOV-2 lands, only path constants change | Done — test_pm_drift.py ships; GOV-2 stays deferred in BACKLOG |
 
 # Follow-up Tasks
-- [ ] GOV-2 (relocation) — deferred; update guard path constants when it lands.
-- [ ] GOV-1 slice 2 (charter-citation / RICE-floor semantic layer) — after one month of mechanical-core CI proving non-noisy.
+- [ ] After PR 1: verify the data-vs-prose guard catches a deliberate count regression.
+- [ ] After PR 3: confirm no Surface E drift guard failures.

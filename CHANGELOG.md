@@ -7,6 +7,16 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **Documentation audit change-set (docs-audit, 2026-08-14)**: five Technical
+  Writer subagents audited all doc surfaces; converged 4-wave plan executed.
+  Wave 1 (P0): dataset-count sweep to `tasks.json` authority (54 live cases —
+  README Nightly, seam doc, PM docs, test docstrings, nightly header); restored
+  the GOV-1 data-vs-prose drift guard (README count vs manifest); purged the
+  mcp-server ghost (plugins.md + gap-analysis banner); spec-status SHIPPED
+  convention on 14 specs; PM reconciliation (shipped backlog rows marked,
+  STATUS regenerated, branch claim fixed); extended `test_pm_drift.py`
+  ("CHANGELOG entry ⇒ not open row"). Dataset `datasetVersion` 2026-08-14.7
+  (EVAL-6 bump; .5 cut-list / .6 EVAL-8 recorded in this entry).
 - **EVAL-13 — Cost-variance tolerance in the nightly gate** (EPIC-1,
   v0.11.0 "The gate that can't lie"): the cost gate is now flake-aware like
   the pass-rate gate (EVAL-2). A single run over 2× baseline is a reported

@@ -1,7 +1,7 @@
 # `pi-run cost` + Budget Cap — Design
 
 **Date:** 2026-08-11
-**Status:** Proposed (from competitive gap analysis, docs/competitive-gap-analysis-2026-08.md)
+**Status:** SHIPPED — cost ledger + budget caps (v0.5.0, PR #25; cost.go)
 **Target release:** v0.5.0 (feature)
 
 ## 1. Context & Motivation

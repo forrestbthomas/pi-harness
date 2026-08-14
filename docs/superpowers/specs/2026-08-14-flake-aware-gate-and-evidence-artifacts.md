@@ -1,6 +1,6 @@
 # Spec — EVAL-1 + EVAL-2: Evidence Artifacts on Every Outcome + Flake-Aware Gate — W7
 
-**Date:** 2026-08-14 · **Status:** DRAFT (awaiting user approval at scope-lock gate)
+**Date:** 2026-08-14 · **Status:** SHIPPED — W7 (2026-08-14, PR #87)
 **Source:** BACKLOG EVAL-1 (1.30) + EVAL-2 (1.40), EPIC-1 — bet on by user (2026-08-14).
 
 ## Goal

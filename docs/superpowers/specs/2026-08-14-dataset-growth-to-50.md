@@ -1,6 +1,6 @@
 # Spec — EVAL-5: Dataset Growth 20 → 50 (stratified, regression twins, edit-graded benchmarks) — W10
 
-**Date:** 2026-08-14 · **Status:** DRAFT (awaiting user approval at scope-lock gate)
+**Date:** 2026-08-14 · **Status:** SHIPPED — W10 (2026-08-14, PRs #93/#94/#95); superseded counts: live suite now 54 cases + 8 benchmarks (tasks.json is the authority)
 **Source:** BACKLOG EVAL-5 (1.60, EPIC-1) — bet on by user (2026-08-14). Sequence position: after EVAL-3 (versioning), so growth is attributable.
 
 ## Goal

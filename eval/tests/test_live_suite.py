@@ -32,7 +32,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DATASET_DIR = REPO_ROOT / "eval" / "datasets"
 LEDGER_PATH = REPO_ROOT / ".pi" / "cost-ledger.jsonl"
 
-# Number of agent runs per case (the nightly sets EVAL_RUNS_PER_CASE=3).
+# Number of agent runs per case (the nightly sets EVAL_RUNS_PER_CASE=5 —
+# the flake-aware gate, EVAL-2).
 RUNS_PER_CASE = int(os.environ.get("EVAL_RUNS_PER_CASE", "1"))
 
 

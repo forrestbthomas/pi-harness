@@ -1,7 +1,7 @@
 # Live Agent Evaluation v2 (dataset growth, nightly baseline gate, cost-per-task metrics) — Design
 
 **Date:** 2026-08-12
-**Status:** Proposed (from live-agent-eval research brief `38697b76`, landscape §1–§2)
+**Status:** SHIPPED — live eval v2 (v0.9.0, PRs #45–#48)
 **Target release:** v0.9.0 (infra / eval)
 **Depends on:** the deterministic-eval-hardening design spec (sibling lane
 `docs/spec-eval-hardening`, lands first) for exactly two surfaces: the CI build

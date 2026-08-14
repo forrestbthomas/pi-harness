@@ -700,9 +700,11 @@ second opinion", "Run worker to implement this plan". See
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, testing, and how to add a
-provider. Report security issues privately per [SECURITY.md](SECURITY.md); all
-participants agree to the [Code of Conduct](CODE_OF_CONDUCT.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, testing, the
+[`good first issue`](https://github.com/forrestbthomas/pi-harness/labels/good%20first%20issue)
+path, the 7-day review SLA, and how to add a provider. Report security issues
+privately per [SECURITY.md](SECURITY.md); all participants agree to the
+[Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Avoiding Vendor Lock-In
 

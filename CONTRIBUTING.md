@@ -2,6 +2,25 @@
 
 Thanks for helping make pi-harness better!
 
+## Your first contribution
+
+Looking for a place to start? Good first issues are labeled
+[`good first issue`](https://github.com/forrestbthomas/pi-harness/labels/good%20first%20issue)
+on GitHub:
+
+1. **Find an issue** with the `good first issue` label — or browse the issue
+   list and ask which issues are beginner-friendly.
+2. **Comment to claim it** — say you're working on it so nobody else picks up
+   the same issue.
+3. **Ask questions on the issue** — maintainers monitor them and will point
+   you at the relevant files.
+4. **Open a PR** using the PR template. Keep it small; a focused fix or docs
+   improvement is ideal.
+5. **Expect a maintainer ping** — see the Review SLA below.
+
+A good first issue is scoped so you can land it in one sitting. If it turns
+out bigger than it looked, say so on the issue and it will be split.
+
 ## Development Setup
 
 ```bash
@@ -53,6 +72,13 @@ Then `go test ./internal/cli/` and `pi-run providers` to verify.
 
 See `SECURITY.md` for reporting vulnerabilities. Never commit API keys.
 
+## License (MIT-in / MIT-out)
+
+pi-harness is licensed under the [MIT License](LICENSE). By submitting a pull
+request or patch you agree that your contribution is offered under the same
+MIT license (MIT-in), and the project's distributed output is MIT (MIT-out) —
+code comes in under MIT and goes out under MIT.
+
 ## Issue and PR conventions
 
 - Use the issue templates (`.github/ISSUE_TEMPLATE/`) for bug reports and
@@ -61,6 +87,13 @@ See `SECURITY.md` for reporting vulnerabilities. Never commit API keys.
   the summary, test plan, and checklist.
 - Add a dated `## [x.y.z]` entry at the top of `CHANGELOG.md` for any
   user-visible change.
+
+## Review SLA
+
+Maintainers aim to review or respond to pull requests within **7 days** of
+submission (mirroring the [security response SLA](SECURITY.md)). If your PR has
+been quiet longer than that, ping it with a comment — we'd rather triage than
+leave you hanging.
 
 ## Releases
 

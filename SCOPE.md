@@ -1,38 +1,37 @@
 # Scope Contract
-**Task:** EVAL-14 — Benchmark provenance parity (ci-benchmark scorecard carries live-schema provenance) | **Plan:** BACKLOG EVAL-14 (EPIC-1, RICE ~0.7, 0.5 pw); ROADMAP §Release Milestones v0.11.0 | **Date:** 2026-08-14 | **Status:** CLOSED — 0 changes logged
+**Task:** EVAL-15 — Split-seam verification (seam contract doc + hermetic dry-run) | **Plan:** BACKLOG EVAL-15 (EPIC-1, RICE ~1.5, 0.5 pw); ROADMAP §Release Milestones v0.11.0 | **Date:** 2026-08-14 | **Status:** CLOSED — 0 changes logged
 
 ## In Scope
 - **Files:**
-  - `internal/cli/scorecard.go`:
-    - New `scorecardProvenance` struct: `{ datasetVersion, agentModel, judgeModel, piVersion }` (all `omitempty`-safe; informational, never gated).
-    - `buildScorecard`: populate `Provenance` from:
-      - `datasetVersion` — read `eval/datasets/tasks.json` (best-effort, "unknown" on error — same class as Python `load_dataset_version()`)
-      - `agentModel` — `PI_MODEL_TIER` env or "unknown"
-      - `judgeModel` — `OPENAI_MODEL_NAME` env or "unknown"
-      - `piVersion` — the `Version` ldflags var or "unknown"
-    - `scorecard` struct gains `Provenance *scorecardProvenance \`json:"provenance,omitempty"\``
-  - `internal/cli/testdata/scorecard-golden.json` — regenerate golden with provenance block.
-  - `internal/cli/scorecard_test.go` — hermetic tests: golden round-trip still passes; provenance populated from env (PI_MODEL_TIER/OPENAI_MODEL_NAME) + tasks.json datasetVersion; missing env/file → "unknown" (best-effort, no crash).
-  - `eval/tests/test_docs_drift.py` (or a new hermetic check) — assert the provider-scorecard workflow captures `pi-run version` for provenance (align with nightly's `PI_VERSION` handling).
-  - `.github/workflows/provider-scorecard.yml` — record `pi-run version` into `PI_VERSION` env for the scorecard run (mirrors nightly `PI_VERSION=$(pi-run version)` step).
+  - `docs/benchmark-seam.md` (NEW) — the versioned contract for the harness↔eval seam:
+    - `eval/datasets/tasks.json` (schema + `datasetVersion` + lint rule)
+    - `eval/scripts/score_run.py` CLI + exit codes + `SCHEMA_VERSION`
+    - scorecard JSON shape (live nightly summary + Go ci-benchmark scorecard)
+    - `eval/datasets/coding_samples.jsonl` + graders/ + references/ + eval/benchmarks/ layout
+    - `eval/grader.py` / `eval/secret_backend.py` boundaries
+    - known coupling today (recorded honestly: `score_run.repo_root()`, `.pi/heal` reads, 11 tests spawning `pi-run`) and the **split trigger** (EPIC-1 DoD AND external consumer)
+  - `eval/tests/test_benchmark_seam.py` (NEW) — hermetic dry-run:
+    1. **Contract pins** (hard pass/fail): tasks.json exists + has `datasetVersion`; score_run has `SCHEMA_VERSION`; coding_samples.jsonl has 50 lines; graders/references counts match the manifest; benchmark dirs present.
+    2. **Self-containment dry-run** (records gaps, never fails the suite): scan `eval/` for harness-root coupling — `repo_root()`, `.pi/` reads, `cmd/pi-run`, `internal/cli`, subprocess `pi-run` spawns — and assert the *report* is written to `eval/live-results/seam-report.json` with a `couplings` list. The dry-run documents the gap: it does not pretend the seam is clean today.
   - `CHANGELOG.md`, `SCOPE.md`, decision record — updates.
 - **Features:**
-  1. ci-benchmark scorecard JSON carries a `provenance` block matching the live schema — EPIC-1 DoD "provenance in every scorecard" now holds on **both** surfaces (nightly live + weekly ci-benchmark).
-  2. Best-effort: missing datasetVersion/env never crashes the scorecard.
+  1. The seam is pinned in one doc (a stranger or future splitter reads it to know exactly what leaves and what stays).
+  2. A hermetic dry-run measures the seam's self-containment and records the coupling inventory — so the charter's "keeps this split cheap either way" is tested, not assumed.
+  3. The dry-run's coupling list is the actionable input to a future pi-bench split.
 - **Boundaries:**
-  - Informational only; no gate change, no baseline schema change, no failBelow/budget change.
-  - No change to the Python live surface (already has provenance, EVAL-3).
-  - No change to scorecard JSON consumers (adding an `omitempty` field is backward-compatible).
+  - No code changes to score_run/grader/conftest (this item *measures* coupling, it does not refactor it).
+  - Dry-run never fails CI on coupling found — it writes the report (a failing-on-coupling test would block every PR today, which is not the point; the *split trigger* is consumer-gated).
+  - No new Go changes; no workflow changes.
 
 ## Out of Scope
-- EVAL-13 (cost-variance) — done (#105).
-- EVAL-15 (split-seam), EVAL-8 (judge), EVAL-6 (agentic) — separate v0.11.0 items.
+- Actually splitting pi-bench (triggered future — EPIC-1 DoD AND external consumer).
+- Refactoring `score_run.repo_root()` / de-coupling (a future split workstream, gated by the dry-run's findings).
 - GOV-2 (relocation), GOV-1 (drift guard) — separate EPIC-6 items.
-- Changing the Python `build_provenance()` shape.
+- EVAL-6/EVAL-8 (separate v0.11.0 items).
 
 # Scope Change Log
 | # | Category | What | Why | Decision | Outcome |
 |---|----------|------|-----|----------|---------|
 
 # Follow-up Tasks
-- [ ] After merge: confirm the next weekly provider-scorecard run surfaces provenance on the ci-benchmark scorecard.
+- [ ] After merge: the seam-report.json coupling inventory is the input to the pi-bench split decision (EPIC-1 DoD AND external consumer trigger).

@@ -7,6 +7,11 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **Dataset versioning + scorecard provenance** (W8): `tasks.json` carries a
+  guarded `datasetVersion` (bumped on every dataset change; enforced by the
+  dataset schema lint); `score_run.py` records `provenance { datasetVersion,
+  agentModel, judgeModel, piVersion }` in the summary + compact summary;
+  the nightly captures `pi-run version` for provenance.
 - **Flake-aware gate + evidence artifacts** (W7): nightly/provider-scorecard
   upload steps now run on every gate outcome (`if: always()`) and the nightly
   artifact includes `.pi/heal/events.jsonl` (EVAL-1); the gate treats a

@@ -156,6 +156,10 @@ jobs:
           PI_EVAL_REPORT: live-results/report.json
         run: .venv/bin/python -m pytest tests/test_live_suite.py tests/test_live_metrics.py tests/test_agent_task_completion.py -v
         working-directory: eval
+      - name: Record pi version for scorecard provenance
+        # EVAL-3: score_run records PI_VERSION (default "unknown" when unset).
+        run: |
+          echo "PI_VERSION=$(pi-run version 2>/dev/null || echo unknown)" >> "$GITHUB_ENV"
       - name: Run baseline gate
         # Per-case pass-rate tolerance 0.05 and cost-per-task >2x baseline fail
         # the run; the total budget cap is enforced by PI_MAX_BUDGET_USD (exit

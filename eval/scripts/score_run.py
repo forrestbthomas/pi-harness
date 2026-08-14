@@ -421,6 +421,31 @@ def parse_self_heal_events(path) -> dict:
     return {"nEvents": n_events, "byKind": by_kind}
 
 
+def load_dataset_version() -> str:
+    """Read datasetVersion from the tasks manifest (best-effort, EVAL-3).
+
+    Missing/malformed manifests yield "unknown" so provenance is never fatal;
+    the schema lint enforces that the manifest actually carries a version.
+    """
+    try:
+        tasks_path = repo_root() / "eval" / "datasets" / "tasks.json"
+        tasks = json.loads(tasks_path.read_text(encoding="utf-8"))
+        version = tasks.get("datasetVersion")
+        return version if isinstance(version, str) and version else "unknown"
+    except (OSError, ValueError):
+        return "unknown"
+
+
+def build_provenance() -> dict:
+    """Attribution for a scorecard run: dataset, agent tier, judge, pi version."""
+    return {
+        "datasetVersion": load_dataset_version(),
+        "agentModel": os.environ.get("PI_MODEL_TIER") or "unknown",
+        "judgeModel": os.environ.get("OPENAI_MODEL_NAME") or "unknown",
+        "piVersion": os.environ.get("PI_VERSION") or "unknown",
+    }
+
+
 def build_summary(args, totals: dict, gate: dict,
                   case_entries: dict[str, dict], exit_code: int,
                   self_heal: dict | None = None) -> dict:
@@ -443,6 +468,7 @@ def build_summary(args, totals: dict, gate: dict,
         "flakes": sorted(
             case_id for case_id, entry in case_entries.items() if entry.get("flake")
         ),
+        "provenance": build_provenance(),
         "cases": case_entries,
         "selfHeal": self_heal if self_heal is not None else {"nEvents": 0, "byKind": {}},
     }
@@ -458,6 +484,7 @@ def build_compact_summary(summary: dict) -> dict:
         "gate": summary["gate"],
         "unbaselined": summary["unbaselined"],
         "flakes": summary["flakes"],
+        "provenance": summary["provenance"],
         "selfHeal": summary["selfHeal"],
     }
 

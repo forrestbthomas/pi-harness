@@ -1,5 +1,6 @@
 {
   "schemaVersion": 1,
+  "datasetVersion": "2026-08-14.1",
   "categories": ["code-gen", "bug-fix", "shell/ops", "concept", "negative-edge", "harness-routing"],
   "surfaces": {
     "live":      { "kind": "jsonl",     "path": "eval/datasets/coding_samples.jsonl" },

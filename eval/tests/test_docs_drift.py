@@ -143,7 +143,7 @@ def test_agents_workflow_target_exists():
     agents = _read("AGENTS.md")
     assert "eval/live-results/" in agents, "AGENTS.md must point at the real live-results output dir"
     assert "eval/outputs/" not in agents, "AGENTS.md phantom eval/outputs/ dir must be gone"
-    assert Path("eval/live-results").is_dir(), "eval/live-results/ must exist (score_run consumer)"
+    assert (HARNESS / "eval/live-results").is_dir(), "eval/live-results/ must exist (score_run consumer)"
 
 
 def test_system_commands_are_real():

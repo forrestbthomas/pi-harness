@@ -35,7 +35,7 @@ var benchmarkNameRe = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9._-]*$`)
 // Benchmark tasks are always deterministically graded (spec §4.5: Docker
 // grading has no judge), so grader must be "deterministic".
 var benchmarkCategories = []string{
-	"code-gen", "bug-fix", "shell/ops", "concept", "negative-edge", "harness-routing",
+	"code-gen", "bug-fix", "shell/ops", "concept", "negative-edge", "harness-routing", "agentic",
 }
 
 var benchmarkDifficulties = []string{"easy", "medium", "hard"}

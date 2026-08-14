@@ -64,8 +64,10 @@ def test_seam_score_run_schema_version():
 
 
 def test_seam_live_dataset_is_50_cases():
+    # EVAL-6 added the agentic category; the floor is the 50-case benchmark
+    # (per-category budgets enforced by test_dataset_schema).
     n = _count_jsonl(EVAL_DIR / "datasets" / "coding_samples.jsonl")
-    assert n == 50, f"coding_samples.jsonl must have 50 live cases, got {n}"
+    assert n >= 50, f"coding_samples.jsonl must have >= 50 live cases, got {n}"
 
 
 def test_seam_grader_and_reference_dirs_exist():

@@ -25,7 +25,7 @@ DATASET = HARNESS / "eval" / "datasets" / "coding_samples.jsonl"
 DEFAULT_TEST_SCRIPT = "tests/run.sh"
 LOCAL_RELATIVE_KEYS = ("instruction", "testScript", "dockerfile", "solution")
 
-CATEGORIES = ("code-gen", "bug-fix", "shell/ops", "concept", "negative-edge", "harness-routing")
+CATEGORIES = ("code-gen", "bug-fix", "shell/ops", "concept", "negative-edge", "harness-routing", "agentic")
 DIFFICULTIES = ("easy", "medium", "hard")
 GRADERS = ("deterministic", "judge")
 

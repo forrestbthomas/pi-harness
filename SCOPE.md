@@ -1,5 +1,5 @@
 # Scope Contract
-**Task:** W9 — EVAL-4: self-heal events in provider scorecard | **Plan:** `docs/superpowers/specs/2026-08-14-self-heal-in-provider-scorecard.md` | **Date:** 2026-08-14 | **Status:** CLOSED — 0 changes logged (W9 shipped #91); **W10 (EVAL-5 dataset growth) is ACTIVE** per the approved 2026-08-14 bet — see `docs/superpowers/specs/2026-08-14-dataset-growth-to-50.md`
+**Task:** W9 — EVAL-4: self-heal events in provider scorecard | **Plan:** `docs/superpowers/specs/2026-08-14-self-heal-in-provider-scorecard.md` | **Date:** 2026-08-14 | **Status:** CLOSED — 1 change logged (W10 EVAL-5 shipped: Batches A/B + benchmark batch; .pi/subagents hygiene permit logged 2026-08-14)
 
 > Supersedes the W8 dataset versioning contract (CLOSED 2026-08-14; record preserved in git history). W10 (EVAL-5 dataset growth) is a separate contract drafted for the same bet and lands after this one closes.
 

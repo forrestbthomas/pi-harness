@@ -1,0 +1,10 @@
+{
+  "id": "fix-graceful-shutdown",
+  "category": "bug-fix",
+  "difficulty": "hard",
+  "grader": "deterministic",
+  "prompt": "src/server.py implements a minimal threaded TCP echo server (class EchoServer). Its shutdown() method hangs forever whenever a client is connected: it joins the connection-handler threads but never closes the listener socket, so the accept loop stays blocked in accept() and handler threads stuck in recv() are joined indefinitely. Fix shutdown() so it returns promptly (within about two seconds) instead of hanging, stops accepting new connections once called, and lets already-connected clients finish their in-flight requests - a client that sent a message before shutdown() must still receive its echo afterwards. The server must keep accepting and echoing messages normally before shutdown() is called. Do not change the public interface (constructor, .host, .port, .shutdown()). The verification script tests/run.sh must exit 0.",
+  "timeoutSecs": 300,
+  "testScript": "tests/run.sh",
+  "solution": "solution/server.py"
+}

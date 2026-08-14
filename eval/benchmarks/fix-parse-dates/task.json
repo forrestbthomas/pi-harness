@@ -1,0 +1,10 @@
+{
+  "id": "fix-parse-dates",
+  "category": "bug-fix",
+  "difficulty": "medium",
+  "grader": "deterministic",
+  "prompt": "Fix the timezone handling bug in src/parser.py so parse_ts(s) correctly handles ISO-8601 timestamps that carry a UTC offset. Today parse_ts strips the offset without normalizing: parse_ts(\"2024-01-01T12:00:00+02:00\") returns 2024-01-01T12:00:00 instead of the correct UTC wall time 2024-01-01T10:00:00. The function must always return a naive UTC datetime: offset timestamps must be normalized to UTC (then returned as naive), naive timestamps like \"2024-01-01T10:00:00\" must keep working unchanged, and unparseable input must still raise ValueError. Do not change the public signature or the function name. The verification script tests/run.sh must exit 0.",
+  "timeoutSecs": 300,
+  "testScript": "tests/run.sh",
+  "solution": "solution/parser.py"
+}

@@ -81,8 +81,12 @@ outcome; `CHARTER.md` is the enforceable boundary contract.
 
 - [x] Charter + north star + README headline landed (PR #98/#99).
 - [x] Cut list decision (MCP/OTel/pdf2txt cut; Homebrew kept per charter;
-      specs deferred) — PR landing this change.
-- [ ] Move PM artifacts under `docs/governance/`.
-- [ ] Spec shelf-ware consolidation (deferred 2026-08-14; separate decision).
-- [ ] Record split triggers in BACKLOG so EPIC-1's DoD doubles as pi-bench's
-      maturity gate.
+      specs deferred) — PR #100.
+- [x] Maturity-scan change-set applied to EPICS/BACKLOG/STATUS (EPIC-6 new,
+      EPIC-4 parked, EPIC-5 dissolved, EVAL-10 removed, HEAL-1 demoted,
+      +EVAL-13..16, GOV-1/2, OSS-1/2, OWN-1, TAX-1/2, PORT-0) — PR landing
+      this change.
+- [ ] Execute OSS-1 (canonical install/identity) — highest-value next item.
+- [ ] Execute GOV-2 (governance relocation + spec archive) — ships before GOV-1.
+- [ ] EVAL-12 live re-baseline after tonight's 03:00 UTC nightly (0 unbaselined
+      DoD + standing cadence).

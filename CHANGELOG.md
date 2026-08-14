@@ -19,6 +19,17 @@ All notable changes to this project are documented here. Format follows
   shipped leg).
 
 ### Added
+- **EPIC-6 — Repo maturity** (maturity-scan convergence 2026-08-14): new
+  epic owning governance/community/debt work — OSS-1 canonical install+
+  identity (~18), GOV-1 drift+charter-conformance guard, GOV-2 relocation+
+  spec archive, OSS-2 contributor on-ramp, OWN-1 CODEOWNERS matrix, TAX-1
+  usage evidence, TAX-2 flag prune, SECURITY ritual line, PORT-0 quarterly
+  re-confirm. EPIC-4 parked (charter non-goal; PORT-0 only), EPIC-5 dissolved
+  (DX-1/DX-2 → idea inbox), EPIC-1 trimmed (EVAL-10 removed, EVAL-7 parked,
+  EVAL-5 capped at 50, +EVAL-13/14/15/16, EVAL-6 RICE 1.4, EVAL-12
+  0-unbaselined DoD + standing cadence), HEAL-1 demoted to idea inbox, HEAL-2
+  data-gated, COST-1 within-provider only. See
+  `docs/knowledge-base/decision/2026-08-14-persona-debate-scope.md`.
 - **Project charter + boundary contract** (scope debate 2026-08-14):
   [`CHARTER.md`](CHARTER.md) defines what this project is and explicitly what
   it is not — one product, the harness; the eval suite is its measurement

@@ -118,7 +118,12 @@ _DETERMINISTIC_CASES = [
 if _DETERMINISTIC_CASES:
 
     @pytest.mark.skipif(not has_api_key(), reason="No provider API key found.")
-    @pytest.mark.timeout(120)
+    # 50-case suite: one test performs EVAL_RUNS_PER_CASE (5) agent runs, each
+    # up to run_pi_print's 180s cap. 120s was sized for the old 17-case/3-run
+    # suite and killed slow cases (coding-017 timed out on 2026-08-14). 600s =
+    # 5 runs * 180s with headroom; the nightly's job-level timeout (60m) is the
+    # real outer bound.
+    @pytest.mark.timeout(600)
     @pytest.mark.parametrize(
         "sample",
         _DETERMINISTIC_CASES,
@@ -144,6 +149,6 @@ else:
     # Dataset v2 (dataset lane) not present yet: keep collection clean instead
     # of failing on an empty parametrize.
     @pytest.mark.skipif(not has_api_key(), reason="No provider API key found.")
-    @pytest.mark.timeout(120)
+    @pytest.mark.timeout(600)
     def test_case(record_property):
         pytest.skip("live dataset has no grader==deterministic cases")

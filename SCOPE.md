@@ -18,6 +18,7 @@
 # Scope Change Log
 | # | Category | What | Why | Decision | Outcome |
 |---|----------|------|-----|----------|---------|
+| 1 | emergent | Drop the `eval/live-results` existence assertion in `test_agents_workflow_target_exists` | CI wiring revealed the guard asserted a generated output dir that is absent on fresh checkouts (false positive on every PR); the real contract is AGENTS.md content (live-results present, outputs absent) | Permit (user-approved 2026-08-14) | PR #123 |
 
 # Follow-up Tasks
 - [ ] Post-merge: throwaway-branch drift check proves python-quick fails on a planted drift.

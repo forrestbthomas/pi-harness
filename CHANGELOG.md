@@ -6,19 +6,25 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
-### Removed
-- **MCP server + OTel exporter (cut list, 2026-08-14)**: removed
-  `pi-run mcp-server` and the `PI_OTLP_ENDPOINT` OTLP telemetry export —
-  consumerless surfaces (zero external callers found in repo search per the
-  persona debate). Deleted `internal/cli/mcp.go` (+ tests),
-  `internal/cli/otel.go` (+ tests), Python contract tests
-  (`test_contract_mcp.py`, `test_contract_otel.py`), and `scripts/pdf2txt.sh`.
-  README/architecture/docs updated; dataset `coding-020` prompt rewritten to
-  generic MCP protocol (case + grader kept), `datasetVersion` → `2026-08-14.5`.
-  Homebrew/release machinery intentionally kept (CHARTER: macOS/Homebrew is the
-  shipped leg).
+## [0.10.0] - 2026-08-14
+
+### BREAKING
+- **Removed `pi-run mcp-server` and the `PI_OTLP_ENDPOINT` OTLP telemetry
+  export** (cut list, 2026-08-14): consumerless surfaces (zero external
+  callers found in repo search per the persona debate). Anything calling
+  `pi-run mcp-server` or setting `PI_OTLP_ENDPOINT` breaks. Deleted
+  `internal/cli/mcp.go` (+ tests), `internal/cli/otel.go` (+ tests), Python
+  contract tests, and `scripts/pdf2txt.sh`. Homebrew/release machinery kept
+  (CHARTER: macOS/Homebrew is the shipped leg).
+- **Go module path moved** `github.com/forrestthomas1/pi-harness` →
+  `github.com/forrestbthomas/pi-harness` (OSS-1) — old import paths and
+  `go install ...forrestthomas1...@latest` no longer resolve.
 
 ### Added
+- **Version-truth stamp (REL-1)**: nightly + provider-scorecard CI builds now
+  stamp `-ldflags "-X …/cli.Version=$(git describe --tags --always)"` so
+  scorecards record a resolvable `piVersion`, never `dev` (the 2026-08-14
+  version-milestone debate found every nightly scorecard was stamped `dev`).
 - **Release milestones (v0.10.0 → v1.0.0)** — seven-persona version-milestone
   debate (2026-08-14) converged on a gated release plan: v0.10.0 "Identity,
   boundary, truth" (now), v0.11.0 "The gate that can't lie", v0.12.0
@@ -201,6 +207,7 @@ All notable changes to this project are documented here. Format follows
 ### Changed
 - The full hermetic pytest surface grew from ~28 to **100 tests**; CI runs a
   `python-contract` job that builds `pi-run` fresh before subprocess tests.
+
 ## [0.8.0] - 2026-08-12
 
 ### Added
@@ -251,6 +258,24 @@ All notable changes to this project are documented here. Format follows
   ollama, mistral, cohere, together, perplexity, fireworks, moonshot, xai,
   bedrock (baseURLs where applicable). No cross-provider auto-fallback;
   key-env lists stay in sync between Go and Python (#29).
+## [0.7.0] - 2026-08-12
+
+### Added
+- `pi-run chat|print --permission-mode default|plan|acceptEdits|bypassPermissions`
+  (+ `--read-only` alias, `PI_PERMISSION_MODE` env). Maps to Pi's real flags:
+  plan → `--tools read,grep,find,ls`; bypassPermissions → `--approve`;
+  default/acceptEdits → none. Per-agent permission policies in
+  `.pi/agents/worker|reviewer|scout.md` (#29).
+- Command hooks via `.pi/hooks.json`: pre-eval / post-eval / pre-chat hooks
+  (cmd, timeoutSecs default 30, continueOnError); `pi-run hooks list` and
+  `hooks run <event>`; missing config is a no-op (#29).
+- Provider breadth: catalog grew from 7 to 17 providers — added azure,
+  ollama, mistral, cohere, together, perplexity, fireworks, moonshot, xai,
+  bedrock (baseURLs where applicable). No cross-provider auto-fallback;
+  key-env lists stay in sync between Go and Python (#29).
+  (Restored 2026-08-14 — this section was dropped in the v0.8.0 release-notes
+  commit `02215b3`; content from `3c0a575`, REL-2 changelog ledger repair.)
+
 ## [0.6.0] - 2026-08-11
 
 ### Added

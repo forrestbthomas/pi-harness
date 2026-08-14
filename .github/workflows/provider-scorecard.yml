@@ -28,7 +28,7 @@ jobs:
           go-version: '1.26'
       - name: Build pi-run
         run: |
-          go build -o bin/pi-run ./cmd/pi-run
+          go build -ldflags "-X github.com/forrestbthomas/pi-harness/internal/cli.Version=$(git describe --tags --always)" -o bin/pi-run ./cmd/pi-run
           # Put the repo bin/ on PATH for later steps (GitHub runner shells do
           # not include the workspace bin/ by default).
           echo "$GITHUB_WORKSPACE/bin" >> "$GITHUB_PATH"

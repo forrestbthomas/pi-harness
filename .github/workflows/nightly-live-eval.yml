@@ -36,9 +36,10 @@ jobs:
       - name: Build pi-run
         # The suite includes binary-spawning tests (config-check and the
         # contract tests); build pi-run fresh so they never depend on a
-        # preinstalled binary on the runner.
+        # preinstalled binary on the runner. Stamp the real version so
+        # scorecards record a resolvable piVersion, never "dev" (REL-1).
         run: |
-          go build -o bin/pi-run ./cmd/pi-run
+          go build -ldflags "-X github.com/forrestbthomas/pi-harness/internal/cli.Version=$(git describe --tags --always)" -o bin/pi-run ./cmd/pi-run
           echo "$GITHUB_WORKSPACE/bin" >> "$GITHUB_PATH"
       # actions/setup-python@v7
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97

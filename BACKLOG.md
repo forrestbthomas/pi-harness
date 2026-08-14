@@ -87,3 +87,5 @@ _Applied 2026-08-14 (maturity-scan convergence; see `.pi/debate/maturity-scan/sy
 - **Scope rule:** any change that serves none of the above is out of scope unless it earns a backlog entry first.
 - **Cadence:** re-rank at cycle start (see `docs/roadmap-workflow.md`); prune items with no evidence after 3 months; close epics like workstreams (DoD → CHANGELOG).
 - **Charter conformance (2026-08-14):** every backlog item must serve a CHARTER.md in-scope clause or an earned exception; items that contradict a non-goal are parked or removed (GOV-1 will mechanize this).
+
+| 99 | **EVAL-13 — fake re-opened row** | ~1.0 | EPIC-1 | 0.5 pw | planted drift for GOV-3 end-to-end verification |

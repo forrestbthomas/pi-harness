@@ -221,7 +221,7 @@ Rules:
 - [x] GOV-2 relocation + spec archive merged (19 dated specs → `docs/governance/specs-archive/` + `decisions.md` index; living PM docs stay at root per GOV-2 scope decision — session-entry contract + GOV-1 path reads + coding-054 grader; BACKLOG ranked-table repair landed #118).
 - [ ] OSS-1 shipped: canonical module path + identity + CI install check (documented install path works).
 - [x] GOV-1 shipped (#112); GOV-2 is the next EPIC-6 item.
-- [ ] OSS-2/OWN-1/SECURITY-line shipped; TAX-1/TAX-2 shipped or parked with recorded decisions.
+- [ ] OWN-1/SECURITY-line shipped; TAX-1/TAX-2 shipped or parked with recorded decisions (OSS-2 shipped #122).
 - [ ] Backlog ≤ ~12 active rows; EPIC-6 row closed in ROADMAP; CHANGELOG entries per shipped item.
 
 **Items (index — source of truth is BACKLOG.md):**

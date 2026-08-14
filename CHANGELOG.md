@@ -7,6 +7,12 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **OSS-2 — Contributor on-ramp v2** (EPIC-6, 2026-08-14): CONTRIBUTING gains
+  a first-issue path (`good first issue` label workflow), a 7-day PR review
+  SLA mirroring SECURITY.md, and a MIT-in/MIT-out license line; the PR
+  template adds a bugfix carve-out (in-scope bugfixes need no roadmap
+  citation); LICENSE copyright holder corrected to the canonical identity
+  `forrestbthomas` (was the pre-OSS-1 `forrestbthomas1`).
 - **GOV-2 — Governance relocation + spec archive** (EPIC-6, 2026-08-14): 19
   dated planning specs moved from `docs/superpowers/specs/` →
   `docs/governance/specs-archive/` (git history intact) with a

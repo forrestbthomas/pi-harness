@@ -1,6 +1,8 @@
 # Pi Coding Agent Harness
 
-**Point `pi-run` at a provider, get a real coding agent, get an *honest* pass-rate and cost over a versioned contract — and trust it not to hang or silently lie.**
+**The score is the product: a versioned, reproducible, variance-aware,
+self-healing measurement of *your* agent configuration — we cannot cheat it,
+and you can verify it. This repository is the demo.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/forrestbthomas/pi-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/forrestbthomas/pi-harness/actions/workflows/ci.yml)
@@ -12,11 +14,38 @@
 > observability platform, or a general MCP platform. See
 > [`CHARTER.md`](CHARTER.md) for the boundary contract.
 
-## It measures itself — here's a real scorecard
+## Verify the claim yourself — no API key needed
+
+```text
+$ pi-run config-check
+config-check: all checks passed
+$ pi-run eval --quick
+38 passed — keyless hermetic smoke (no API key needed)
+$ pi-run doctor
+...
+```
+
+These three commands verify the harness's honesty machinery keyless. Every
+claim on this page maps to a guard, a test, or a graded case in this repo
+(see [`test_docs_drift.py`](eval/tests/test_docs_drift.py)) — the scorecard
+below is reproducible from the committed contract, not a marketing number.
+
+## Honesty, stated plainly
+
+**No moat, no new science.** The measurement techniques here are commodity;
+every major agent vendor has an internal eval team that could build this in a
+week. What they don't ship is a *neutral, cross-provider, verifiable* seam for
+*your* config — their measurement is welded to their agent (they measure
+*their* model on *their* terms). This project is the **starter kit for that discipline** —
+the discipline applied to its own agent, packaged so you can apply it to
+yours. The number below is a **dated demo**; the mechanism is the promise.
+## It measures itself — here's a real scorecard (dated demo)
 
 Every night the harness runs a real coding agent against **55 live eval cases**
 across 7 categories, 5 runs each, and gates the result against a committed
-baseline. This is the actual scorecard from the 2026-08-15 run (not a mock):
+baseline. This is the actual scorecard from the 2026-08-15 run — a dated
+snapshot; the **mechanism** (versioned contract → gate → reproducible
+scorecard) is the product, not this number:
 
 | | |
 |---|---|
@@ -54,29 +83,47 @@ graph LR
 A change to the harness reports its own scorecard delta; the drift guards run
 in CI on every PR; the eval has **caught its own bugs** — each one became a
 graded eval case (e.g. `coding-055`, the debugging case that tests exactly this
-skill).
+skill — measured 0.2 → 0.8 after a prompt-scaffold fix, datasetVersion
+2026-08-15.3).
 
 ## Why this is different
 
-- **Self-healing by default** — an output-stall watchdog, process-group kill
-  (SIGTERM → grace → SIGKILL), and git-state auto-recovery mean a hung or
-  wedged run resolves itself or escalates with evidence (`.pi/heal/` + exit 9).
-  It never needs a human nudge.
-- **A gate that can't lie** — flake-aware pass-rate and median-shift cost
-  gates: a single flaky run or an intrinsically noisy cost case never
-  false-fails; low pass rates are recorded as honest baseline bounds, and
-  unbaselined cases are never silently skipped.
+- **The score is the product, and you can check it** — the versioned contract
+  (`tasks.json → score_run.py → scorecard`), provenance stamps
+  (datasetVersion, agentModel, judgeModel, piVersion), and keyless hermetic
+  smoke mean the score is reproducible by anyone who runs the same command.
+  The vendors' evals are private and welded to their agents; this one is
+  public and a seam.
+- **A gate that handles the noise it actually hit** — flake vs regression,
+  run-step variance (EVAL-18), and median-shift cost: the false-fail/false-pass
+  classes this project really measured and fixed. Low pass rates are recorded
+  as honest baseline bounds; unbaselined cases are never silently skipped.
+- **Self-healing, so the measurement stays true** — an output-stall watchdog,
+  process-group kill (SIGTERM → grace → SIGKILL), and git-state auto-recovery
+  mean a hung or wedged run resolves itself or escalates with evidence
+  (`.pi/heal/` + exit 9); a run that hung is stamped in the scorecard, not
+  hidden. It never needs a human nudge.
 - **Provider-agnostic, explicit** — **17 providers in total** (OpenAI,
   OpenRouter, DeepSeek, Anthropic, Gemini, Groq, local Ollama/vLLM, Azure,
   Bedrock, …) via a data-driven table; keys env-first, secret-store optional;
   **no automatic cross-provider fallback** — the provider is always explicit.
 - **Real cost, no price tables** — spend comes from the actual session files
   (`usage.cost`), per provider/model, with a hard budget cap (exit 6).
-- **One versioned contract** — `tasks.json → score_run.py → scorecard` is the
-  seam; measurement is reproducible and provenance-carrying (datasetVersion,
-  agentModel, judgeModel, piVersion).
 - **The loop measures itself** — EVAL-16 scorecard-delta reports and GOV-1/3
   drift guards in CI mean the harness's own honesty is enforced, not assumed.
+
+## What this is not
+
+- **Not a better agent** — the agent underneath is Pi's product; we measure
+  your setup, we don't compete on agent quality.
+- **Not a benchmark corpus** — the 55-case suite was written by one person as
+  a demo of the discipline; its rates are evidence of the mechanism, not of
+  agent quality. We do not claim SWE-bench-class standing.
+- **Not new measurement science** — every technique here exists inside the
+  vendors' eval teams; the offering is the discipline made external and
+  verifiable.
+- **No support commitment** — single-owner OSS, no SLA; the CONTRIBUTING
+  review SLA is best-effort.
 
 ## Install
 

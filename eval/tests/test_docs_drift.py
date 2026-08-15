@@ -122,6 +122,42 @@ def test_readme_live_dataset_count_matches_manifest():
     )
 
 
+CLAIMS_TABLE = [
+    # (README claim marker, evidence file, evidence substring | None = file must exist)
+    # The honest-reframe claims table (Dogfooder condition, 2026-08-15): every
+    # headline README claim must map to the guard/test/artifact/graded case that
+    # enforces it — an unbacked claim line fails CI.
+    ("caught its own bugs", "eval/datasets/coding_samples.jsonl", "coding-055"),
+    ("run-step variance (EVAL-18)", "eval/scripts/score_run.py", "run_step"),
+    ("flake vs regression", "eval/scripts/score_run.py", "regressed"),
+    ("median-shift cost", "eval/scripts/score_run.py", "median_over"),
+    ("a run that hung is stamped in the scorecard", "eval/scripts/score_run.py", "selfHeal"),
+    ("provenance", "eval/scripts/score_run.py", "piVersion"),
+    ("datasetVersion", "eval/scripts/score_run.py", "datasetVersion"),
+    ("judgeModel", "eval/scripts/score_run.py", "judgeModel"),
+    ("keyless hermetic smoke", "eval/tests/test_harness_config.py", None),
+    ("starter kit for that discipline", "docs/knowledge-base/decision/2026-08-15-honest-reframe.md", None),
+    ("no automatic cross-provider fallback", "providers.json", "providers"),
+    ("variance-aware", "eval/scripts/score_run.py", "band"),
+]
+
+
+def test_readme_claims_are_backed_by_machinery():
+    """Honest-reframe claims table: each headline README claim maps to the
+    artifact that enforces it. This is the 'we don't ask you to trust us'
+    invariant made testable — if a claim line rots or the backing machinery
+    disappears, CI fails."""
+    readme = _read("README.md")
+    for marker, evidence_rel, needle in CLAIMS_TABLE:
+        assert marker in readme, f"README must still make the claim: {marker!r}"
+        evidence_path = HARNESS / evidence_rel
+        assert evidence_path.exists(), f"claim {marker!r} lost its backing file {evidence_rel}"
+        if needle is not None:
+            assert needle in evidence_path.read_text(encoding="utf-8"), (
+                f"claim {marker!r} lost its backing evidence in {evidence_rel}: {needle!r}"
+            )
+
+
 def test_contributing_commit_prefixes_match_practice():
     """docs-audit P1-2 (Surface E): CONTRIBUTING's commit-prefix set must match
     actual practice (the old feat(oss)/chore(oss) prefixes matched zero of the

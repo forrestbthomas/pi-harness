@@ -60,7 +60,9 @@
   EVAL-6 agentic slice 1 (#111), GOV-1 drift guard (#112), GOV-2 relocation +
   spec archive (#119), GOV-3 CI-wiring item + docs-drift cwd fix (#120), OSS-2
   contributor on-ramp (#122), GOV-3 drift guards wired into CI (#123), EVAL-16
-  harness-change gate pilot (#129), EVAL-12 live re-baseline 17→55 (#140)
+  harness-change gate pilot (#129), EVAL-12 live re-baseline 17→55 (#140),
+  README minimalization + docs/reference.md (#143), memory-statement clean
+  (#144)
 
 ## Open PRs / branches
 

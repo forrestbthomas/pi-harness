@@ -28,7 +28,7 @@ baseline. This is the actual scorecard from the 2026-08-15 run (not a mock):
 
 ```text
 $ pi-run eval --quick
-126 passed, 3 skipped — hermetic suite, no API key needed
+38 passed — keyless hermetic smoke (no API key needed)
 $ pi-run config-check
 config-check: all checks passed
 $ pi-run print --model-tier cheap "explain mutable vs immutable in Python"
@@ -125,7 +125,7 @@ lives in **[`docs/reference.md`](docs/reference.md)**.
   0.05 pass-rate tolerance and a flake-aware cost gate. Missing provider key =
   hard failure, never a silent skip. Budget-capped at $2/night; artifacts kept
   90 days.
-- **Hermetic smoke** — `pi-run eval --quick` (126 deterministic tests) and
+- **Hermetic smoke** — `pi-run eval --quick` (38 keyless hermetic tests) and
   `pi-run config-check` run keyless, so the harness verifies itself anywhere.
 - **Provider scorecard in CI** — `pi-run ci-benchmark` runs the Docker-isolated
   benchmark suite against 2+ providers and gates the build on pass rate,

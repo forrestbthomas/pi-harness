@@ -53,7 +53,7 @@ Rules:
 
 **Appetite:** ≈ 2.5–3 pw honest core for one author (restated from "≤ 2 cycles" — the 12-item plan was ~4.5× over budget at 9.0 pw; scope is cut, not extended).
 
-**Why now:** the eval is a smoke gate with n=5 runs and a committed 17-of-54 baseline (31.5%). Friday's gate failed on a single-run flake (`coding-005`) and the 2026-08-14 nightly failed on a **cost spike** (`coding-010`) — the flake/cost false-fail classes are real, the baseline covers only 31.5% of the benchmark, and the loop does not yet measure changes to itself. Making the gate honest and the seam provable comes before any growth.
+**Why now:** the eval is a smoke gate with n=5 runs and a committed 17-of-54 baseline (31.5%). Friday's gate failed on a single-run flake (`coding-005`) and the 2026-08-14 nightly failed on a **cost spike** (`coding-010`) — the flake/cost false-fail classes are real, the baseline covers only 31.5% of the benchmark, and the loop does not yet measure changes to itself. Making the gate honest and the seam provable comes before any growth. *(Resolved 2026-08-15: EVAL-12 re-baselined the full suite to 55/55, 0 unbaselined; the flake + cost gates are now median-shift aware.)*
 
 **Sequence (dependency-ordered):**
 

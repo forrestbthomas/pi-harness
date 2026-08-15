@@ -13,6 +13,14 @@ green with provenance fields.
 
 ## 0. Gate evidence (must exist BEFORE any release work)
 
+> **Dogfood posture (2026-08-15): this project does not ship a product to a
+> market that hasn't been established.** v1.0.0 (or any product release) is
+> **consumer-triggered**: it happens only when someone outside the author asks
+> for the discipline for their own agent setup, OR the recorded earned-bar
+> decision is made and logged. A v1.0.0 tag without that evidence is a
+> charter violation. Until then, releases are the loop's integrity check
+> (v0.11.0 = two consecutive green nightlies), not product launches.
+
 - [ ] **Two consecutive green nightlies** on `main`. Evidence: the two
       workflow runs' `live` job conclusion == `success`, and each `live-results`
       report gates `PASS` under the current gate (EVAL-18 run-step band +

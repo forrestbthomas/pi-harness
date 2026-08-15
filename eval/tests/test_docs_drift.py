@@ -143,6 +143,13 @@ CLAIMS_TABLE = [
     # (2026-08-15 — the original wording overclaimed; this row keeps the
     # honest qualifier from rotting back into 'any agent').
     ("Provider-neutral, **not runtime-neutral**", "CHARTER.md", "neutral across *providers*"),
+    # Dogfood-posture trigger (2026-08-15): the 'no product release until a
+    # consumer earns it' wording is pinned in CHARTER/README and the release
+    # checklist names the evidence as a hard gate — a v1.0.0 tag without the
+    # consumer/earned-bar evidence is a charter violation the repo can detect.
+    ("consumer-triggered", "docs/release-checklist.md", "consumer"),
+    ("Not a product until earned", "CHARTER.md", "consumer-triggered"),
+    ("personal agent-improvement loop", "README.md", "personal agent-improvement loop"),
 ]
 
 

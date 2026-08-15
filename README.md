@@ -1,8 +1,12 @@
 # Pi Coding Agent Harness
 
-**The score is the product: a versioned, reproducible, variance-aware,
-self-healing measurement of *your* agent configuration — we cannot cheat it,
-and you can verify it. This repository is the demo.**
+**The author's personal agent-improvement loop, public as a demo of the
+discipline: measure → diagnose → improve → re-measure, with receipts.** The
+loop runs a real coding agent against a versioned, reproducible,
+variance-aware contract and hands you a pass-rate-and-cost scorecard for
+*your* config that you can verify yourself — we cannot cheat it.
+**Not a product until earned** — consumer-triggered: it ships only when
+someone outside the author wants it.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/forrestbthomas/pi-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/forrestbthomas/pi-harness/actions/workflows/ci.yml)
@@ -42,6 +46,7 @@ the discipline applied to its own agent, packaged so you can apply it to
 tasks). Provider-neutral, **not runtime-neutral**: it measures the agent this
 harness runs. The number below is a **dated demo**; the mechanism is the
 promise.
+
 ## It measures itself — here's a real scorecard (dated demo)
 
 Every night the harness runs a real coding agent against **55 live eval cases**

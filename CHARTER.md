@@ -9,16 +9,28 @@
 
 ## North star
 
-**The score is the product**: a versioned, reproducible, variance-aware,
-self-healing measurement of *your* agent configuration (provider, model tier,
-prompts, settings) over a versioned contract (`tasks.json` → `score_run.py` →
-scorecard, including the harness's own health events) — we cannot cheat it,
-and you can verify it. **This repository is the demo**: the discipline this
-project applies to its own agent, packaged so you can apply it to **your
-configuration of the same agent** — your provider, model tier, prompts, and
-tasks. The measurement is neutral across *providers*, **not across
-*runtimes***: it measures the agent this harness runs (Pi via `pi-run`), not
-other agents.
+**This is the author's personal agent-improvement loop, built in public as a
+demo of the discipline.** The job is real even though the audience is one:
+*know whether your agent setup is actually improving, with evidence, before
+you bet work on it.* The loop — measure → diagnose → improve → re-measure,
+with receipts — is the product; today its only customer is the author, and it
+demonstrably works (coding-055 measured 0.2 → 0.8 after a prompt fix; the
+nightly that caught its own bugs; the gate whose false-fail/false-pass
+classes are handled — and re-runnable). The discipline machinery — versioned
+contract (`tasks.json` → `score_run.py` → scorecard), provenance stamps,
+variance-aware gates, drift guards, self-heal observability, the claims
+table — is the engine of the loop and the demo's content. It binds as hard
+for an audience of one as it would for a market: a loop that stops measuring
+itself is a hobby script.
+
+**Not a product until earned.** No v1.0.0 (or any product release) ships to a
+market that hasn't been established. A release is **consumer-triggered**: it
+happens only when someone outside the author actually wants the discipline
+for their own agent setup (the recorded earned-bar gate — see ROADMAP). The
+repo is public so the discipline is visible, improvable, and a stranger can
+adopt it for their own setup — as a demo, not as a promise of support. The
+measurement is neutral across *providers*, **not across *runtimes***: it
+measures the agent this harness runs (Pi via `pi-run`), not other agents.
 
 **No moat, no new science** — stated plainly because honesty is the entire
 premise. The measurement techniques here are commodity; every major agent
@@ -36,19 +48,16 @@ Homebrew is the shipped leg; any further platform or benchmark repo
 
 ## Why this project exists
 
-Coding agents are becoming the default way software is written, and teams are
-locking into a single AI vendor because they cannot compare providers
-honestly. The vendors all measure — but their measurement is welded to their
-agent, private, and on their terms. This project exists so you can point one
-harness at any provider, get a real agent, get an honest pass-rate and cost
-over a versioned contract, and verify the score yourself — because the only
-thing this project sells is that you don't have to trust the number, ours or
-the vendors'. It is the discipline this project applies to its own agent,
-packaged so you can apply it to **your configuration of the same agent** —
-your provider, model tier, prompts, and tasks (dogfood-first). A
-runtime-agnostic scorer (measuring Claude Code, Codex, or any agent CLI
-through this same contract) would be a new surface and is explicitly
-deferred.
+Coding agents are becoming the default way software is written, and the
+author wants to know whether *his own* agent setup is actually improving —
+with evidence, not vibes. The vendors all measure, but their measurement is
+welded to their agent, private, and on their terms. This project exists so
+its author can point one harness at any provider, get a real agent, get an
+honest pass-rate and cost over a versioned contract, verify the score
+himself, and turn every failure into a graded case his agent must learn to
+pass. It is public because the discipline is worth showing, and because a
+stranger might want the same loop for their own setup — which is the only
+trigger that turns this from a personal loop into a product.
 
 ## What this project is (in scope)
 

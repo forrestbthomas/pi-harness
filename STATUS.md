@@ -7,6 +7,7 @@
 
 | Item | Status |
 |---|---|
+| **Dogfood posture — personal loop, public demo** | **SHIPPED — 2026-08-15** — short 7-persona debate (`.pi/debate/dogfood-posture/`): the project is the author's agent-improvement loop, public as a demo of the discipline; **no product release until a consumer earns it** (v1.0.0 consumer-triggered); gates re-mean as the loop's integrity check; consumer trigger machine-checked (`test_docs_drift.py` + release-checklist step 0); decision record `docs/knowledge-base/decision/2026-08-15-dogfood-posture.md` |
 | **Honest reframe — no-moat positioning** | **SHIPPED — 2026-08-15** — 7-persona debate (`.pi/debate/honest-reframe/`): "the score is the product" — versioned, reproducible, variance-aware, self-healing measurement of *your* config; no moat, no new science, stated plainly; neutrality framing (vendors' measurement is welded to their agent); claims table enforced by `test_docs_drift.py`; decision record `docs/knowledge-base/decision/2026-08-15-honest-reframe.md` |
 | **Charter + project identity** | **SHIPPED — 2026-08-14** — `CHARTER.md` (boundary contract: one product, the harness; "we do not" non-goals); north star adjusted; README single-product; AGENTS/.pi/SYSTEM carry scope for agents (#98/#99) |
 | **Cut list** (MCP server, OTel, pdf2txt) | **SHIPPED — 2026-08-14** — −1790 lines (#100); Homebrew/release machinery kept (charter wins); spec shelf-ware deferred |

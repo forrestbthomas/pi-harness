@@ -55,6 +55,41 @@ def sample_cases(dataset) -> list[LLMTestCase]:
     return cases
 
 
+def _run_pi(
+    cmd: list[str],
+    cwd: Path,
+    timeout: float,
+    extra_env: dict[str, str] | None = None,
+) -> str:
+    """Run a pi-run command and return stdout, with the eval failure honesty
+    rule: exit code non-zero OR empty stdout is a failure (a silent model
+    failure must never look like a pass). Shared by run_pi_print and
+    run_pi_session so both surfaces obey the same contract.
+    """
+    env = os.environ.copy()
+    if extra_env:
+        env.update(extra_env)
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=cwd,
+            text=True,
+            capture_output=True,
+            env=env,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(
+            f"pi timed out after {timeout:.0f}s: {' '.join(cmd)}"
+        ) from exc
+    if result.returncode != 0 or not result.stdout.strip():
+        raise RuntimeError(
+            f"pi failed (exit {result.returncode}, empty stdout? "
+            f"{not result.stdout.strip()}):\n{result.stderr}"
+        )
+    return result.stdout
+
+
 def run_pi_print(prompt: str, cwd: Path | None = None, extra_args: list[str] | None = None, timeout: float = 180.0) -> str:
     """Run Pi in print mode and return the text output.
 
@@ -72,26 +107,61 @@ def run_pi_print(prompt: str, cwd: Path | None = None, extra_args: list[str] | N
     if extra_args:
         cmd.extend(extra_args)
     cmd.append(prompt)
+    return _run_pi(cmd, cwd, timeout)
 
-    try:
-        result = subprocess.run(
-            cmd,
-            cwd=cwd,
-            text=True,
-            capture_output=True,
-            env=os.environ.copy(),
-            timeout=timeout,
-        )
-    except subprocess.TimeoutExpired as exc:
-        raise RuntimeError(
-            f"pi print timed out after {timeout:.0f}s: {' '.join(cmd)}"
-        ) from exc
-    if result.returncode != 0 or not result.stdout.strip():
-        raise RuntimeError(
-            f"pi print failed (exit {result.returncode}, empty stdout? "
-            f"{not result.stdout.strip()}):\n{result.stderr}"
-        )
-    return result.stdout
+
+def run_pi_session(
+    turns: list[str],
+    session_id: str,
+    cwd: Path | None = None,
+    extra_args: list[str] | None = None,
+    per_turn_timeout: float = 180.0,
+    extra_env: dict[str, str] | None = None,
+) -> str:
+    """Drive a multi-turn chat session (EVAL-17 chat-session runner).
+
+    Turn 1 launches with ``pi-run print`` and pins ``--session-id`` (the
+    EVAL-17 pi-run enabler keeps the pinned session persistent without a
+    cumulative budget cap); turns 2..N continue the same exact session with
+    ``pi-run resume --session-id``. Returns the full transcript (each turn's
+    output joined) for the caller to grade. Per-turn failure uses the same
+    honesty rule as print (non-zero exit / empty stdout / timeout = failed
+    run, never a silent pass).
+
+    Isolation: --session-id pins each case to its own session, so 'resume'
+    always continues the right conversation even when cases run sequentially
+    in one nightly. Runaway protection: per-turn timeout plus the harness
+    watchdog (PI_SELF_HEAL=1 records wedge events) — a stalled session is a
+    failed run, not a silent pass.
+
+    Memory-free invariant (MEM-1): this is the same pi-run spawn path as
+    print — no memory/stateful packages are added; extra_env may carry
+    PI_SELF_HEAL=1 (the watchdog pump), which records heal events, not
+    memory.
+    """
+    cwd = cwd or Path(__file__).parent.parent
+    transcript: list[str] = []
+    for i, turn in enumerate(turns):
+        if i == 0:
+            cmd = [
+                "pi-run", "print",
+                "--cost-mode", "live-eval",
+                "--session-id", session_id,
+            ]
+            if extra_args:
+                cmd.extend(extra_args)
+        else:
+            # Launch-only args (--model-tier, --permission-mode, --cost-mode)
+            # must NOT be repeated on resume: pi-run rejects --model-tier for
+            # resume (a resumed session continues with its original model and
+            # permissions). The session is pinned via --session <id> (the
+            # EVAL-17 pi-run enabler: a pinned resume skips --continue, which
+            # pi rejects when combined with a session pin; --session is
+            # non-interactive, unlike --resume which opens the TUI).
+            cmd = ["pi-run", "resume", "--session", session_id]
+        cmd.append(turn)
+        transcript.append(_run_pi(cmd, cwd, per_turn_timeout, extra_env))
+    return "\n\n".join(transcript)
 
 
 # Mirrors internal/cli/eval.go's supportedProviderKeyEnvs and must cover every

@@ -84,6 +84,15 @@ eval side).
 > change — an agent carrying memory into an eval case could answer from
 > memory instead of from the task, corrupting the honest pass-rate.
 
+> **Chat surface (EVAL-17, 2026-08-15):** cases with `surface: "chat"` run
+> through the chat-session runner (`run_pi_session`): turn 1 = `pi-run print
+> --session-id eval-<case>`, turns 2+ = `pi-run resume --session
+> eval-<case>`. The runner stays on the same memory-free pi-run spawn path;
+> `PI_SELF_HEAL=1` records watchdog events (the HEAL-2 wedge pump) — heal
+> events are measurement, not memory. The pi-run enabler: `--session-id` /
+> `--session` pins the session (persists without a cumulative budget cap),
+> and a pinned resume skips `--continue` (pi rejects the combination).
+
 The loop must measure changes to itself: a change to the eval/harness surface
 can silently shift every scorecard (the zero-token silent-success class) with
 nothing measuring the delta. The EVAL-16 pilot ships two hermetic mechanics

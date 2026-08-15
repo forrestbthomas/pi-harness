@@ -108,8 +108,8 @@
       "latencyMs": 28811.6
     },
     "coding-018": {
-      "passRate": 0.4,
-      "costPerTaskUsd": 0.0045989,
+      "passRate": 0.2,
+      "costPerTaskUsd": 0.0050749,
       "tokensPerTask": 12585,
       "latencyMs": 13012.4
     },
@@ -300,8 +300,8 @@
       "latencyMs": 14786.2
     },
     "coding-050": {
-      "passRate": 0.8,
-      "costPerTaskUsd": 0.0049465,
+      "passRate": 0.5,
+      "costPerTaskUsd": 0.0052335,
       "tokensPerTask": 14746,
       "latencyMs": 16743.5
     },
@@ -334,6 +334,18 @@
       "costPerTaskUsd": 0.0034124,
       "tokensPerTask": 7033,
       "latencyMs": 18085.3
+    },
+    "coding-056": {
+      "passRate": 0.8,
+      "costPerTaskUsd": 0.1226583,
+      "tokensPerTask": 67588,
+      "latencyMs": 106758.8
+    },
+    "coding-058": {
+      "passRate": 1.0,
+      "costPerTaskUsd": 0.10536045,
+      "tokensPerTask": 81336,
+      "latencyMs": 83362.5
     }
   }
 }

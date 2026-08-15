@@ -1,0 +1,1 @@
+Turn 1 suggested a possible regression, but the turn-2 data changes the diagnosis: the case's baseline pass rate is 0.2 (2 of 10), so at n=5 we expect ~4 failed runs. Observing 1 of 5 is a one-extra-failure dip — within variance. The gate correctly treated it as a flake, not a regression, and stayed green.

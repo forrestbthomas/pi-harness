@@ -7,6 +7,22 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **EVAL-17 — Agentic slice 2: chat-session runner + multi-turn cases**
+  (2026-08-15, datasetVersion 2026-08-15.4): the eval can now drive
+  multi-turn sessions — `run_pi_session` (turn 1 via `pi-run print
+  --session-id`, turns 2+ via `pi-run resume --session`), two new
+  `surface: "chat"` cases (coding-056 multi-turn gate tuning, coding-058
+  follow-up clarification), deterministic graders on the transcript,
+  `PI_SELF_HEAL=1` on chat runs (the HEAL-2 wedge pump). pi-run enabler:
+  `--session-id`/`--session` pins a session without a cumulative budget cap,
+  and a pinned resume skips `--continue` (pi rejects the combination).
+  Honest attribution: chat cost/tokens come from the pinned session file's
+  usage blocks (the ledger diff double-counts multi-turn sessions); runs use
+  per-run unique session ids (independent samples). Re-baseline: 056 at 0.8,
+  058 at 1.0, ~$0.11-0.12/session. **coding-057 (subagent delegation)
+  parked** — the 5× re-baseline caught that a subagent-spawning turn 1 makes
+  the turn-2 resume time out; it stays the graded case for the future fix.
+  Memory-free eval invariant held; live count stays 55.
 - **Release runbook** `docs/release-checklist.md` (2026-08-15): the v0.11.0
   cut, step-by-step — gate evidence (two consecutive green nightlies) →
   changelog flip (PR first) → tag → formula SHAs → post-release verify;

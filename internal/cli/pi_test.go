@@ -59,6 +59,28 @@ func TestPiArgsPrintDeepSeek(t *testing.T) {
 	}
 }
 
+func TestPiArgsPrintPinnedSessionPersists(t *testing.T) {
+	// EVAL-17 enabler: an explicit --session-id must keep the session (no
+	// --no-session) even with persist=false, so the chat-session runner's
+	// turn 1 (print) can be continued by resume without a cumulative budget cap.
+	p, _ := LookupProvider("openai")
+	got := piArgs(p, p.DefaultModel, "print", []string{"--session-id", "eval-coding-056", "hello"}, false, "")
+	want := []string{"--provider", "openai", "--model", "openai/gpt-5.6-terra", "--offline", "-p", "--session-id", "eval-coding-056", "hello"}
+	if len(got) != len(want) {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("got %v, want %v", got, want)
+		}
+	}
+	for _, a := range got {
+		if a == "--no-session" {
+			t.Fatalf("pinned session must not be ephemeral: %v", got)
+		}
+	}
+}
+
 func TestPiArgsPassThroughFlagsAndMessage(t *testing.T) {
 	p, _ := LookupProvider("openai")
 	got := piArgs(p, "openai/gpt-5.6-terra", "chat", []string{"--tools", "read", "refactor x"}, false, "")
@@ -90,7 +112,9 @@ func TestPiArgsResumeAppendsContinue(t *testing.T) {
 func TestPiArgsResumePreservesPassThrough(t *testing.T) {
 	p, _ := LookupProvider("deepseek")
 	got := piArgs(p, "deepseek/deepseek-v4-flash", "resume", []string{"--session", "abc123", "continue refactor"}, false, "")
-	want := []string{"--provider", "deepseek", "--model", "deepseek/deepseek-v4-flash", "--offline", "--continue", "--session", "abc123", "continue refactor"}
+	// A session pin replaces --continue (pi rejects --continue + a pin): the
+	// EVAL-17 runner pins eval-<case> on resume turns.
+	want := []string{"--provider", "deepseek", "--model", "deepseek/deepseek-v4-flash", "--offline", "--session", "abc123", "continue refactor"}
 	if len(got) != len(want) {
 		t.Fatalf("got %v, want %v", got, want)
 	}

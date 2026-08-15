@@ -1,29 +1,50 @@
 # Scope Contract
-**Task:** EVAL-16 — Harness-change eval gate, pilot-first | **Plan:** BACKLOG rank 1 (EVAL-16, RICE ~1.6, 0.3–0.5 pw), EPIC-1, `.pi/debate/whats-next/synthesis.md` | **Date:** 2026-08-14 | **Status:** ACTIVE
+**Task:** EVAL-17 — Agentic slice 2: chat-session runner + multi-turn/subagent cases | **Plan:** docs/specs/eval17-agentic-slice2.md | **Date:** 2026-08-15 | **Status:** CLOSED — shipped 2026-08-15 (EVAL-17 PR)
 
-## Context (from the debate)
-The loop must measure changes to itself: a change to the eval/harness surface can silently shift every scorecard (the zero-token silent-success class) and nothing measures the delta today. Pilot-first: build the delta mechanics hermetically now, learn delta-vs-noise, promote to an enforced gate on the first caught regression. **Pilot is independent of W5 Part C** (orthogonal surfaces — agent-output honesty vs tool-timeout telemetry).
-
-## In Scope (the pilot slice)
-1. **Eval-surface classifier** (hermetic) — a utility that classifies a PR's changed paths into eval-surface categories, reusing EVAL-15's seam inventory (`eval/tests/test_benchmark_seam.py` + `docs/benchmark-seam.md` §5 surface: `eval/datasets/`, `eval/benchmarks/`, `eval/scripts/score_run.py`, `eval/grader.py`, `eval/secret_backend.py`, `eval/baselines/`, `eval/tests/`, `tasks.json`, Go `internal/cli/scorecard*`, nightly/provider-scorecard workflows). Unit-tested with fixtures.
-2. **Scorecard-delta renderer** (hermetic) — a small module (new `eval/scripts/score_delta.py`) that compares two scorecards (candidate report vs committed baseline, or two nightlies) per case: pass-rate delta + cost delta, reusing the EVAL-2 flake + EVAL-13 cost tolerance model; emits a compact delta report (JSON + markdown). Unit tests with hermetic fixtures — **no live runs, no API cost**.
-3. **CI wiring (report-only)** — a cheap step in `ci.yml` (python-quick or a new step) on eval-touching PRs: runs the classifier, runs the hermetic eval checks, produces a PR delta-report artifact (changed surfaces, invariants checked, per-case delta if a candidate scorecard is supplied, and a `needs-nightly-verification` flag for live-surface changes). **Report-only: never fails the PR in the pilot.**
-4. **Promotion rule recorded** — in the DoD + a short design note: promote to an enforced gate (fail CI on the delta class) on the first caught regression, or once the delta-vs-noise mechanics are validated against real nightlies.
-5. **Nightly-artifact delta** (user-approved addition): the nightly workflow also runs `score_delta.py --diff` comparing each nightly's scorecard against the committed baseline and writes the delta report into `eval/live-results/` (already uploaded as the `live-eval-results` artifact) — report-only.
+## In Scope
+- **Files:**
+  - `eval/conftest.py` — add `run_pi_session` (chat-session runner)
+  - `eval/tests/test_chat_runner.py` (new) — hermetic runner tests
+  - `eval/tests/test_live_suite.py` — `_run_agent_once` branches on `surface == "chat"`; `PI_SELF_HEAL=1` on chat runs
+  - `eval/datasets/coding_samples.jsonl` — 3 chat cases (next free `coding-0NN` ids, category `agentic`, `surface: "chat"`, `turns`)
+  - `eval/datasets/tasks.json` — `datasetVersion` bump
+  - `eval/datasets/graders/coding-0NN/grade.py` (×3, new) — deterministic graders
+  - `eval/datasets/references/coding-0NN/answer.txt` (×3, new)
+  - `eval/baselines/live-baseline.json` — re-baseline entries (data release)
+  - `docs/benchmark-seam.md` — surface note (chat + memory-free reaffirmation)
+  - `docs/specs/eval17-agentic-slice2.md` — this spec (archives per GOV-2 on ship)
+  - `CHANGELOG.md`, `BACKLOG.md`, `EPICS.md`, `STATUS.md` — record the ship
+- **Features:**
+  - Chat-session runner: turn 1 via `pi-run print --max-budget-usd <cap> --cost-mode live-eval [--permission-mode plan]`, turns 2+ via `pi-run resume`; transcript + stats (pass/costUsd/judgeCostUsd/tokens/latencyMs)
+  - 3 chat cases: multi-turn correction, subagent delegation, follow-up clarification — deterministic graders on the final answer/transcript
+  - Watchdog pump: `PI_SELF_HEAL=1` on chat runs (HEAL-2 data source)
+  - Re-baseline: new cases recorded honestly, 0 unbaselined, provenance stamped
+- **Boundaries:**
+  - Memory-free eval invariant: same pi-run spawn path, no new packages; pi-subagents (already pinned) is tool delegation, not memory
+  - Live count stays 55 (`surface: "chat"` ≠ `"live"`); count authority = tasks.json
+  - Report shape unchanged — score_run.py / gate / baseline schema untouched
+  - Deterministic graders only (no new LLM-judge cases)
 
 ## Out of Scope
-- **Enforcing the gate** (promotion is a later, evidence-gated decision — the pilot is report-only by design).
-- W5 Part C (`toolTimeoutMs` observation — orthogonal surface; rides v0.12.0).
-- New dataset cases or graders (EVAL-5/EVAL-17 territory).
-- Changing the Go scorecard struct or the `score_run.py` gate semantics (read/reuse only).
-- New live-run spend (the pilot is hermetic).
-- EVAL-12 re-baseline (tonight's scheduled data release — separate item).
+- Runtime-agnostic scorer (deferred new surface — dogfood posture)
+- Subagent support in pi-run (upstream pi-subagents)
+- Sandboxing (EVAL-7 — parked)
+- Memory engines / any new package in the eval spawn path (MEM-1 closed)
+- EVAL-16 enforcement promotion
+- Dataset growth beyond the 3 chat cases
+- Changing print-mode semantics or existing case grading
+- The standalone eval product surface (pi-bench split — consumer-triggered)
 
 # Scope Change Log
 | # | Category | What | Why | Decision | Outcome |
 |---|----------|------|-----|----------|---------|
-| 1 | user-expansion | Also wire the scorecard-delta report into the nightly artifact (nightly-vs-baseline diff in `live-eval-results`) | User chose the wider pilot when approving the contract | Permit | PR (this change) |
+| 1 | emergent | pi-run enabler: `--session-id`/`--session` pins a session without a cumulative budget cap; pinned resume skips `--continue` | `--max-budget-usd` is cumulative across the ledger (rejected the per-case cap approach); pi rejects `--continue` + a session pin; `--resume` opens the TUI (non-interactive capture fails) | Permit (anticipated in spec: "if the session-persistence enabler needs a pi-run flag") | `internal/cli/pi.go` + `pi_test.go`; runner uses print `--session-id` + resume `--session` |
+| 2 | emergent | Chat runs get a **per-run unique** `--session-id` (`eval-<case>-<hex>`), not per-case | A shared id made EVAL_RUNS_PER_CASE samples continue run 1's session — not independent samples (contaminated measurement) | Permit (correctness of the measurement) | `_run_agent_once` session id includes `secrets.token_hex(4)` |
+| 3 | emergent | Chat cost/tokens attributed from the **pinned session file** (`_session_usage`), not the ledger diff | The ledger diff double-counts multi-turn sessions (cumulative per-launch entries + interleaving) — reported $0.86/549k-tokens for a ~$0.05 session | Permit (honesty of the scorecard) | `_session_usage` reads `message.usage` blocks of `*_<session-id>.jsonl` |
+| 4 | user-expansion (scope cut) | coding-057 (subagent delegation) **parked** — ships 056+058 only | Turn-2 resume timed out after a subagent-spawning turn 1 in the 5× re-baseline: subagent-in-scripted-session is not reliable yet. The eval caught the limitation; 057 stays the graded case for the future fix | Permit (user chose ship-056-058-park-057) | Follow-up task: re-add coding-057 when subagent-in-session works (runner/timeout investigation) |
 
 # Follow-up Tasks
-- [ ] After the pilot ships: record the first scorecard-delta observed on a real PR/nightly (delta-vs-noise baseline).
-- [ ] Promotion decision ticket: enforced-gate criteria (first caught regression OR validated delta mechanics).
+- [ ] Archive spec to `docs/governance/specs-archive/` on ship (GOV-2)
+- [ ] Record the chat cases' re-baseline entries with provenance (done in this PR)
+- [x] Confirm session-isolation mechanism at implementation (pi `--session` vs per-case cwd) — resolved: `--session-id` (turn 1) + `--session` (resume)
+- [ ] **coding-057 (subagent delegation)**: re-add when subagent-in-scripted-session works (scope change #4 — the measured limitation; investigate the turn-2 resume timeout after a subagent-spawning turn 1)

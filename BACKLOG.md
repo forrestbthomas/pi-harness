@@ -13,7 +13,7 @@ one-screen snapshot, `EPICS.md` for the epic grouping layer, and
 
 | Rank | Item | RICE | Epic | Effort | DoD sketch |
 |---|---|---|---|---|---|
-| 1 | **EVAL-17 — Agentic case family slice 2** (multi-turn/subagent) | 1.40 | EPIC-1 | 1 pw | re-opened from EVAL-6 slice 2 with a guard-safe id (queue-visibility fix: `\bEVAL-6\b` collides with slice 1's CHANGELOG entry); multi-turn/subagent task surface + **chat-session runner named enabler**; **the data pump HEAL-2 is gated on** (print-mode cannot wedge → `self-heal events: 0`) |
+| 1 | **EVAL-17 — Agentic case family slice 2** — **SHIPPED 2026-08-15** (multi-turn surface: chat-session runner + coding-056/058; datasetVersion 2026-08-15.4) | 1.40 | EPIC-1 | 1 pw | re-opened from EVAL-6 slice 2 with a guard-safe id; multi-turn task surface + **chat-session runner named enabler** (pi-run `--session-id`/`--session` pin); **the data pump HEAL-2 is gated on** (print-mode cannot wedge → `self-heal events: 0`). **Follow-up: coding-057 (subagent delegation) parked** — the 5× re-baseline caught that a subagent-spawning turn 1 makes the turn-2 resume time out; stays the graded case for the future fix |
 
 | 12 | **EVAL-18 — Variance-aware baseline** (the gate must not false-fail — or false-pass — sub-1.0 cases whose rates come from a single noisy snapshot) | ~1.5 | EPIC-1 | 0.5 pw | spec-first (persona debate 2026-08-15): per-case tolerance/variance from observed n_failed distribution; ends the 're-baseline → immediately red again' churn (coding-017/018/055 dipped 1 run below single-snapshot rates on the 2nd 55-case nightly); must not mask real regressions (the 'can't false-fail in either direction' promise). Trigger: EVAL-12 landed (#140); v0.11.0 needs 2 consecutive green nightlies |
 

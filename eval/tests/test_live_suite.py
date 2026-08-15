@@ -27,7 +27,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import has_api_key, load_dataset, run_pi_print, run_pi_session
+from conftest import has_api_key, load_all_datasets, run_pi_print, run_pi_session
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DATASET_DIR = REPO_ROOT / "eval" / "datasets"
@@ -169,7 +169,7 @@ def _run_agent_once(sample: dict) -> dict:
 
 
 _DETERMINISTIC_CASES = [
-    sample for sample in load_dataset() if sample.get("grader") == "deterministic"
+    sample for sample in load_all_datasets() if sample.get("grader") == "deterministic"
 ]
 
 

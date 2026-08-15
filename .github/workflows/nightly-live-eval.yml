@@ -70,7 +70,7 @@ jobs:
     # authority). 30 min was sized for the old 17-case
     # suite and the job was killed at the cap on 2026-08-14. 60 min leaves
     # headroom; the per-case budget cap (PI_MAX_BUDGET_USD) bounds spend.
-    timeout-minutes: 60
+    timeout-minutes: 90
     env:
       EVAL_RUNS_PER_CASE: '5'
       EVAL_JUDGE_RUNS: '3'               # EVAL-8: majority-of-3 judge passes (bound judge variance)

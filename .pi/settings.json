@@ -48,7 +48,8 @@
     "claude-*",
     "gemini-*",
     "kimi-coding/*",
-    "moonshotai/*"
+    "moonshotai/*",
+    "ollama/*"
   ],
   "warnings": {
     "anthropicExtraUsage": true

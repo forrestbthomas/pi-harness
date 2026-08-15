@@ -71,8 +71,9 @@
     {
       "name": "ollama",
       "keyEnv": "OLLAMA_API_KEY",
-      "piProvider": "openai",
+      "piProvider": "ollama",
       "defaultModel": "ollama/llama3.1",
+      "keyless": true,
       "baseURL": "http://localhost:11434/v1"
     },
     {

@@ -1,50 +1,43 @@
 # Scope Contract
-**Task:** EVAL-17 — Agentic slice 2: chat-session runner + multi-turn/subagent cases | **Plan:** docs/specs/eval17-agentic-slice2.md | **Date:** 2026-08-15 | **Status:** CLOSED — shipped 2026-08-15 (EVAL-17 PR)
+**Task:** #157 — Derive the Ollama `/model` picker from the local daemon catalog | **Plan:** Approved in chat (2026-08-15) | **Date:** 2026-08-15 | **Status:** ACTIVE
 
 ## In Scope
 - **Files:**
-  - `eval/conftest.py` — add `run_pi_session` (chat-session runner)
-  - `eval/tests/test_chat_runner.py` (new) — hermetic runner tests
-  - `eval/tests/test_live_suite.py` — `_run_agent_once` branches on `surface == "chat"`; `PI_SELF_HEAL=1` on chat runs
-  - `eval/datasets/coding_samples.jsonl` — 3 chat cases (next free `coding-0NN` ids, category `agentic`, `surface: "chat"`, `turns`)
-  - `eval/datasets/tasks.json` — `datasetVersion` bump
-  - `eval/datasets/graders/coding-0NN/grade.py` (×3, new) — deterministic graders
-  - `eval/datasets/references/coding-0NN/answer.txt` (×3, new)
-  - `eval/baselines/live-baseline.json` — re-baseline entries (data release)
-  - `docs/benchmark-seam.md` — surface note (chat + memory-free reaffirmation)
-  - `docs/specs/eval17-agentic-slice2.md` — this spec (archives per GOV-2 on ship)
-  - `CHANGELOG.md`, `BACKLOG.md`, `EPICS.md`, `STATUS.md` — record the ship
+  - `.pi/extensions/ollama.ts` (new) — register a Pi `ollama` provider via Pi's documented static import pattern; fetch and normalize the local daemon catalog with a bounded timeout and last-successful cache.
+  - `.pi/extensions/lib/ollama-catalog.ts` (new) — pure discovery/normalization helpers with no Pi runtime imports, so Node's hermetic tests can exercise them without a daemon or runtime dependency.
+  - `.pi/extensions/__tests__/ollama.test.ts` (new) — hermetic Node tests for discovery parsing, timeout, and cached-catalog fallback. The subdirectory prevents Pi's extension auto-discovery from treating the test as an extension.
+  - `.pi/settings.json` — load the project-local Ollama extension.
+  - `internal/cli/providers.go`, `internal/cli/pi.go`, `internal/cli/app.go`, `internal/cli/benchmark.go`, `internal/cli/eval.go`, `internal/cli/ollama.go`, `internal/cli/ollama_test.go`, `eval/conftest.py`, `providers.json` — route the harness `ollama` provider to Pi’s `ollama` provider while retaining the loopback OpenAI-compatible endpoint, permitting its local catalog refresh, supporting its keyless local-daemon authentication, and choosing a live installed model as the unflagged launch default.
+  - `internal/cli/*_test.go` — hermetic regression tests for routing and catalog normalization/failure handling.
+  - `CHANGELOG.md` — user-visible bug-fix entry.
 - **Features:**
-  - Chat-session runner: turn 1 via `pi-run print --max-budget-usd <cap> --cost-mode live-eval [--permission-mode plan]`, turns 2+ via `pi-run resume`; transcript + stats (pass/costUsd/judgeCostUsd/tokens/latencyMs)
-  - 3 chat cases: multi-turn correction, subagent delegation, follow-up clarification — deterministic graders on the final answer/transcript
-  - Watchdog pump: `PI_SELF_HEAL=1` on chat runs (HEAL-2 data source)
-  - Re-baseline: new cases recorded honestly, 0 unbaselined, provenance stamped
+  - `pi-run chat --provider ollama` launches Pi under provider ID `ollama`.
+  - Pi’s `/model` selector receives the exact model tags reported by the configured local Ollama daemon.
+  - Discovery has a short timeout, does not need credentials, and retains the last successfully discovered catalog if the daemon is unavailable.
+  - Tests use a local fake endpoint; CI never requires a real Ollama daemon or model download.
 - **Boundaries:**
-  - Memory-free eval invariant: same pi-run spawn path, no new packages; pi-subagents (already pinned) is tool delegation, not memory
-  - Live count stays 55 (`surface: "chat"` ≠ `"live"`); count authority = tasks.json
-  - Report shape unchanged — score_run.py / gate / baseline schema untouched
-  - Deterministic graders only (no new LLM-judge cases)
+  - OpenAI-compatible request transport remains `http://localhost:11434/v1`.
+  - The extension is project-local and uses Pi’s supported extension API; no fork or modification of the installed Pi runtime.
+  - The issue and PR close #157.
 
 ## Out of Scope
-- Runtime-agnostic scorer (deferred new surface — dogfood posture)
-- Subagent support in pi-run (upstream pi-subagents)
-- Sandboxing (EVAL-7 — parked)
-- Memory engines / any new package in the eval spawn path (MEM-1 closed)
-- EVAL-16 enforcement promotion
-- Dataset growth beyond the 3 chat cases
-- Changing print-mode semantics or existing case grading
-- The standalone eval product surface (pi-bench split — consumer-triggered)
+- Upstream Pi-native Ollama provider/support (explicitly deferred).
+- Dynamic catalogs for any provider other than Ollama.
+- Global `~/.pi` configuration changes or user credential changes.
+- Altering Pi’s global OpenAI catalog behavior.
+- New Go/npm dependencies, model pulls, or network-dependent CI.
+- Unrelated provider-catalog cleanup/refactoring.
 
 # Scope Change Log
 | # | Category | What | Why | Decision | Outcome |
-|---|----------|------|-----|----------|---------|
-| 1 | emergent | pi-run enabler: `--session-id`/`--session` pins a session without a cumulative budget cap; pinned resume skips `--continue` | `--max-budget-usd` is cumulative across the ledger (rejected the per-case cap approach); pi rejects `--continue` + a session pin; `--resume` opens the TUI (non-interactive capture fails) | Permit (anticipated in spec: "if the session-persistence enabler needs a pi-run flag") | `internal/cli/pi.go` + `pi_test.go`; runner uses print `--session-id` + resume `--session` |
-| 2 | emergent | Chat runs get a **per-run unique** `--session-id` (`eval-<case>-<hex>`), not per-case | A shared id made EVAL_RUNS_PER_CASE samples continue run 1's session — not independent samples (contaminated measurement) | Permit (correctness of the measurement) | `_run_agent_once` session id includes `secrets.token_hex(4)` |
-| 3 | emergent | Chat cost/tokens attributed from the **pinned session file** (`_session_usage`), not the ledger diff | The ledger diff double-counts multi-turn sessions (cumulative per-launch entries + interleaving) — reported $0.86/549k-tokens for a ~$0.05 session | Permit (honesty of the scorecard) | `_session_usage` reads `message.usage` blocks of `*_<session-id>.jsonl` |
-| 4 | user-expansion (scope cut) | coding-057 (subagent delegation) **parked** — ships 056+058 only | Turn-2 resume timed out after a subagent-spawning turn 1 in the 5× re-baseline: subagent-in-scripted-session is not reliable yet. The eval caught the limitation; 057 stays the graded case for the future fix | Permit (user chose ship-056-058-park-057) | Follow-up task: re-add coding-057 when subagent-in-session works (runner/timeout investigation) |
+| 1 | emergent | Add extension discovery tests | Discovery behavior belongs to the TypeScript extension; Go-only tests would not prove the `/model` catalog is correct | Permit (user approved) | Node built-in tests will use a fake loopback fetch; no daemon or new dependency |
+| 2 | emergent | Add `internal/cli/pi.go`; omit Pi `--offline` for Ollama only | Pi's supported dynamic-provider cache will not perform fresh discovery while offline | Permit (user approved) | All other providers retain `--offline`; Ollama refreshes only its bounded loopback catalog |
+| 3 | implementation safeguard | Place the extension test under `.pi/extensions/__tests__/` | Pi auto-loads every top-level `.ts` file in `.pi/extensions/`; a top-level test would be mistaken for an extension | Permit (covered by approved test addition) | Test remains project-local but is not auto-loaded by Pi |
+| 4 | critical | Add explicit keyless-provider handling in launch and benchmark paths | Harness otherwise refuses the credential-free Ollama daemon before Pi starts | Permit (user approved) | A declarative provider field limits bypassing secret lookup to Ollama; all other providers keep existing key requirements |
+| 5 | critical | Split pure helpers into `.pi/extensions/lib/ollama-catalog.ts` | Pi aliases static `@earendil-works/pi-ai` imports; dynamic imports can bypass the alias and fail. The lib keeps Node tests runtime-independent | **Auto-approved (user directive)** | Static imports in the extension; pure helpers in lib |
+| 7 | emergent | Exclude `OLLAMA_API_KEY` from the eval live-key guard (Go + Python) | A stale placeholder key for the now-keyless provider flipped `anyProviderKeyEnv()` and made `TestRunEvalNoKeySkipsLive` run the live branch in this shell | **Auto-approved (user directive)** | Keyless providers no longer gate live evals; the failing test is now hermetic and green |
+| 8 | emergent | Live default model for unflagged Ollama launches (`ollama.go`) | The static `ollama/llama3.1` placeholder is not installed locally, so a bare `pi-run chat --provider ollama` 404'd after the picker fix | **Auto-approved (user directive)** | Bounded loopback lookup picks the first chat-capable installed tag; static default is the fallback when the daemon is down; hermetic httptest coverage |
+| 6 | process | Auto-approval directive | User directed autonomous fixes using persona-agent best practices (worker/reviewer/scout + playtest battery discipline) | **Auto-approved (user directive)** | Deviations are logged here as encountered; work proceeds without blocking prompts |
 
 # Follow-up Tasks
-- [ ] Archive spec to `docs/governance/specs-archive/` on ship (GOV-2)
-- [ ] Record the chat cases' re-baseline entries with provenance (done in this PR)
-- [x] Confirm session-isolation mechanism at implementation (pi `--session` vs per-case cwd) — resolved: `--session-id` (turn 1) + `--session` (resume)
-- [ ] **coding-057 (subagent delegation)**: re-add when subagent-in-scripted-session works (scope change #4 — the measured limitation; investigate the turn-2 resume timeout after a subagent-spawning turn 1)
+- [ ] Propose upstream Pi-native Ollama support after the harness extension is validated.

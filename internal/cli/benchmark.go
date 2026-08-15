@@ -337,9 +337,12 @@ func runProviderBenchmark(tasks []benchmarkTask, opts evalOptions, root string) 
 	if err != nil {
 		return benchmarkRunResult{}, &benchmarkExitError{2, err}
 	}
-	key, err := resolveSecret(p.KeyEnv)
-	if err != nil {
-		return benchmarkRunResult{}, &benchmarkExitError{3, fmt.Errorf("no %s available: export it, or check your secret manager (`pi-run doctor`)", p.KeyEnv)}
+	key := ""
+	if providerRequiresCredential(p) {
+		key, err = resolveSecret(p.KeyEnv)
+		if err != nil {
+			return benchmarkRunResult{}, &benchmarkExitError{3, fmt.Errorf("no %s available: export it, or check your secret manager (`pi-run doctor`)", p.KeyEnv)}
+		}
 	}
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -349,10 +352,7 @@ func runProviderBenchmark(tasks []benchmarkTask, opts evalOptions, root string) 
 	if err != nil {
 		return benchmarkRunResult{}, &benchmarkExitError{4, err}
 	}
-	model := opts.model
-	if model == "" {
-		model = p.DefaultModel
-	}
+	model := benchmarkLaunchModel(p, opts.model)
 
 	runID := benchmarkRunID(p.Name, model)
 	wsBase, err := os.MkdirTemp("", "pi-bench-"+runID)

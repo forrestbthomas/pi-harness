@@ -19,7 +19,7 @@ func TestLookupProviderKnown(t *testing.T) {
 func TestExpandedCatalogIncludesNewProviders(t *testing.T) {
 	want := map[string]Provider{
 		"azure":      {Name: "azure", KeyEnv: "AZURE_OPENAI_API_KEY", PiProvider: "openai", DefaultModel: "azure/gpt-5.6-terra", BaseURL: "https://<your-resource>.openai.azure.com/openai/v1"},
-		"ollama":     {Name: "ollama", KeyEnv: "OLLAMA_API_KEY", PiProvider: "openai", DefaultModel: "ollama/llama3.1", BaseURL: "http://localhost:11434/v1"},
+		"ollama":     {Name: "ollama", KeyEnv: "OLLAMA_API_KEY", PiProvider: "ollama", DefaultModel: "ollama/llama3.1", BaseURL: "http://localhost:11434/v1", Keyless: true},
 		"mistral":    {Name: "mistral", KeyEnv: "MISTRAL_API_KEY", PiProvider: "openai", DefaultModel: "mistral/mistral-large-latest", BaseURL: "https://api.mistral.ai/v1"},
 		"cohere":     {Name: "cohere", KeyEnv: "COHERE_API_KEY", PiProvider: "openai", DefaultModel: "cohere/command-r-plus", BaseURL: "https://api.cohere.com/compatibility/v1"},
 		"together":   {Name: "together", KeyEnv: "TOGETHER_API_KEY", PiProvider: "openai", DefaultModel: "together/llama-3.3-70b-instruct", BaseURL: "https://api.together.xyz/v1"},
@@ -47,6 +47,23 @@ func TestExpandedCatalogIncludesNewProviders(t *testing.T) {
 // TestProviderNamesAndKeyEnvsUnique guards the routing table against duplicate
 // names (ambiguous --provider) and duplicate key env vars (ambiguous key
 // resolution).
+func TestProviderRequiresCredential(t *testing.T) {
+	ollama, err := LookupProvider("ollama")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if providerRequiresCredential(ollama) {
+		t.Fatal("ollama local daemon must not require a credential")
+	}
+	openai, err := LookupProvider("openai")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !providerRequiresCredential(openai) {
+		t.Fatal("openai must retain its credential requirement")
+	}
+}
+
 func TestProviderNamesAndKeyEnvsUnique(t *testing.T) {
 	names := make(map[string]bool, len(defaultProviders))
 	keyEnvs := make(map[string]string, len(defaultProviders)) // keyEnv -> provider name
@@ -65,14 +82,18 @@ func TestProviderNamesAndKeyEnvsUnique(t *testing.T) {
 	}
 }
 
-// TestSupportedProviderKeyEnvsCoverCatalog makes every catalog keyEnv eligible
-// for the eval no-key skip guard (mirrors eval/conftest.py's list).
+// TestSupportedProviderKeyEnvsCoverCatalog makes every credentialed catalog
+// keyEnv eligible for the eval no-key skip guard (mirrors eval/conftest.py's
+// list). Keyless providers (local daemons) do not gate live evals.
 func TestSupportedProviderKeyEnvsCoverCatalog(t *testing.T) {
 	covered := make(map[string]bool, len(supportedProviderKeyEnvs))
 	for _, k := range supportedProviderKeyEnvs {
 		covered[k] = true
 	}
 	for _, p := range defaultProviders {
+		if p.Keyless {
+			continue
+		}
 		if !covered[p.KeyEnv] {
 			t.Fatalf("keyEnv %q (provider %q) missing from supportedProviderKeyEnvs", p.KeyEnv, p.Name)
 		}

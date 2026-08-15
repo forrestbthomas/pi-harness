@@ -7,6 +7,11 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **Dataset 54 → 55 live cases** (data release, `datasetVersion` 2026-08-15.1):
+  new `coding-055` (bug-fix, deterministic) encodes the 2026-08-15 nightly
+  debugging lesson — root-cause an index/list mismatch in the eval wiring and
+  dismiss version differences as red herrings; grader + reference + dataset
+  guard committed with the case.
 - **EVAL-16 — Harness-change eval gate, pilot** (EPIC-1, 2026-08-14): the
   loop measures itself. New `eval/scripts/score_delta.py` (stdlib-only,
   hermetic) provides (a) an eval-surface classifier for PR changes and (b) a

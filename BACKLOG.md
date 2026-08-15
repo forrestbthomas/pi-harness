@@ -21,7 +21,7 @@ one-screen snapshot, `EPICS.md` for the epic grouping layer, and
 
 | 4 | **HEAL-5 — `pi-run hooks` post-rebase hook** (auto-continue wedged rebase) | 1.20 | EPIC-2 | 0.5 pw | post-rebase hook invokes `pi-run self-heal` after agent timeout; hermetic test |
 
-| 5 | **EVAL-12 — Live re-baseline after W10** (standing trigger: fires on the 03:00 UTC nightly — not a pick) | 1.10 | EPIC-1 | 0.25 pw | pull live-results artifact, review the 54-case report, commit `--update-baseline`; **DoD: 0 unbaselined live cases** + standing re-baseline cadence (after every dataset/harness change; history in `eval/baselines/`); gate-safe verified (score_run records unbaselined, never fails) |
+| 5 | **EVAL-12 — Live re-baseline after W10** (standing trigger: fires on the 03:00 UTC nightly — not a pick) | 1.10 | EPIC-1 | 0.25 pw | pull live-results artifact, review the 55-case report, commit `--update-baseline`; **DoD: 0 unbaselined live cases** + standing re-baseline cadence (after every dataset/harness change; history in `eval/baselines/`); gate-safe verified (score_run records unbaselined, never fails) |
 
 | 6 | **TAX-1 — Opt-in usage evidence via cost ledger** | ~0.7 | EPIC-6 | 0.25 pw | per-provider/per-flag counts from `.pi/cost-ledger.jsonl` (local, opt-in, no keys) → RICE Reach becomes measured |
 

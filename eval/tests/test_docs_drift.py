@@ -139,6 +139,10 @@ CLAIMS_TABLE = [
     ("starter kit for that discipline", "docs/knowledge-base/decision/2026-08-15-honest-reframe.md", None),
     ("no automatic cross-provider fallback", "providers.json", "providers"),
     ("variance-aware", "eval/scripts/score_run.py", "band"),
+    # The honest 'yours' qualifier: provider-neutral, NOT runtime-neutral
+    # (2026-08-15 — the original wording overclaimed; this row keeps the
+    # honest qualifier from rotting back into 'any agent').
+    ("Provider-neutral, **not runtime-neutral**", "CHARTER.md", "neutral across *providers*"),
 ]
 
 

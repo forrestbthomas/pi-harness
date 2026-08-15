@@ -14,7 +14,11 @@ self-healing measurement of *your* agent configuration (provider, model tier,
 prompts, settings) over a versioned contract (`tasks.json` → `score_run.py` →
 scorecard, including the harness's own health events) — we cannot cheat it,
 and you can verify it. **This repository is the demo**: the discipline this
-project applies to its own agent, packaged so you can apply it to yours.
+project applies to its own agent, packaged so you can apply it to **your
+configuration of the same agent** — your provider, model tier, prompts, and
+tasks. The measurement is neutral across *providers*, **not across
+*runtimes***: it measures the agent this harness runs (Pi via `pi-run`), not
+other agents.
 
 **No moat, no new science** — stated plainly because honesty is the entire
 premise. The measurement techniques here are commodity; every major agent
@@ -40,7 +44,11 @@ harness at any provider, get a real agent, get an honest pass-rate and cost
 over a versioned contract, and verify the score yourself — because the only
 thing this project sells is that you don't have to trust the number, ours or
 the vendors'. It is the discipline this project applies to its own agent,
-packaged so you can apply it to yours (dogfood-first).
+packaged so you can apply it to **your configuration of the same agent** —
+your provider, model tier, prompts, and tasks (dogfood-first). A
+runtime-agnostic scorer (measuring Claude Code, Codex, or any agent CLI
+through this same contract) would be a new surface and is explicitly
+deferred.
 
 ## What this project is (in scope)
 

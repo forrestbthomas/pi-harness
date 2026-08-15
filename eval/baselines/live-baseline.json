@@ -330,7 +330,7 @@
       "latencyMs": 12522.1
     },
     "coding-055": {
-      "passRate": 0.2,
+      "passRate": 0.8,
       "costPerTaskUsd": 0.0034124,
       "tokensPerTask": 7033,
       "latencyMs": 18085.3

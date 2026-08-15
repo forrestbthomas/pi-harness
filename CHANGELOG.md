@@ -7,6 +7,14 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **coding-055 prompt scaffold — measured debugging score 0.2 → 0.8**
+  (2026-08-15, datasetVersion 2026-08-15.3): the debugging case's prompt now
+  enforces a four-part labeled root-cause format with completeness pressure.
+  The agent already found the bug; it failed on producing the complete report.
+  A 10-run re-measure went 2/10 → 8/10 — the harness's measured debugging
+  skill (cheap tier) improved 4× without changing the grader. Baseline
+  re-baselined to 0.8. This is the self-improving loop: measure → diagnose →
+  improve the prompt → re-measure.
 - **README minimalization** (2026-08-15): the front door is now a ~150-line
   landing page — above-the-fold real scorecard (55 cases, 88.7%, $0.72,
   0 unbaselined), the "why this is different" differentiators, a terminal

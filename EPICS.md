@@ -57,7 +57,7 @@ Rules:
 
 **Sequence (dependency-ordered):**
 
-1. EVAL-12 — live re-baseline after W10 → 0 unbaselined cases; standing cadence (scheduled, tonight)
+1. EVAL-12 — live re-baseline after W10 → 0 unbaselined cases; standing cadence (**DONE 2026-08-15, #140**: 17→55, 0 unbaselined)
 2. EVAL-17 (EVAL-6 slice 2) — multi-turn/subagent agentic pump → the data pump EPIC-2's HEAL-2 is gated on (print-mode cannot wedge; chat-session runner is a named enabler)
 3. EVAL-8 — judge stabilization → bound variance
 4. EVAL-13 — cost-variance tolerance in the gate → kill the false-cost-alarm class
@@ -73,7 +73,7 @@ Rules:
 - [ ] Each item closed via its own PR with hermetic tests (BACKLOG traceability).
 - [ ] Scorecard reports flakes vs. regressions AND cost-flakes; no false-fail from 1-of-N flake or a single-run cost spike.
 - [ ] Dataset version + provenance in **every** scorecard (live **and** ci-benchmark); 55 live cases held.
-- [ ] 0 unbaselined live cases after EVAL-12; re-baseline is a standing cadence (after every dataset/harness-behavior change; history in `eval/baselines/`).
+- [x] 0 unbaselined live cases after EVAL-12 (#140, 2026-08-15); re-baseline is a standing cadence (after every dataset/harness-behavior change; history in `eval/baselines/`).
 - [ ] Split-seam dry-run passes (or the gap is documented as the reason the split needs the dry-run).
 - [ ] EPIC-1 row closed in ROADMAP; CHANGELOG entries per shipped item.
 
@@ -81,7 +81,7 @@ Rules:
 
 | ID | Item | RICE | Effort |
 |---|---|---|---|
-| EVAL-12 | Live re-baseline after W10: 0 unbaselined cases + standing cadence | 1.10 | 0.25 pw |
+| EVAL-12 | Live re-baseline after W10: 0 unbaselined cases + standing cadence — **SHIPPED #140** | 1.10 | 0.25 pw |
 | EVAL-6 | Agentic case family: slice 1 (tool-using) SHIPPED #111; slice 2 (multi-turn/subagent) → **EVAL-17** | 1.40 | 1 pw |
 | EVAL-17 | Agentic case family slice 2: multi-turn/subagent + chat-session runner (re-opened from EVAL-6 slice 2, guard-safe id) | 1.40 | 1 pw |
 | EVAL-13 | Cost-variance tolerance in nightly gate (`costFlakes`, median-of-N, ≥2-run fail) | 1.00 | 0.5 pw |

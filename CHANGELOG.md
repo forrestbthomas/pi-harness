@@ -6,6 +6,30 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+### Added
+- **EVAL-12 — Live re-baseline 17 → 55 cases** (data release, 2026-08-15,
+  #140): the baseline now covers the full live suite (55 cases, **0
+  unbaselined**, 0 incomplete omitted) with provenance recorded
+  (agentModel `cheap` / judgeModel `gpt-4.1-mini`); 14 sub-1.0 rates recorded
+  as honest bounds; a standing re-baseline cadence is established (after
+  every dataset/harness-behavior change; history in `eval/baselines/`). The
+  v0.11.0 "two consecutive green nightlies" gate can now be met.
+
+### Fixed
+- **Judge-graded cases no longer gate as "incomplete"** (#139, 2026-08-15):
+  `test_live_metrics` cases complete with ONE agent run carrying an internal
+  EVAL_JUDGE_RUNS majority; the gate's `--runs 5` held them to five runs, so
+  every judge case failed as incomplete even when the verdict passed. The
+  `judgeRuns` property now flows through and judge cases expect 1 completed
+  run (deterministic cases stay at `--runs`).
+- **EVAL-13 cost gate is median-shift-only** (#141, 2026-08-15): the
+  "≥2 runs over 2× baseline" regression clause is retired — an intrinsically
+  bimodal case (coding-010) fired it against its own freshly re-baselined
+  median every run (a false-fail, the v0.11.0 "gate can't false-fail in
+  either direction" class). A cost regression is now a **median shift**;
+  over-threshold runs stay reported (`nCostOver`) and single spikes stay
+  `costFlake` (never a gate failure).
+
 ### Removed
 - **`@loreai/pi` (Lore memory engine) from the agent runtime** (2026-08-15):
   removed from `.pi/npm/package.json` and `.pi/settings.json` packages;

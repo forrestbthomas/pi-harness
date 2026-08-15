@@ -63,7 +63,9 @@ EVAL-17 is that pump, and it is also the second half of the agentic family
 3. **Wire into the live suite** — `test_live_suite._run_agent_once` branches
    on `surface == "chat"` → `run_pi_session`. Report shape unchanged
    (score_run.py, gate, baseline untouched).
-4. **Three chat cases** (category `agentic`, surface `chat`, next free
+4. **Two chat cases** (category `agentic`, surface `chat`, in
+   `eval/datasets/chat_samples.jsonl` — a separate jsonl surface so the live
+   surface stays 55; next free
    `coding-0NN` ids) with deterministic graders + references:
    - **Multi-turn correction**: turn 1 asks for an approach; turn 2 challenges
      it with a constraint; the final answer must show the corrected reasoning.

@@ -153,14 +153,18 @@ def test_manifest_schema_and_taxonomy():
     assert surfaces.get("live", {}).get("path") == "eval/datasets/coding_samples.jsonl"
     assert surfaces.get("benchmark", {}).get("kind") == "directory"
     assert surfaces.get("benchmark", {}).get("path") == "eval/benchmarks"
+    # EVAL-17: the chat surface is a second jsonl (multi-turn cases). Its
+    # tasks are validated by test_chat_surface_manifest below.
+    assert surfaces.get("chat", {}).get("kind") == "jsonl"
+    assert surfaces.get("chat", {}).get("path") == "eval/datasets/chat_samples.jsonl"
 
     taxonomy = set(manifest.get("categories", []))
     assert taxonomy == set(CATEGORIES), "manifest categories must match the shared taxonomy"
 
     problems = []
     for task in _manifest_tasks(manifest):
-        if task.get("surface") not in ("live", "benchmark"):
-            problems.append(f"{task.get('id')}: surface must be live or benchmark")
+        if task.get("surface") not in ("live", "benchmark", "chat"):
+            problems.append(f"{task.get('id')}: surface must be live, benchmark, or chat")
         if task.get("category") not in taxonomy:
             problems.append(f"{task.get('id')}: category {task.get('category')!r} not in taxonomy")
         if task.get("difficulty") not in DIFFICULTIES:
@@ -262,3 +266,29 @@ def test_manifest_benchmark_bijection():
             + ", ".join(missing_in_benchmarks)
         )
     assert not problems, "benchmark surface is not bijective:\n" + "\n".join(problems)
+
+
+def test_manifest_chat_bijection():
+    """EVAL-17: chat surface ids <-> manifest chat tasks must be bijective
+    (mirrors the live parity test; the chat file is a second jsonl surface)."""
+    manifest = _load_manifest()
+    chat_path = HARNESS / manifest["surfaces"]["chat"]["path"]
+    assert chat_path.is_file(), f"missing chat dataset: {chat_path}"
+    chat_ids = set()
+    with chat_path.open(encoding="utf-8") as handle:
+        for line in handle:
+            line = line.strip()
+            if not line:
+                continue
+            chat_ids.add(json.loads(line)["id"])
+    manifest_chat_ids = {
+        task["id"] for task in _manifest_tasks(manifest) if task.get("surface") == "chat"
+    }
+    problems = []
+    missing_in_manifest = sorted(chat_ids - manifest_chat_ids)
+    if missing_in_manifest:
+        problems.append("chat jsonl ids missing from manifest: " + ", ".join(missing_in_manifest))
+    missing_in_chat = sorted(manifest_chat_ids - chat_ids)
+    if missing_in_chat:
+        problems.append("manifest chat tasks missing from chat jsonl: " + ", ".join(missing_in_chat))
+    assert not problems, "chat surface is not bijective:\n" + "\n".join(problems)

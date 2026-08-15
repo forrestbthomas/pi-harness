@@ -15,11 +15,17 @@ from secret_backend import resolve_secret as _resolve_secret
 
 
 DATASET_PATH = Path(__file__).parent / "datasets" / "coding_samples.jsonl"
+CHAT_DATASET_PATH = Path(__file__).parent / "datasets" / "chat_samples.jsonl"
 PI_DIR = Path(__file__).parent.parent / ".pi"
 
 
 def load_dataset(path: Path = DATASET_PATH) -> list[dict[str, Any]]:
-    """Load a JSONL dataset of coding evaluation samples."""
+    """Load a JSONL dataset of coding evaluation samples.
+
+    With the default path, the live surface only; with CHAT_DATASET_PATH, the
+    chat surface (EVAL-17 multi-turn cases). The suite merges both via
+    load_all_datasets so one test loop runs every deterministic case.
+    """
     samples = []
     if not path.exists():
         return samples
@@ -30,6 +36,11 @@ def load_dataset(path: Path = DATASET_PATH) -> list[dict[str, Any]]:
                 continue
             samples.append(json.loads(line))
     return samples
+
+
+def load_all_datasets() -> list[dict[str, Any]]:
+    """Live + chat surfaces merged: the nightly deterministic loop runs both."""
+    return load_dataset() + load_dataset(CHAT_DATASET_PATH)
 
 
 @pytest.fixture

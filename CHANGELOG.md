@@ -7,14 +7,19 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Removed
+- **`@loreai/pi` (Lore memory engine) from the agent runtime** (2026-08-15):
+  removed from `.pi/npm/package.json` and `.pi/settings.json` packages;
+  the transitive chain (`@loreai/core`, `@huggingface/transformers`, `sharp`)
+  is pruned — **the last dependabot alert (sharp < 0.35, GHSA-f88m-g3jw-g9cj)
+  now closes** (0 vulnerabilities). The pi agent no longer loads the Lore
+  memory feature; the harness, eval suite, and remaining workspace packages
+  are unaffected. README workspace list updated.
 - **Lore tooling and artifacts** (2026-08-15): deleted `.lore.md` (frozen
   historical knowledge record) and `.lore.json` (disabled config); removed the
   `Long-term Knowledge` pointer section from `AGENTS.md` and the vestigial
   `loreMaintainedSection` strip from `paths_test.go`. The project does not use
   the lore CLI and no longer carries anything that suggests it does; history
-  remains recoverable via git and dated docs. (The `@loreai/pi` npm package —
-  the pi agent's runtime memory engine — is unaffected: it is a real
-  dependency the harness runs.)
+  remains recoverable via git and dated docs.
 
 ### Added
 - **Dependency security: 16 of 17 dependabot alerts closed** (2026-08-15):

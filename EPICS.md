@@ -259,6 +259,7 @@ Rules:
 | HEAL-4 (loop/stuck detection) | Deferred; needs thresholds | Evidence of loop/stuck class with usable thresholds |
 | DX-1 (skill audit) | Dissolved with EPIC-5; data-guard half → GOV-1 | Real skill collision; user re-prioritization |
 | DX-2 (context stats) | User-parked ("treat context as a separate feature") | User re-prioritization |
+| MEM-1 (memory-engine hook) | Closed as decided 2026-08-15 (spike): no harness memory abstraction; default none; eval runs memory-free (seam invariant) | Consumer signal / measured eval contamination / EVAL-17 memory-sensitive data |
 | COST-1 (cost-aware router, within-provider) | Deferred 2026-08-14 by persona debate: 2 pw / zero consumers; COST-2 owns the catalog-drift class | Consumer signal (an external user asking for cost routing) |
 | Cloud eval backend | Deferred to backlog per user | EPIC-4 (PORT-2): second machine/CI-with-keys pattern emerges |
 | Upstream pi-subagents release watch | Waiting on release carrying `toolTimeoutMs` | New upstream release (W5 Part C) |

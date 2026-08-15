@@ -78,6 +78,12 @@ eval side).
 
 ## Harness-change delta (EVAL-16 pilot, report-only)
 
+> **Measurement invariant (MEM-1, 2026-08-15):** the seam's measurement
+> contract assumes **memory-free agent runs**. Adding a stateful/memory
+> package to the eval spawn path is a **re-baseline trigger**, not a silent
+> change — an agent carrying memory into an eval case could answer from
+> memory instead of from the task, corrupting the honest pass-rate.
+
 The loop must measure changes to itself: a change to the eval/harness surface
 can silently shift every scorecard (the zero-token silent-success class) with
 nothing measuring the delta. The EVAL-16 pilot ships two hermetic mechanics

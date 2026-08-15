@@ -63,11 +63,25 @@ func piArgs(p Provider, model, mode string, rest []string, persist bool, permiss
 	switch mode {
 	case "print":
 		args = append(args, "-p")
-		if !persist {
+		// An explicit --session-id/--session pins the session regardless of the
+		// budget cap: the EVAL-17 chat-session runner drives multi-turn cases
+		// via print (turn 1) + resume (turns 2+), and a pinned session must
+		// persist even when no --max-budget-usd is set (the budget cap is
+		// cumulative across the ledger, so it cannot double as a per-run
+		// persistence switch).
+		if !persist && !hasSessionPin(rest) {
 			args = append(args, "--no-session")
 		}
 	case "resume":
-		args = append(args, "--continue")
+		// Continue the most recent session by default; when the caller pins a
+		// session (--resume/--session/--session-id), pass the pin through
+		// instead of --continue — pi rejects --continue combined with a pin.
+		// This is the EVAL-17 chat-session runner's continuation mechanism:
+		// turn 1 creates eval-<case> via --session-id, turns 2+ resume it via
+		// --resume eval-<case>.
+		if !hasSessionPin(rest) {
+			args = append(args, "--continue")
+		}
 	}
 	switch permissionMode {
 	case "plan":
@@ -78,6 +92,19 @@ func piArgs(p Provider, model, mode string, rest []string, persist bool, permiss
 		// default: no flag; acceptEdits: Pi's default already permits edits.
 	}
 	return append(args, rest...)
+}
+
+// hasSessionPin reports whether the launch args pin a specific session
+// (--session-id/--session), which requires the session to persist so resume
+// can continue it.
+func hasSessionPin(rest []string) bool {
+	for _, a := range rest {
+		if a == "--session-id" || a == "--session" ||
+			strings.HasPrefix(a, "--session-id=") || strings.HasPrefix(a, "--session=") {
+			return true
+		}
+	}
+	return false
 }
 
 // nonInteractiveEnv is injected into every spawned pi process (see launchEnv)

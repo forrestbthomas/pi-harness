@@ -21,12 +21,13 @@ checkout collectable.
 
 import json
 import os
+import secrets
 import time
 from pathlib import Path
 
 import pytest
 
-from conftest import has_api_key, load_dataset, run_pi_print
+from conftest import has_api_key, load_dataset, run_pi_print, run_pi_session
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DATASET_DIR = REPO_ROOT / "eval" / "datasets"
@@ -35,6 +36,39 @@ LEDGER_PATH = REPO_ROOT / ".pi" / "cost-ledger.jsonl"
 # Number of agent runs per case (the nightly sets EVAL_RUNS_PER_CASE=5 —
 # the flake-aware gate, EVAL-2).
 RUNS_PER_CASE = int(os.environ.get("EVAL_RUNS_PER_CASE", "1"))
+
+
+def _session_usage(session_id: str) -> tuple[float, int]:
+    """Attribute a chat session's true spend from its pinned session file.
+
+    The ledger-diff approach double-counts multi-turn sessions (each launch
+    records cumulative usage, and resume launches can interleave), so EVAL-17
+    chat runs read the session file pi wrote for ``--session-id <id>`` and sum
+    its usage blocks. Returns (costUsd, tokens). Best-effort: returns (0.0, 0)
+    when the session file is missing/unparsable — the run still graded, the
+    cost line is honest (0 is a real unknown, never a guess).
+    """
+    sessions_dir = REPO_ROOT / ".pi" / "sessions"
+    if not sessions_dir.exists():
+        return 0.0, 0
+    candidates = sorted(sessions_dir.glob(f"*_{session_id}.jsonl"))
+    if not candidates:
+        return 0.0, 0
+    cost = 0.0
+    tokens = 0
+    for line in candidates[-1].read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        usage = (row.get("message") or {}).get("usage") or {}
+        cost_row = usage.get("cost") or {}
+        cost += float(cost_row.get("total") or 0.0)
+        tokens += int(usage.get("totalTokens") or 0)
+    return round(cost, 9), tokens
 
 
 def _ledger_entries() -> list[dict]:
@@ -99,15 +133,31 @@ def _run_agent_once(sample: dict) -> dict:
     if sample.get("category") == "agentic":
         extra.append("--permission-mode")
         extra.append("plan")
-    output = run_pi_print(sample["input"], extra_args=extra)
+    # EVAL-17 slice 2: chat (multi-turn/subagent) cases run through the
+    # chat-session runner (print + resume, --session-id pinned per RUN so the
+    # EVAL_RUNS_PER_CASE samples are independent — a shared id would continue
+    # run 1's session and contaminate later samples). PI_SELF_HEAL=1 so a
+    # stalled session is a watchdog event, not a silent pass — the HEAL-2
+    # wedge pump. Cost/tokens are attributed from the pinned session file's
+    # usage blocks (the ledger diff double-counts multi-turn sessions).
+    if sample.get("surface") == "chat":
+        session_id = f"eval-{sample['id']}-{secrets.token_hex(4)}"
+        output = run_pi_session(
+            sample["turns"],
+            session_id=session_id,
+            extra_args=extra,
+            extra_env={"PI_SELF_HEAL": "1"},
+        )
+        cost_usd, tokens = _session_usage(session_id)
+    else:
+        output = run_pi_print(sample["input"], extra_args=extra)
+        added = _ledger_entries()[before:]
+        cost_usd = sum(float(entry.get("costUsd") or 0.0) for entry in added)
+        tokens = sum(
+            int(entry.get("inputTokens") or 0) + int(entry.get("outputTokens") or 0)
+            for entry in added
+        )
     latency_ms = (time.monotonic() - start) * 1000.0
-
-    added = _ledger_entries()[before:]
-    cost_usd = sum(float(entry.get("costUsd") or 0.0) for entry in added)
-    tokens = sum(
-        int(entry.get("inputTokens") or 0) + int(entry.get("outputTokens") or 0)
-        for entry in added
-    )
     passed, _detail = _grade(sample, output)
     return {
         "pass": passed,

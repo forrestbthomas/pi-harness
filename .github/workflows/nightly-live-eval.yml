@@ -87,8 +87,12 @@ jobs:
         with:
           go-version: '1.26.5'
       - name: Build pi-run
+        # REL-1: stamp the real version so the live scorecard records a
+        # resolvable piVersion, never "dev" (the deterministic job already
+        # does this; the live job missed it — the 2026-08-15 nightly recorded
+        # piVersion: dev, hiding which commit produced the scorecard).
         run: |
-          go build -o bin/pi-run ./cmd/pi-run
+          go build -ldflags "-X github.com/forrestbthomas/pi-harness/internal/cli.Version=$(git describe --tags --always)" -o bin/pi-run ./cmd/pi-run
           echo "$GITHUB_WORKSPACE/bin" >> "$GITHUB_PATH"
       # actions/setup-python@v7
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
@@ -174,6 +178,10 @@ jobs:
         # the nightly never updates its own baseline.
         run: eval/.venv/bin/python eval/scripts/score_run.py --report eval/live-results/report.json --baseline eval/baselines/live-baseline.json --tolerance 0.05 --runs 5 --budget-usd 2.0 --out eval/live-results/live-$(date +%Y%m%dT%H%M%S).json
       - name: Emit scorecard-delta report (EVAL-16 pilot, report-only)
+        # Runs even when the gate fails: the delta report is exactly the
+        # evidence you want on a failed run (the 2026-08-15 nightly skipped it
+        # because the gate step aborted).
+        if: always()
         # Compares the just-produced scorecard against the committed baseline
         # and writes a delta report into live-results/ (rides the artifact).
         # Report-only by design: never fails the nightly (continue-on-error);

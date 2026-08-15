@@ -15,6 +15,8 @@ one-screen snapshot, `EPICS.md` for the epic grouping layer, and
 |---|---|---|---|---|---|
 | 1 | **EVAL-17 — Agentic case family slice 2** (multi-turn/subagent) | 1.40 | EPIC-1 | 1 pw | re-opened from EVAL-6 slice 2 with a guard-safe id (queue-visibility fix: `\bEVAL-6\b` collides with slice 1's CHANGELOG entry); multi-turn/subagent task surface + **chat-session runner named enabler**; **the data pump HEAL-2 is gated on** (print-mode cannot wedge → `self-heal events: 0`) |
 
+| 12 | **EVAL-18 — Variance-aware baseline** (the gate must not false-fail — or false-pass — sub-1.0 cases whose rates come from a single noisy snapshot) | ~1.5 | EPIC-1 | 0.5 pw | spec-first (persona debate 2026-08-15): per-case tolerance/variance from observed n_failed distribution; ends the 're-baseline → immediately red again' churn (coding-017/018/055 dipped 1 run below single-snapshot rates on the 2nd 55-case nightly); must not mask real regressions (the 'can't false-fail in either direction' promise). Trigger: EVAL-12 landed (#140); v0.11.0 needs 2 consecutive green nightlies |
+
 | 2 | **OWN-1 — CODEOWNERS ownership matrix + fallback-to-lead** | ~1.5 | EPIC-6 | 0.25 pw | real matrix (Go core, /eval, .github, scripts/, docs/governance/) + explicit fallback; cheap EPIC-6-close interlude **bundled with SECURITY**; not parked (EPIC-6 DoD is a v1.0.0 gate input); seeds the charter's second-owner split trigger |
 
 | 3 | **SECURITY — supported-versions bump in release ritual** | ~1.0 | EPIC-6 | 0.25 pw | same PR as CHANGELOG entry bumps the supported-versions table (SECURITY.md); bundled with OWN-1 as the EPIC-6 close |

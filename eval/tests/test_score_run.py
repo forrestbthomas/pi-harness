@@ -217,6 +217,37 @@ def test_judge_case_not_incomplete_with_one_run():
     assert agg2["incomplete"] is True
 
 
+def test_eval18_one_run_dip_on_sub1_is_flake_not_regression():
+    """EVAL-18: at n=5 the band is the 0.2 run step. A 1-run dip on a sub-1.0
+    case (0.6 -> 0.4, coding-017/018 class) is normal variance — reported as a
+    flake, never a gate failure."""
+    baseline = {"coding-001": {"passRate": 0.6, "costPerTaskUsd": 0.01}}
+    agg = _agg(0.4, cost=0.01, n_runs=5)  # 2/5 vs baseline 3/5
+    comp = score_run.compare_case("coding-001", agg, baseline, 0.05, expected_runs=5)
+    assert comp["regressed"] is False
+    assert comp["flake"] is True
+
+
+def test_eval18_two_run_drop_is_regression():
+    """EVAL-18: a >1-run drop (0.6 -> 0.2, coding-055 class) is real signal and
+    must fail the gate — the false-pass guard."""
+    baseline = {"coding-001": {"passRate": 0.6, "costPerTaskUsd": 0.01}}
+    agg = _agg(0.2, cost=0.01, n_runs=5)  # 1/5 vs baseline 3/5
+    comp = score_run.compare_case("coding-001", agg, baseline, 0.05, expected_runs=5)
+    assert comp["regressed"] is True
+    assert comp["flake"] is False
+
+
+def test_eval18_perfect_case_single_failure_is_flake():
+    """EVAL-18 preserves the EVAL-2 contract: a 1.0 baseline case with one
+    failed run is a flake (reported), not a regression."""
+    baseline = {"coding-001": {"passRate": 1.0, "costPerTaskUsd": 0.01}}
+    agg = _agg(0.8, cost=0.01, n_runs=5)  # 4/5 vs 5/5
+    comp = score_run.compare_case("coding-001", agg, baseline, 0.05, expected_runs=5)
+    assert comp["flake"] is True
+    assert comp["regressed"] is False
+
+
 def test_totals_math():
     cases_raw = {
         "coding-001": [
@@ -268,16 +299,17 @@ def _agg(pass_frac, cost, tokens=1000, latency=100.0, n_runs=3):
 
 
 def test_tolerance_boundary_at_edge_passes():
-    # baseline passRate 1.0, tolerance 0.05: exactly baseline - 0.05 passes.
+    # EVAL-18: band = max(tolerance, run_step). At n=20 run_step = 0.05, so a
+    # delta of exactly one run (0.95 vs 1.0) is at the edge and passes.
     at_edge = _agg(0.95, cost=0.01, n_runs=20)  # 19/20 -> 0.95
-    comp = score_run.compare_case("coding-001", at_edge, {"coding-001": {"passRate": 1.0}}, 0.05)
+    comp = score_run.compare_case("coding-001", at_edge, {"coding-001": {"passRate": 1.0}}, 0.05, expected_runs=20)
     assert comp["regressed"] is False
     assert comp["unbaselined"] is False
 
 
 def test_tolerance_boundary_below_fails():
-    below = _agg(0.9, cost=0.01, n_runs=20)  # 18/20 -> 0.90 < 0.95
-    comp = score_run.compare_case("coding-001", below, {"coding-001": {"passRate": 1.0}}, 0.05)
+    below = _agg(0.9, cost=0.01, n_runs=20)  # 18/20 -> 0.90 < 0.95 (a >1-run drop)
+    comp = score_run.compare_case("coding-001", below, {"coding-001": {"passRate": 1.0}}, 0.05, expected_runs=20)
     assert comp["regressed"] is True
 
 

@@ -105,9 +105,3 @@ command starts a background process that inherits the terminal. Project agent
 wrappers in `.pi/agents/` already set a 10-minute default, but explicit launch
 values are still preferred. Children are instructed (in the wrappers) to pass
 `timeout:` on every `bash` call and to avoid long-running/background commands.
-
-## Long-term Knowledge
-
-Historical project knowledge is frozen in [`.lore.md`](.lore.md) (no longer
-maintained by lore; kept as a dated record). For current state, see
-`ROADMAP.md`, `BACKLOG.md`, `CHANGELOG.md`, and `docs/`.

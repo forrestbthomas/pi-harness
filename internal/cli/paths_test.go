@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bytes"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -40,21 +39,8 @@ func TestNoHardcodedUserPaths(t *testing.T) {
 		"eval/tests/test_harness_config.py": true,
 	}
 
-	// loreMaintainedSection returns the content of b with the lore-managed
-	// knowledge block (from the "maintained by the coding agent via lore"
-	// marker to EOF) removed. AGENTS.md is scanned for hardcoded paths in its
-	// human-written instructions, but its lore block is auto-generated
-	// documentation that intentionally references historical paths and the old
-	// module path (e.g. the Open-source migration decision) — those are facts
-	// about the project's history, not shipped runtime artifacts, so they must
-	// not fail the portability scan.
-	loreMaintainedSection := func(b []byte) []byte {
-		const marker = "<!-- This section is maintained by the coding agent via lore"
-		if before, _, ok0 := bytes.Cut(b, []byte(marker)); ok0 {
-			return before
-		}
-		return b
-	}
+	// AGENTS.md is scanned in full — it carries no auto-generated knowledge
+	// block to skip (that mechanism was removed 2026-08-15).
 	scanFiles := []string{
 		filepath.Join(root, "README.md"),
 		filepath.Join(root, "AGENTS.md"),
@@ -73,7 +59,7 @@ func TestNoHardcodedUserPaths(t *testing.T) {
 		if err != nil {
 			return
 		}
-		text := string(loreMaintainedSection(b))
+		text := string(b)
 		if strings.Contains(text, "/Users/forrestthomas"+"/") {
 			t.Errorf("hardcoded user path in %s", rel)
 		}

@@ -52,6 +52,10 @@ func TestNoHardcodedUserPaths(t *testing.T) {
 		".git": true, ".worktrees": true, "bin": true, "sessions": true,
 		"subagents": true,
 		".venv": true, "__pycache__": true, ".pytest_cache": true, "node_modules": true,
+		// "debate": gitignored persona-debate artifacts (.pi/debate/) — local
+		// only, never committed, so hardcoded user paths in forum contexts
+		// must not trip the committed-artifact guard (2026-08-15).
+		"debate": true,
 	}
 
 	check := func(path, rel string) {

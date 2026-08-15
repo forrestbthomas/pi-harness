@@ -38,6 +38,18 @@ All notable changes to this project are documented here. Format follows
   v0.11.0 "two consecutive green nightlies" gate can now be met.
 
 ### Changed
+- **Dogfood posture — personal loop, public demo** (2026-08-15): after a
+  short 7-persona debate (`.pi/debate/dogfood-posture/`, decision record
+  `docs/knowledge-base/decision/2026-08-15-dogfood-posture.md`), the project
+  replaces the product-shape framing: it is the **author's personal
+  agent-improvement loop, public as a demo of the discipline**. **No product
+  release until a consumer earns it** — v1.0.0 is consumer-triggered (the
+  recorded earned-bar gate), never a date; v0.11.0's two green nightlies
+  re-mean as the loop's integrity check (same thresholds). The consumer
+  trigger is machine-checked: `test_docs_drift.py` pins the wording and
+  `docs/release-checklist.md` names the evidence as a hard gate. CHARTER
+  north star + README hero + ROADMAP release rows + STATUS updated; the
+  discipline machinery binds as hard for an audience of one.
 - **Honest reframe — no-moat positioning** (2026-08-15): after a 7-persona
   debate (`.pi/debate/honest-reframe/`, decision record
   `docs/knowledge-base/decision/2026-08-15-honest-reframe.md`), the project

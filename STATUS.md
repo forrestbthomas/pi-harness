@@ -1,7 +1,7 @@
 # STATUS — where the harness is right now
 
 > One-screen snapshot. Regenerate at every cycle start per
-> [`docs/roadmap-workflow.md`](docs/roadmap-workflow.md). Last updated: 2026-08-14.
+> [`docs/roadmap-workflow.md`](docs/roadmap-workflow.md). Last updated: 2026-08-15.
 
 ## Now (committed — this cycle)
 
@@ -21,13 +21,15 @@
 | **OSS-2 — Contributor on-ramp v2** | **SHIPPED — 2026-08-14** — #122: CONTRIBUTING first-issue path (`good first issue`) + 7-day review SLA + MIT-in/MIT-out; PR-template bugfix carve-out; LICENSE identity → `forrestbthomas` |
 | **GOV-3 — Wire drift guards into CI** | **SHIPPED — 2026-08-14** — #123: docs/pm drift guards run in python-quick on every push (tags fetched so tag↔changelog enforces); end-to-end drift caught in CI (#124); guard fresh-checkout false positive fixed |
 | **EVAL-16 — Harness-change eval gate (pilot)** | **SHIPPED — 2026-08-14** — #129: `score_delta.py` (classifier + delta renderer, 15 hermetic tests) + report-only eval-delta CI job + nightly delta artifact; **enforcement pending** (evidence-gated: first caught regression or validated delta-vs-noise) |
+| **EVAL-18 — Variance-aware gate (run-step band)** | **SHIPPED — 2026-08-15** — #147: 7-persona debate → the flat 0.05 tolerance was 4–5× smaller than the n=5 noise floor; gate now uses `band = max(tolerance, 1/n)`; exactly 1 extra failed run vs baseline = flake (report, never fail); a >1-run drop = regression (false-pass guard). coding-017/018 false-fails eliminated; coding-055 kept honestly red until its rate was measured. No baseline schema change. |
+| **coding-055 — debugging case settled (the self-improving loop)** | **SHIPPED — 2026-08-15** — #148: 10× re-baseline → true rate 0.2 (harness passes the debugging case ~1-in-5); #149: prompt scaffold (four-part root-cause format + completeness pressure, no new info) → **measured 0.2 → 0.8**, datasetVersion 2026-08-15.3, grader unchanged. Measure → diagnose → improve prompt → re-measure. |
 | **W4 Project-management layer** | Active ritual — governance layer; now with EPIC-6 (repo maturity) owning governance/community/debt work |
 
 ## Next (shaped — next 1–2 cycles)
 
 | Item | RICE | Tag |
 |---|---|---|
-| **v0.11.0 — The gate that can't lie** (EVAL-12 re-baseline ✓ → EVAL-16 enforcement) | — | Release |
+| **v0.11.0 — The gate that can't lie** (EVAL-12 re-baseline ✓ → EVAL-18 variance-aware ✓ → 2 green nightlies → EVAL-16 enforcement) | — | Release |
 | **EPIC-1 — Eval suite → research-grade measurement** (EVAL-17, EVAL-9, EVAL-11) | top EVAL-17 1.40 | EPIC-1 |
 | **EPIC-6 — Repo maturity** (OWN-1+SECURITY bundle, TAX-1, PORT-0) | top OWN-1 ~1.5 | EPIC-6 |
 | **EPIC-2 — Self-healing resilience** (HEAL-5, HEAL-2 data-gated, HEAL-3; HEAL-1 demoted) | top HEAL-5 1.20 | EPIC-2 |
@@ -62,7 +64,8 @@
   contributor on-ramp (#122), GOV-3 drift guards wired into CI (#123), EVAL-16
   harness-change gate pilot (#129), EVAL-12 live re-baseline 17→55 (#140),
   README minimalization + docs/reference.md (#143), memory-statement clean
-  (#144)
+  (#144), EVAL-18 variance-aware gate (#147), coding-055 10× re-baseline
+  (#148), coding-055 prompt scaffold 0.2→0.8 (#149)
 
 ## Open PRs / branches
 

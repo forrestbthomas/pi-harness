@@ -1,6 +1,6 @@
 # Epics — themed initiatives that group backlog items
 
-**Owner:** forrestthomas · **Last updated:** 2026-08-14
+**Owner:** forrestthomas · **Last updated:** 2026-08-15
 
 ## Why epics exist
 
@@ -83,7 +83,7 @@ Rules:
 |---|---|---|---|
 | EVAL-12 | Live re-baseline after W10: 0 unbaselined cases + standing cadence — **SHIPPED #140** | 1.10 | 0.25 pw |
 | EVAL-6 | Agentic case family: slice 1 (tool-using) SHIPPED #111; slice 2 (multi-turn/subagent) → **EVAL-17** | 1.40 | 1 pw |
-| EVAL-18 | Variance-aware baseline: per-case tolerance from observed variance; ends single-snapshot re-baseline churn | ~1.5 | 0.5 pw |
+| EVAL-18 | Variance-aware baseline: per-case tolerance from observed variance; ends single-snapshot re-baseline churn | ~1.5 | 0.5 pw | **SHIPPED #147** (run-step band; no schema change) |
 | EVAL-17 | Agentic case family slice 2: multi-turn/subagent + chat-session runner (re-opened from EVAL-6 slice 2, guard-safe id) | 1.40 | 1 pw |
 | EVAL-13 | Cost-variance tolerance in nightly gate (`costFlakes`, median-of-N, ≥2-run fail) | 1.00 | 0.5 pw |
 | EVAL-15 | Split-seam verification: contract doc + hermetic dry-run + test classification | 1.50 | 0.5 pw |

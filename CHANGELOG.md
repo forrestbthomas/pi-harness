@@ -7,6 +7,10 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **Release runbook** `docs/release-checklist.md` (2026-08-15): the v0.11.0
+  cut, step-by-step — gate evidence (two consecutive green nightlies) →
+  changelog flip (PR first) → tag → formula SHAs → post-release verify;
+  hard-fail reminders against the v0.9.x-class tag mistake.
 - **coding-055 prompt scaffold — measured debugging score 0.2 → 0.8**
   (2026-08-15, datasetVersion 2026-08-15.3): the debugging case's prompt now
   enforces a four-part labeled root-cause format with completeness pressure.

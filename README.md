@@ -21,6 +21,11 @@ A self-healing, measurable coding-agent harness built around the [Pi coding agen
   - `pi-spark` — daily-experience polish.
   - `dot-pi` (from GitHub) — curated extensions, skills, prompts, and rules.
 
+> **Memory is optional — default none.** The harness ships no memory engine;
+> the docs are the source of truth; any memory engine is user-loaded via
+> `.pi/settings.json` packages; context-engine (MCP) is a documented opt-in,
+> never a dependency.
+
 > `@zigai/pi-ui-tweaks` was removed because its bundled settings schema is currently incompatible with this Pi version.
 - **Project context files**: `AGENTS.md`, `.pi/SYSTEM.md`, `.pi/APPEND_SYSTEM.md`.
 - **DeepEval environment** in `eval/.venv` with sample tests and datasets. Python deps live in `eval/requirements.txt` (DeepEval + pytest stack, `~=`-bounded; `pytest-json-report` is retained, but the nightly live-eval report is written by a conftest hook via `PI_EVAL_REPORT`, not by pytest-json-report). Add new dependencies deliberately; `pi-run setup` installs them.

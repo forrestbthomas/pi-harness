@@ -7,6 +7,14 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **README minimalization** (2026-08-15): the front door is now a ~150-line
+  landing page — above-the-fold real scorecard (55 cases, 88.7%, $0.72,
+  0 unbaselined), the "why this is different" differentiators, a terminal
+  screenshot, a mermaid seam diagram, install + quick start, and config
+  essentials. The full reference manual moved to
+  `docs/reference.md` (commands, env vars, providers, hooks, budgets,
+  troubleshooting) — nothing deleted, only relocated. All drift-guard
+  invariants preserved.
 - **EVAL-12 — Live re-baseline 17 → 55 cases** (data release, 2026-08-15,
   #140): the baseline now covers the full live suite (55 cases, **0
   unbaselined**, 0 incomplete omitted) with provenance recorded

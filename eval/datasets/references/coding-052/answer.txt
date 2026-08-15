@@ -1,1 +1,1 @@
-There are 45 deterministic grader scripts under eval/datasets/graders/.
+There are 50 deterministic grader scripts under eval/datasets/graders/.

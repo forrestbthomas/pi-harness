@@ -26,6 +26,15 @@ All notable changes to this project are documented here. Format follows
   v0.11.0 "two consecutive green nightlies" gate can now be met.
 
 ### Fixed
+- **EVAL-18 — Variance-aware gate (run-step band)** (#147, 2026-08-15): the
+  flat 0.05 pass-rate tolerance was 4–5× smaller than the n=5 measurement's
+  noise floor (a rate moves in 0.2 steps), so sub-1.0 cases false-failed on
+  normal variance. The gate now uses the run-step band
+  (`max(tolerance, 1/expected_runs)`): exactly one additional failed run vs
+  the baseline is a reported flake (never a failure); a >1-run drop below the
+  band is a regression. Verified on the real 2026-08-15 nightly: coding-017/018
+  become flakes; coding-055 stays honestly red (its true rate is unproven).
+  No baseline schema change.
 - **Judge-graded cases no longer gate as "incomplete"** (#139, 2026-08-15):
   `test_live_metrics` cases complete with ONE agent run carrying an internal
   EVAL_JUDGE_RUNS majority; the gate's `--runs 5` held them to five runs, so

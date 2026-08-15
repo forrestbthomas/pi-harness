@@ -27,7 +27,7 @@ This repository is a **self-healing, measurable coding-agent harness** built aro
 |---|---|
 | `cmd/pi-run/`, `internal/cli/` | The Go CLI (single module `github.com/forrestbthomas/pi-harness`): command dispatch + all logic (watchdog, self-heal, cost, provider routing, doctor, config-check) |
 | `eval/` | DeepEval suite: datasets (`datasets/`), tests (`tests/`), scripts (`scripts/`, incl. `score_run.py`), baselines (`baselines/`) |
-| `docs/` | Architecture, knowledge base (`knowledge-base/`), workflow (`roadmap-workflow.md`), research (`*.md`) |
+| `docs/` | Architecture, the manual (`reference.md`), knowledge base (`knowledge-base/`), workflow (`roadmap-workflow.md`), research (`*.md`) |
 | `docs/governance/` | Governance home (internal, off the contributor surface): `decisions.md` (archived-spec index), `specs-archive/` (dated planning specs), `scope-history/` (superseded SCOPE.md contracts) |
 | `.pi/` | Pi runtime config: `settings.json` (project packages incl. pinned `pi-subagents`), `SYSTEM.md`, `APPEND_SYSTEM.md`, agent wrappers (`agents/`), npm workspace (`npm/`) |
 | `.github/workflows/` | CI: `ci.yml`, `nightly-live-eval.yml`, `release.yml`, `provider-scorecard.yml`, `codeql.yml` |

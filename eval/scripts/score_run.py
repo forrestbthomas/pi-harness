@@ -337,8 +337,18 @@ def load_baseline(path) -> dict:
         return json.load(handle)
 
 
-def compare_case(case_id: str, agg: dict, baseline_cases: dict, tolerance: float) -> dict:
-    """Compare one case against its baseline entry (unbaselined cases never fail)."""
+def compare_case(case_id: str, agg: dict, baseline_cases: dict, tolerance: float,
+                 expected_runs: int = DEFAULT_RUNS) -> dict:
+    """Compare one case against its baseline entry (unbaselined cases never fail).
+
+    EVAL-18 (2026-08-15): the pass-rate band is the RUN STEP, not a flat
+    tolerance — at n=5 a rate moves in 0.2 steps and the binomial SE of a 0.6
+    case is ~0.22, so the old flat 0.05 flagged normal variance as regression
+    (the 2026-08-15 reds: coding-017/018 dipped one run below single-snapshot
+    rates). band = max(tolerance, 1/expected_runs); a 1-run dip is a flake
+    (report, never fail), a >1-run drop is a regression (the false-pass guard:
+    coding-055's 2-run drop stays honestly red).
+    """
     base = (baseline_cases or {}).get(case_id)
     if base is None:
         return {
@@ -352,10 +362,22 @@ def compare_case(case_id: str, agg: dict, baseline_cases: dict, tolerance: float
     base_pass = _as_float(base.get("passRate"))
     base_cost = _as_float(base.get("costPerTaskUsd"))
     n_failed = int(agg.get("nFailed", 0))
-    # Flake-aware gate (EVAL-2): a single failed run is a flake, not a
-    # regression; recurring failure (>= 2 runs) is a real signal. Flakes are
-    # reported in the scorecard but never fail the gate.
-    below_tolerance = agg["passRate"] < base_pass - tolerance
+    # Flake-aware gate (EVAL-2 + EVAL-18): a single failed run is a flake, not
+    # a regression; recurring failure (>= 2 runs) is a real signal. Flakes are
+    # reported in the scorecard but never fail the gate. The band is the
+    # quantization unit of the measured rate (run step), floored by the
+    # explicit tolerance for legacy/override semantics.
+    run_step = 1.0 / max(int(expected_runs), 1)
+    band = max(tolerance, run_step)
+    drop = base_pass - agg["passRate"]
+    below_band = drop > band
+    # Flake vs regression by FAILURE-COUNT DIFF (OSS rule): the baseline's
+    # expected failed count at n runs minus the observed failed count. A
+    # 1-extra-failure dip is a flake (report, never fail); a >1-extra-failure
+    # drop is a regression.
+    base_failed = max(0, int(round(expected_runs * (1 - base_pass))))
+    diff_failed = n_failed - base_failed
+    flake = diff_failed == 1
     # Cost-variance gate (EVAL-13): mirror the pass-rate logic for cost. A
     # single run over 2x baseline is a cost flake (report, never fail). A REAL
     # cost regression is a **median shift** (median > 2x baseline). The
@@ -371,9 +393,9 @@ def compare_case(case_id: str, agg: dict, baseline_cases: dict, tolerance: float
     median_over = agg["costPerTaskUsd"] > 2.0 * base_cost if base_cost > 0 else False
     return {
         "unbaselined": False,
-        "flake": below_tolerance and n_failed == 1,
+        "flake": flake,
         "costFlake": (not median_over) and n_cost_over == 1,
-        "regressed": below_tolerance and n_failed >= 2,
+        "regressed": below_band and diff_failed >= 2,
         "costRegressed": median_over,
         "incomplete": agg["incomplete"],
         "baselinePassRate": base_pass,
@@ -399,7 +421,7 @@ def evaluate_gate(case_comps: dict[str, dict], totals: dict, budget_usd: float,
             if comp["regressed"]:
                 failures.append(
                     f"case {case_id}: passRate {comp.get('deltaPassRate', 0):+.3f} vs baseline "
-                    f"(below baseline - tolerance)"
+                    f"(drop of more than one run below the variance band)"
                 )
             if comp["costRegressed"]:
                 failures.append(
@@ -709,7 +731,8 @@ def main(argv=None) -> int:
     totals = compute_totals(cases_raw, case_aggs)
     baseline_cases = baseline.get("cases", {}) if isinstance(baseline, dict) else {}
     case_comps = {
-        case_id: compare_case(case_id, case_aggs[case_id], baseline_cases, args.tolerance)
+        case_id: compare_case(case_id, case_aggs[case_id], baseline_cases, args.tolerance,
+                              _expected_runs(cases_raw[case_id], args.runs))
         for case_id in case_aggs
     }
     case_entries = merge_case_entries(case_aggs, case_comps)

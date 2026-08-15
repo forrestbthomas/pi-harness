@@ -21,7 +21,7 @@
     },
     "chat": {
       "kind": "jsonl",
-      "path": "eval/datasets/coding_samples.jsonl"
+      "path": "eval/datasets/chat_samples.jsonl"
     }
   },
   "tasks": [
@@ -783,6 +783,39 @@
         "red-herring",
         "regression-diagnosis"
       ]
+    },
+    {
+      "id": "coding-056",
+      "surface": "chat",
+      "category": "agentic",
+      "difficulty": "medium",
+      "grader": "deterministic",
+      "tags": [
+        "agentic",
+        "multi-turn",
+        "variance-aware",
+        "gate-tuning",
+        "regression-gate-variance"
+      ],
+      "graderRef": "graders/coding-056/grade.py",
+      "reference": "references/coding-056/answer.txt"
+    },
+    {
+      "id": "coding-058",
+      "surface": "chat",
+      "category": "agentic",
+      "difficulty": "medium",
+      "grader": "deterministic",
+      "tags": [
+        "agentic",
+        "multi-turn",
+        "follow-up",
+        "variance-aware",
+        "flake-vs-regression",
+        "regression-flake-vs-regression"
+      ],
+      "graderRef": "graders/coding-058/grade.py",
+      "reference": "references/coding-058/answer.txt"
     }
   ]
 }

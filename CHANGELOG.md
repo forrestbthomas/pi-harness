@@ -7,6 +7,17 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **Dependency security: 16 of 17 dependabot alerts closed** (2026-08-15):
+  `.pi/npm` transitive deps bumped to patched versions — hono 4.13.2,
+  @hono/node-server 1.19.17, undici 7.29.0, ip-address 10.5.0, fast-uri
+  3.1.5, tar 7.5.22 (covers the hono CORS/SSR/DoS cluster, undici
+  cross-user-disclosure/CRLF cluster, fast-uri host-confusion, ip-address
+  SSRF-misclassification, and node-tar recursion advisories). The remaining
+  alert — the **sharp < 0.35 chain** (@huggingface/transformers pins
+  `sharp ^0.34.5`; no version allows 0.35) — is **blocked upstream**; npm's
+  only "fix" is a breaking @loreai/pi downgrade to 0.19.0, so it is recorded
+  as a known issue and tracked via the dependabot alert (re-check on upstream
+  release).
 - **Dataset 54 → 55 live cases** (data release, `datasetVersion` 2026-08-15.1):
   new `coding-055` (bug-fix, deterministic) encodes the 2026-08-15 nightly
   debugging lesson — root-cause an index/list mismatch in the eval wiring and

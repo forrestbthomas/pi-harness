@@ -368,8 +368,7 @@ require approval on first use: `pi list -a`.
 
 > **Memory is optional — default none.** The harness ships no memory engine;
 > the docs are the source of truth; any memory engine is user-loaded via
-> `.pi/settings.json` packages; context-engine (MCP) is a documented opt-in,
-> never a dependency. (Decision: `docs/knowledge-base/decision/2026-08-15-memory-engine-spike.md`.)
+> `.pi/settings.json` packages. (Decision: `docs/knowledge-base/decision/2026-08-15-memory-engine-spike.md`.)
 
 ## Subagent-driven development
 

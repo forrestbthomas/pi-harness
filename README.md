@@ -151,8 +151,7 @@ Exit codes: `0` ok · `1` generic · `2` usage · `3` missing API key · `4` nod
 
 > **Memory is optional — default none.** The harness ships no memory engine;
 > the docs are the source of truth; any memory engine is user-loaded via
-> `.pi/settings.json` packages; context-engine (MCP) is a documented opt-in,
-> never a dependency.
+> `.pi/settings.json` packages.
 
 ## Docs & governance
 

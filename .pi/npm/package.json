@@ -3,7 +3,6 @@
   "private": true,
   "dependencies": {
     "@demigodmode/pi-web-agent": "^1.7.0",
-    "@loreai/pi": "^0.37.0",
     "@zigai/pi-ui-tweaks": "^0.5.0",
     "pi-mcp-adapter": "^2.11.0",
     "pi-spark": "^0.20.0",

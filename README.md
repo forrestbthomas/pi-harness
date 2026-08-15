@@ -18,7 +18,6 @@ A self-healing, measurable coding-agent harness built around the [Pi coding agen
   - `pi-mcp-adapter` — token-efficient MCP adapter (Pi-side; distinct from the harness's `mcp-server` command, which was removed in v0.10.0).
   - `pi-web-access` — web fetch/search for agents.
   - `@demigodmode/pi-web-agent` — reliable web search/fetch with explicit boundaries.
-  - `@loreai/pi` — Lore memory engine.
   - `pi-spark` — daily-experience polish.
   - `dot-pi` (from GitHub) — curated extensions, skills, prompts, and rules.
 

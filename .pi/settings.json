@@ -61,7 +61,6 @@
     "npm:pi-mcp-adapter",
     "npm:pi-web-access",
     "npm:@demigodmode/pi-web-agent",
-    "npm:@loreai/pi",
     "npm:pi-spark",
     "git:github.com/dannote/dot-pi",
     "npm:pi-subagents@0.48.0"

@@ -83,6 +83,18 @@ All notable changes to this project are documented here. Format follows
   claim line fails CI. No gate thresholds changed; in-flight work untouched.
 
 ### Fixed
+- **Ollama `/model` picker derives from the local daemon** (#157, 2026-08-15):
+  Pi's `/model` selector showed the cached OpenAI catalog for the harness's
+  `ollama` route (and omitted local Qwen models), so a launch with the local
+  `qwen3.6:35b-a3b` failed with `model_not_found`. The harness now routes the
+  `ollama` provider to Pi's `ollama` provider id via a project-local
+  extension (`.pi/extensions/ollama.ts`) that discovers `/api/tags` with a
+  bounded 1.5s timeout and Pi's persisted catalog as the last-known fallback;
+  the launch path is keyless (no `OLLAMA_API_KEY` required), omits `--offline`
+  only for Ollama so discovery can refresh, and when no `--model`/tier is
+  given picks the first chat-capable installed tag as the default. All other
+  providers keep their exact prior behavior. Tests are hermetic (fake
+  loopback endpoints; no daemon, model downloads, or credentials).
 - **EVAL-18 — Variance-aware gate (run-step band)** (#147, 2026-08-15): the
   flat 0.05 pass-rate tolerance was 4–5× smaller than the n=5 measurement's
   noise floor (a rate moves in 0.2 steps), so sub-1.0 cases false-failed on

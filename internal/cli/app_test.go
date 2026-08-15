@@ -143,12 +143,9 @@ func TestRunEvalNoKeySkipsLive(t *testing.T) {
 	// proceeds past the venv check, but no provider key in env → skip notice.
 	root := t.TempDir()
 	t.Setenv("HARNESS_ROOT", root)
-	t.Setenv("OPENAI_API_KEY", "")
-	t.Setenv("OPENROUTER_API_KEY", "")
-	t.Setenv("ANTHROPIC_API_KEY", "")
-	t.Setenv("GEMINI_API_KEY", "")
-	t.Setenv("GROQ_API_KEY", "")
-	t.Setenv("DEEPSEEK_API_KEY", "")
+	for _, key := range supportedProviderKeyEnvs {
+		t.Setenv(key, "")
+	}
 	// Fake venv python that records its argv to a file and exits 0, so we can
 	// assert what pytest was asked to run. With no provider key, the skip
 	// guard must run the deterministic subset, NOT the full suite ("tests/"

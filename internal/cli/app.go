@@ -224,6 +224,11 @@ func runLaunch(mode string, args []string) int {
 		fmt.Fprintf(os.Stderr, "pi-run: %s: %v\n", mode, err)
 		return 2
 	}
+	// Ollama's catalog is dynamic: when the user did not pin a model/tier and
+	// this is a chat/print launch, use an id the local daemon actually has
+	// (bounded loopback lookup; the static default is kept when the daemon is
+	// unreachable). Resume keeps the resolved session model.
+	model = launchModelForOllama(p, model, modelFlag, tier, mode)
 
 	// Pre-flight budget check: refuse BEFORE resolving keys or launching pi.
 	root := repoRoot()
@@ -239,10 +244,13 @@ func runLaunch(mode string, args []string) int {
 		return exitBudgetExceeded
 	}
 
-	key, err := resolveSecret(p.KeyEnv)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "pi-run: %s: no %s available: export it, or check your secret manager (`pi-run doctor`)\n", mode, p.KeyEnv)
-		return 3
+	key := ""
+	if providerRequiresCredential(p) {
+		key, err = resolveSecret(p.KeyEnv)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "pi-run: %s: no %s available: export it, or check your secret manager (`pi-run doctor`)\n", mode, p.KeyEnv)
+			return 3
+		}
 	}
 
 	nodeVersion, err := resolveNodeVersion(os.Getenv("HOME"))

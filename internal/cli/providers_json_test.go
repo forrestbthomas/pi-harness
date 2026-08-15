@@ -63,6 +63,28 @@ func TestLoadProvidersFromRepoFile(t *testing.T) {
 	}
 }
 
+func TestOllamaRoutesToNativePiProvider(t *testing.T) {
+	ollama, ok := findProvider(defaultProviders, "ollama")
+	if !ok {
+		t.Fatal("defaultProviders missing ollama")
+	}
+	if ollama.PiProvider != "ollama" {
+		t.Fatalf("ollama PiProvider = %q, want %q", ollama.PiProvider, "ollama")
+	}
+	if ollama.BaseURL != "http://localhost:11434/v1" {
+		t.Fatalf("ollama baseURL = %q, want loopback OpenAI-compatible endpoint", ollama.BaseURL)
+	}
+}
+
+func findProvider(providers []Provider, name string) (Provider, bool) {
+	for _, provider := range providers {
+		if provider.Name == name {
+			return provider, true
+		}
+	}
+	return Provider{}, false
+}
+
 func TestDefaultProvidersIncludeAllShippedProviders(t *testing.T) {
 	want := map[string]bool{
 		"openai": false, "openrouter": false, "deepseek": false,

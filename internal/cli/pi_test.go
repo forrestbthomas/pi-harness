@@ -45,6 +45,28 @@ func TestPiArgsChatOpenAI(t *testing.T) {
 	}
 }
 
+func TestPiArgsOllamaAllowsLocalCatalogRefresh(t *testing.T) {
+	p, err := LookupProvider("ollama")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := piArgs(p, p.DefaultModel, "chat", nil, false, "")
+	want := []string{"--provider", "ollama", "--model", "ollama/llama3.1"}
+	if len(got) != len(want) {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("got %v, want %v", got, want)
+		}
+	}
+	for _, arg := range got {
+		if arg == "--offline" {
+			t.Fatalf("ollama must not be offline because its local catalog must refresh: %v", got)
+		}
+	}
+}
+
 func TestPiArgsPrintDeepSeek(t *testing.T) {
 	p, _ := LookupProvider("deepseek")
 	got := piArgs(p, p.DefaultModel, "print", []string{"hello"}, false, "")

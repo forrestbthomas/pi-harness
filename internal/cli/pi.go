@@ -57,9 +57,14 @@ func nodeBinDir(home, version string) (string, error) {
 //
 // pi runs with --offline so startup network ops (version check, changelog,
 // catalog refresh) never hang on the flaky pi.dev endpoint; the stored model
-// catalogs are used instead. `pi-run setup` is the explicit online path.
+// catalogs are used instead. Ollama is the sole exception: its project-local
+// dynamic provider must refresh its bounded loopback catalog at startup, while
+// Pi retains the provider's last successful catalog if that refresh fails.
 func piArgs(p Provider, model, mode string, rest []string, persist bool, permissionMode string) []string {
-	args := []string{"--provider", p.PiProvider, "--model", model, "--offline"}
+	args := []string{"--provider", p.PiProvider, "--model", model}
+	if p.Name != "ollama" {
+		args = append(args, "--offline")
+	}
 	switch mode {
 	case "print":
 		args = append(args, "-p")

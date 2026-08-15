@@ -20,7 +20,9 @@ var supportedProviderKeyEnvs = []string{
 	"DEEPSEEK_API_KEY",
 	"LOCAL_API_KEY",
 	"AZURE_OPENAI_API_KEY",
-	"OLLAMA_API_KEY",
+	// OLLAMA_API_KEY is deliberately absent: the Ollama provider is keyless
+	// (local daemon), so a stale placeholder key must not flip the eval
+	// runner into live mode.
 	"MISTRAL_API_KEY",
 	"COHERE_API_KEY",
 	"TOGETHER_API_KEY",

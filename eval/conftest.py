@@ -176,7 +176,8 @@ def run_pi_session(
 
 
 # Mirrors internal/cli/eval.go's supportedProviderKeyEnvs and must cover every
-# keyEnv in the provider catalog (providers.json / embedded defaultProviders).
+# keyEnv in the provider catalog (providers.json / embedded defaultProviders),
+# except keyless providers (local daemons like Ollama do not gate live evals).
 # Keep both lists in sync when adding providers.
 SUPPORTED_PROVIDER_KEYS = (
     "OPENROUTER_API_KEY",
@@ -187,7 +188,6 @@ SUPPORTED_PROVIDER_KEYS = (
     "DEEPSEEK_API_KEY",
     "LOCAL_API_KEY",
     "AZURE_OPENAI_API_KEY",
-    "OLLAMA_API_KEY",
     "MISTRAL_API_KEY",
     "COHERE_API_KEY",
     "TOGETHER_API_KEY",
@@ -257,6 +257,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 # PI_PROVIDER / PI_PERMISSION_MODE / PI_MAX_BUDGET_USD clears are defensive:
 # ambient values would otherwise change provider/permission/budget resolution.
 _HERMETIC_ENV_VARS = (
+    "OLLAMA_API_KEY",  # keyless provider: absent from SUPPORTED_PROVIDER_KEYS, still cleared for children
     "PI_SECRET_BACKEND",
     "BW_GET",
     "PI_MODEL_TIER",

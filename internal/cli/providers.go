@@ -16,6 +16,7 @@ type Provider struct {
 	PiProvider   string            `json:"piProvider"`           // value passed to `pi --provider`
 	DefaultModel string            `json:"defaultModel"`         // default `pi --model` value
 	BaseURL      string            `json:"baseURL,omitempty"`    // optional provider base URL (OpenAI- or Anthropic-compatible)
+	Keyless      bool              `json:"keyless,omitempty"`    // local provider is available without an API credential
 	ModelTiers   map[string]string `json:"modelTiers,omitempty"` // tier name -> model id (fast|cheap; balanced is the defaultModel alias and is never stored)
 }
 
@@ -62,7 +63,7 @@ var defaultProviders = []Provider{
 	{Name: "local", KeyEnv: "LOCAL_API_KEY", PiProvider: "openai", DefaultModel: "local/model", BaseURL: "http://localhost:11434/v1"},
 	// OpenAI-compatible cloud + local endpoints routed through pi's openai provider.
 	{Name: "azure", KeyEnv: "AZURE_OPENAI_API_KEY", PiProvider: "openai", DefaultModel: "azure/gpt-5.6-terra", BaseURL: "https://<your-resource>.openai.azure.com/openai/v1"},
-	{Name: "ollama", KeyEnv: "OLLAMA_API_KEY", PiProvider: "openai", DefaultModel: "ollama/llama3.1", BaseURL: "http://localhost:11434/v1"},
+	{Name: "ollama", KeyEnv: "OLLAMA_API_KEY", PiProvider: "ollama", DefaultModel: "ollama/llama3.1", BaseURL: "http://localhost:11434/v1", Keyless: true},
 	{Name: "mistral", KeyEnv: "MISTRAL_API_KEY", PiProvider: "openai", DefaultModel: "mistral/mistral-large-latest", BaseURL: "https://api.mistral.ai/v1"},
 	{Name: "cohere", KeyEnv: "COHERE_API_KEY", PiProvider: "openai", DefaultModel: "cohere/command-r-plus", BaseURL: "https://api.cohere.com/compatibility/v1"},
 	{Name: "together", KeyEnv: "TOGETHER_API_KEY", PiProvider: "openai", DefaultModel: "together/llama-3.3-70b-instruct", BaseURL: "https://api.together.xyz/v1"},
@@ -149,6 +150,13 @@ func loadProviders(path string, explicit bool) ([]Provider, error) {
 		return nil, fmt.Errorf("load providers file %q: %w", path, err)
 	}
 	return ps, nil
+}
+
+// providerRequiresCredential reports whether launch paths must resolve the
+// provider's configured secret before starting Pi. Keyless is explicit so no
+// provider name receives special-case behavior.
+func providerRequiresCredential(p Provider) bool {
+	return !p.Keyless
 }
 
 // LookupProvider returns the provider named name, or an error.

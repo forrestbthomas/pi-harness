@@ -357,10 +357,14 @@ def compare_case(case_id: str, agg: dict, baseline_cases: dict, tolerance: float
     # reported in the scorecard but never fail the gate.
     below_tolerance = agg["passRate"] < base_pass - tolerance
     # Cost-variance gate (EVAL-13): mirror the pass-rate logic for cost. A
-    # single run over 2x baseline is a cost flake (report, never fail); a
-    # median over 2x baseline OR >= 2 over-threshold runs is a real cost
-    # regression. This kills the single-run cost-spike false-fail class
-    # (2026-08-14 nightly: coding-010 cost spike failed the gate at n=5).
+    # single run over 2x baseline is a cost flake (report, never fail). A REAL
+    # cost regression is a **median shift** (median > 2x baseline). The
+    # >=2-over-runs clause was retired 2026-08-15: for a case whose own runs
+    # are intrinsically bimodal (e.g. coding-010: two runs at ~2.3x its own
+    # median), >=2 over-threshold runs fire against the case's OWN freshly
+    # re-baselined median every run — a false-fail, the class the v0.11.0
+    # 'gate can't false-fail in either direction (flake AND cost)' claim
+    # exists to kill. nCostOver stays reported so variance is visible.
     n_cost_over = 0
     if base_cost > 0:
         n_cost_over = sum(1 for c in agg.get("costsPerRun", []) if c > 2.0 * base_cost)
@@ -370,7 +374,7 @@ def compare_case(case_id: str, agg: dict, baseline_cases: dict, tolerance: float
         "flake": below_tolerance and n_failed == 1,
         "costFlake": (not median_over) and n_cost_over == 1,
         "regressed": below_tolerance and n_failed >= 2,
-        "costRegressed": median_over or n_cost_over >= 2,
+        "costRegressed": median_over,
         "incomplete": agg["incomplete"],
         "baselinePassRate": base_pass,
         "baselineCostPerTaskUsd": base_cost,

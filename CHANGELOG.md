@@ -6,6 +6,16 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+### Removed
+- **Lore tooling and artifacts** (2026-08-15): deleted `.lore.md` (frozen
+  historical knowledge record) and `.lore.json` (disabled config); removed the
+  `Long-term Knowledge` pointer section from `AGENTS.md` and the vestigial
+  `loreMaintainedSection` strip from `paths_test.go`. The project does not use
+  the lore CLI and no longer carries anything that suggests it does; history
+  remains recoverable via git and dated docs. (The `@loreai/pi` npm package —
+  the pi agent's runtime memory engine — is unaffected: it is a real
+  dependency the harness runs.)
+
 ### Added
 - **Dependency security: 16 of 17 dependabot alerts closed** (2026-08-15):
   `.pi/npm` transitive deps bumped to patched versions — hono 4.13.2,

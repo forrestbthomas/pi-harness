@@ -42,13 +42,13 @@ changed after creation; any "change" produces a new object ...
 ## The loop
 
 ```mermaid
-flowchart LR
-    A[tasks.json<br/>55 cases, datasetVersion] --> B[nightly agent runs<br/>pi-run print, 5x/case]
-    B --> C[score_run.py<br/>flake + cost gate]
-    C --> D[scorecard JSON<br/>pass rate · cost · provenance]
-    D --> E[committed baseline<br/>eval/baselines/]
+graph LR
+    A["tasks.json<br/>55 cases, datasetVersion"] --> B["nightly agent runs<br/>pi-run print, 5x/case"]
+    B --> C["score_run.py<br/>flake + cost gate"]
+    C --> D["scorecard JSON<br/>pass rate, cost, provenance"]
+    D --> E["committed baseline<br/>eval/baselines/"]
     E --> C
-    C --> F[delta report<br/>EVAL-16 pilot]
+    C --> F["delta report<br/>EVAL-16 pilot"]
 ```
 
 A change to the harness reports its own scorecard delta; the drift guards run

@@ -7,6 +7,7 @@
 
 | Item | Status |
 |---|---|
+| **Honest reframe — no-moat positioning** | **SHIPPED — 2026-08-15** — 7-persona debate (`.pi/debate/honest-reframe/`): "the score is the product" — versioned, reproducible, variance-aware, self-healing measurement of *your* config; no moat, no new science, stated plainly; neutrality framing (vendors' measurement is welded to their agent); claims table enforced by `test_docs_drift.py`; decision record `docs/knowledge-base/decision/2026-08-15-honest-reframe.md` |
 | **Charter + project identity** | **SHIPPED — 2026-08-14** — `CHARTER.md` (boundary contract: one product, the harness; "we do not" non-goals); north star adjusted; README single-product; AGENTS/.pi/SYSTEM carry scope for agents (#98/#99) |
 | **Cut list** (MCP server, OTel, pdf2txt) | **SHIPPED — 2026-08-14** — −1790 lines (#100); Homebrew/release machinery kept (charter wins); spec shelf-ware deferred |
 | **W5 — Upstream per-tool-call timeout** (upstream #1076/#1077) | Part A (pin 0.48.0) landed; **Part B MERGED upstream** (`a660ea3`, 2026-08-13); Part C (observe via `PI_SELF_HEAL`) pending a release carrying `toolTimeoutMs` |

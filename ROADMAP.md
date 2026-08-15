@@ -5,7 +5,7 @@
 
 ## North star
 
-A **self-healing, measurable coding-agent harness**: point `pi-run` at a provider, get a real agent, get an honest pass-rate and cost over a versioned contract (`tasks.json` → `score_run.py` → scorecard, including the harness's own health events), and trust it not to hang your machine or silently lie. **We do not** own a benchmark, a PM system, a spec library, an observability platform, or a general MCP platform. **Distributable is earned**: macOS / Homebrew is the shipped leg; any further platform or benchmark repo (pi-bench) waits for a concrete consumer or a second owner team. (Adjusted 2026-08-14 per the six-persona scope debate; see `docs/knowledge-base/decision/2026-08-14-persona-debate-scope.md`.)
+**The score is the product**: a versioned, reproducible, variance-aware, self-healing measurement of *your* agent configuration — point `pi-run` at a provider, get a real agent, get an honest pass-rate and cost over a versioned contract (`tasks.json` → `score_run.py` → scorecard, including the harness's own health events), and verify the score yourself. **No moat, no new science** — the offering is the discipline made external and verifiable (the vendors' measurement is welded to their agent; a neutral, cross-provider seam for your config is an uncontested space). **This repository is the demo.** **We do not** own a benchmark, a PM system, a spec library, an observability platform, or a general MCP platform. **Distributable is earned**: macOS / Homebrew is the shipped leg; any further platform or benchmark repo (pi-bench) waits for a concrete consumer or a second owner team. (Reframed 2026-08-15 per the honest-reframe debate; see `docs/knowledge-base/decision/2026-08-15-honest-reframe.md`.)
 
 ## Guiding principles
 

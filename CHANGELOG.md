@@ -37,6 +37,23 @@ All notable changes to this project are documented here. Format follows
   every dataset/harness-behavior change; history in `eval/baselines/`). The
   v0.11.0 "two consecutive green nightlies" gate can now be met.
 
+### Changed
+- **Honest reframe — no-moat positioning** (2026-08-15): after a 7-persona
+  debate (`.pi/debate/honest-reframe/`, decision record
+  `docs/knowledge-base/decision/2026-08-15-honest-reframe.md`), the project
+  states plainly that it has **no moat and no new science** — the measurement
+  techniques are commodity and the vendors could build this in a week. The
+  offering is the discipline made external and verifiable: "the score is the
+  product" — a versioned, reproducible, variance-aware, self-healing
+  measurement of *your* agent config that you can check keyless
+  (`pi-run config-check` + `pi-run eval --quick` + `pi-run doctor`). The
+  README leads with the verifiable claim, labels the published scorecard as a
+  dated demo, adds a "What this is not" block (not a better agent, not a
+  benchmark corpus, no support commitment), and the charter's NOT-list is
+  extended. A **claims table** in `test_docs_drift.py` now maps every README
+  headline claim to the guard/test/graded case that enforces it — an unbacked
+  claim line fails CI. No gate thresholds changed; in-flight work untouched.
+
 ### Fixed
 - **EVAL-18 — Variance-aware gate (run-step band)** (#147, 2026-08-15): the
   flat 0.05 pass-rate tolerance was 4–5× smaller than the n=5 measurement's

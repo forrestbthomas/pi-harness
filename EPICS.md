@@ -234,6 +234,7 @@ Rules:
 | GOV-2 | Governance relocation + spec archive + BACKLOG table repair (GOV-1 shipped first #112; GOV-2 next) | ~2.5 | 0.25–0.5 pw |
 | GOV-3 | Wire drift guards into CI (enforce GOV-1; today hermetic-only — found 2026-08-14) | ~2.0 | 0.15 pw |
 | OSS-2 | Contributor on-ramp v2: first-issue path, bugfix carve-out, SLA, MIT-in/out | ~2.0 | 0.5 pw |
+| MEM-1 | Memory-engine hook: spike + decision (optional pluggable engine; default none/MD/context-engine) | ~1.5 | 0.5 pw (spike) |
 | OWN-1 | CODEOWNERS ownership matrix + fallback-to-lead | ~1.5 | 0.25 pw |
 | TAX-1 | Opt-in usage evidence via cost ledger (measured RICE Reach) | ~0.7 | 0.25 pw |
 | TAX-2 | Flag/env-var prune audit | ~0.8 | 0.25 pw |

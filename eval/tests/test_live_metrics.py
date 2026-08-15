@@ -130,7 +130,12 @@ if _DATASET:
         times and the case passes on majority, bounding judge variance.
         """
         sample = _DATASET[idx]
-        case = sample_cases[idx]  # the sample_cases fixture (conftest)
+        # _DATASET is the judge-only subset; sample_cases indexes the FULL
+        # dataset, so idx is misaligned (the judge would grade this case's
+        # answer against another case's input/expected_output). Match by input
+        # instead — the 2026-08-15 nightly gate failed all 5 judge-graded
+        # cases on exactly this mismatch. (LLMTestCase has no usable id attr.)
+        case = next(c for c in sample_cases if c.input == sample["input"])
 
         start = time.monotonic()
         case.actual_output = run_pi_print(

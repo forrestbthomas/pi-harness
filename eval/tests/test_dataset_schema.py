@@ -155,6 +155,23 @@ def test_grader_ref_files_exist(rows):
         assert path.is_file(), f"{row['id']}: graderRef missing: {path}"
 
 
+def test_judge_case_inputs_match_dataset_unambiguously(rows):
+    """Metrics-wiring guard (2026-08-15): test_live_metrics matches judge
+    cases to the full dataset by input. The judge-only subset must have
+    unambiguous input matches, or the judge grades an answer against the wrong
+    prompt/expected_output — the exact class that failed all 5 judge cases on
+    the 2026-08-15 nightly gate (idx mismatch: judge-only list vs full
+    dataset)."""
+    full_inputs = [row["input"] for row in rows]
+    for row in rows:
+        if row["grader"] != "judge":
+            continue
+        assert full_inputs.count(row["input"]) == 1, (
+            f"{row['id']}: judge-case input must match exactly one dataset row "
+            f"(ambiguous match would mis-grade: {row['input'][:60]!r})"
+        )
+
+
 def test_deterministic_references_provably_pass_their_grader(rows):
     """Terminal-Bench oracle rule: every deterministic reference solution must
     pass its own grader (spec §4.2 / review checklist)."""

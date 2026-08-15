@@ -307,14 +307,20 @@ def test_cost_flake_single_over_run_never_fails():
     assert comp["nCostOver"] == 1
 
 
-def test_cost_regression_two_over_runs_fails():
-    # EVAL-13: >= 2 runs over 2x baseline is a real regression even if the
-    # median stays under (median 0.01 with 2 spikes of 0.025).
+def test_cost_regression_two_over_runs_reported_not_regression():
+    # EVAL-13 (2026-08-15 refinement): >=2 runs over 2x baseline with an
+    # UNCHANGED median is intrinsic cost variance, not a regression — it is
+    # reported via nCostOver but never fails the gate. Without this, an
+    # intrinsically bimodal case (coding-010: two runs at ~2.3x its own
+    # median) self-fails every run against its own freshly re-baselined
+    # median — the false-fail class the v0.11.0 'gate can't false-fail in
+    # either direction (flake AND cost)' claim exists to kill. A real
+    # regression is a MEDIAN shift (test_cost_regression_boundary).
     baseline = {"coding-001": {"passRate": 1.0, "costPerTaskUsd": 0.01}}
     agg = _agg_mixed_costs([0.01, 0.01, 0.01, 0.025, 0.025], n_runs=5)
     comp = score_run.compare_case("coding-001", agg, baseline, 0.05)
     assert comp["costFlake"] is False
-    assert comp["costRegressed"] is True
+    assert comp["costRegressed"] is False
     assert comp["nCostOver"] == 2
 
 
@@ -341,19 +347,19 @@ def test_cost_flake_never_fails_end_to_end(tmp_path):
     assert summary["costFlakes"] == ["coding-001"]
 
 
-def test_cost_regression_two_over_runs_fails_end_to_end(tmp_path):
-    # EVAL-13 end-to-end: >= 2 over-threshold runs is a real regression even
-    # with the median under 2x — gate fails and names the case.
+def test_cost_regression_two_over_runs_reported_end_to_end(tmp_path):
+    # EVAL-13 (2026-08-15 refinement) end-to-end: >=2 over-threshold runs with
+    # the median unchanged is intrinsic variance — gate PASSES, nCostOver is
+    # reported, no cost regression named. A median shift is the regression.
     report = make_report({
         "coding-001": [std_run(True, cost=c) for c in [0.01, 0.01, 0.01, 0.025, 0.025]],
     })
     baseline = make_baseline({"coding-001": {"passRate": 1.0, "costPerTaskUsd": 0.01}})
     result = run_cli(tmp_path, report, baseline, "--runs", "5")
-    assert result.returncode == 1
+    assert result.returncode == 0, result.stderr
     summary = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))
-    assert summary["gate"]["passed"] is False
-    assert any("coding-001" in failure and "costPerTaskUsd regression" in failure
-               for failure in summary["gate"]["failures"])
+    assert summary["gate"]["passed"] is True
+    assert summary["cases"]["coding-001"]["nCostOver"] == 2
 
 
 def test_unbaselined_cases_recorded_not_failed():

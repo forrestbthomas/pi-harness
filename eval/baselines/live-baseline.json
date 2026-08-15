@@ -295,8 +295,8 @@
     },
     "coding-049": {
       "passRate": 0.2,
-      "costPerTaskUsd": 0.002137,
-      "tokensPerTask": 1488,
+      "costPerTaskUsd": 0.00605365,
+      "tokensPerTask": 14473,
       "latencyMs": 14786.2
     },
     "coding-050": {

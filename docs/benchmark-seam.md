@@ -17,8 +17,8 @@
 
 | Path | Role | Versioning |
 |---|---|---|
-| `eval/datasets/tasks.json` | Manifest: `datasetVersion` + task table (62 tasks: 54 live + 8 benchmark) | `datasetVersion` `YYYY-MM-DD.N`, schema-lint guarded |
-| `eval/datasets/coding_samples.jsonl` | 54 live cases (JSONL), each with `grader` + `graderRef` + `reference` | under the manifest `datasetVersion` |
+| `eval/datasets/tasks.json` | Manifest: `datasetVersion` + task table (63 tasks: 55 live + 8 benchmark) | `datasetVersion` `YYYY-MM-DD.N`, schema-lint guarded |
+| `eval/datasets/coding_samples.jsonl` | 55 live cases (JSONL), each with `grader` + `graderRef` + `reference` | under the manifest `datasetVersion` |
 | `eval/datasets/graders/` | 49 deterministic grader scripts (exit 0 = pass) | content moves with the dataset |
 | `eval/datasets/references/` | 54 reference answers/solutions (schema lint proves each passes) | content moves with the dataset |
 | `eval/benchmarks/` | 8 edit-based Docker benchmark tasks (`task.json` + hidden `tests/run.sh`) | under the manifest `datasetVersion` |

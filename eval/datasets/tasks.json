@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "datasetVersion": "2026-08-14.7",
+  "datasetVersion": "2026-08-15.1",
   "categories": [
     "code-gen",
     "bug-fix",
@@ -764,6 +764,20 @@
         "agentic",
         "tool-using",
         "regression-tool-grep-milestones"
+      ]
+    },
+    {
+      "id": "coding-055",
+      "surface": "live",
+      "category": "bug-fix",
+      "difficulty": "hard",
+      "grader": "deterministic",
+      "tags": [
+        "debugging",
+        "root-cause",
+        "harness-eval",
+        "red-herring",
+        "regression-diagnosis"
       ]
     }
   ]

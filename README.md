@@ -266,7 +266,7 @@ nudge (spec `docs/governance/specs-archive/2026-08-13-self-healing-design.md`):
 
 The nightly workflow (`.github/workflows/nightly-live-eval.yml`) evaluates the
 agent against the live dataset (`eval/datasets/coding_samples.jsonl` —
-currently 54 cases across 7 categories; the manifest `eval/datasets/tasks.json`
+currently 55 cases across 7 categories; the manifest `eval/datasets/tasks.json`
 is the count authority) with a two-job split:
 
 - **Deterministic job** — runs the hermetic suite (config checks, contract

@@ -30,7 +30,7 @@ Rules:
 
 | Epic | Outcome | Appetite |
 |---|---|---|
-| EPIC-1 — Eval suite | smoke gate → research-grade **measurement** (0 flake false-fails, attributable, 54 live cases held) | ≈ 2.5–3 pw (one author, honest core) |
+| EPIC-1 — Eval suite | smoke gate → research-grade **measurement** (0 flake false-fails, attributable, 55 live cases held) | ≈ 2.5–3 pw (one author, honest core) |
 | EPIC-2 — Self-healing resilience | every hang/wedge class detected, recovered, observable; watchdog tuned on real data; auto-resume decided | ≤ 1.5 cycles |
 | EPIC-3 — Cost intelligence & routing | know/control cost per provider+task; **within-provider** tier routing (never cross-provider) | ≤ 1 cycle |
 | EPIC-4 — Portability & distribution | **PARKED** — non-goals per CHARTER.md until a consumer asks; PORT-0 quarterly re-confirm | 0.1 pw/quarter |
@@ -46,7 +46,7 @@ Rules:
 - Every nightly/weekly eval leaves a **complete evidence artifact** (report, summary, heal events) on **every** gate outcome — zero lost runs.
 - **Gate false-fails from single-run flake → 0/week** — for **pass rate AND cost** (EVAL-2 + EVAL-13); the scorecard distinguishes flake from regression and reports flake/cost-flake rate.
 - Every scorecard is **attributable**: dataset version, pi version, and judge model recorded — **on both surfaces** (live nightly gate **and** ci-benchmark provider scorecard) (EVAL-3 + EVAL-14).
-- Dataset holds **54 live cases** across 7 categories (incl. the agentic tool-using family) with regression pairs and diff-graded code tasks (EVAL-5 capped the six original categories; growth only on a consumer or a 30-day regression-catch signal; `tasks.json` is the count authority).
+- Dataset holds **55 live cases** across 7 categories (incl. the agentic tool-using family) with regression pairs and diff-graded code tasks (EVAL-5 capped the six original categories; growth only on a consumer or a 30-day regression-catch signal; `tasks.json` is the count authority).
 - The **split seam is verified, not assumed**: the eval suite's self-containment is proven by dry-run so the triggered pi-bench split stays cheap (EVAL-15).
 - The **loop measures itself**: changes to the harness report their own scorecard delta (EVAL-16 pilot shipped #129; **enforcement pending** — evidence-gated: first caught regression or validated delta-vs-noise).
 - Live runs exercise **agentic/tool-using behavior** (EVAL-6 slice 1 shipped #111; **EVAL-17** slice 2 multi-turn/subagent pending); sandboxing is **parked** behind a real contamination incident (EVAL-7); judge variance is bounded (EVAL-8); known-flaky cases are **quarantined** (EVAL-9).
@@ -72,7 +72,7 @@ Rules:
 
 - [ ] Each item closed via its own PR with hermetic tests (BACKLOG traceability).
 - [ ] Scorecard reports flakes vs. regressions AND cost-flakes; no false-fail from 1-of-N flake or a single-run cost spike.
-- [ ] Dataset version + provenance in **every** scorecard (live **and** ci-benchmark); 54 live cases held.
+- [ ] Dataset version + provenance in **every** scorecard (live **and** ci-benchmark); 55 live cases held.
 - [ ] 0 unbaselined live cases after EVAL-12; re-baseline is a standing cadence (after every dataset/harness-behavior change; history in `eval/baselines/`).
 - [ ] Split-seam dry-run passes (or the gap is documented as the reason the split needs the dry-run).
 - [ ] EPIC-1 row closed in ROADMAP; CHANGELOG entries per shipped item.

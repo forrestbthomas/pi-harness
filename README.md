@@ -38,7 +38,10 @@ week. What they don't ship is a *neutral, cross-provider, verifiable* seam for
 *your* config — their measurement is welded to their agent (they measure
 *their* model on *their* terms). This project is the **starter kit for that discipline** —
 the discipline applied to its own agent, packaged so you can apply it to
-yours. The number below is a **dated demo**; the mechanism is the promise.
+**your configuration of the same agent** (your provider, model tier, prompts,
+tasks). Provider-neutral, **not runtime-neutral**: it measures the agent this
+harness runs. The number below is a **dated demo**; the mechanism is the
+promise.
 ## It measures itself — here's a real scorecard (dated demo)
 
 Every night the harness runs a real coding agent against **55 live eval cases**

@@ -16,6 +16,14 @@ with the harness's own failures becoming graded cases.
 self-healing measurement of *your* agent configuration — we cannot cheat it,
 and you can verify it. This repository is the demo."
 
+**Scope of "your":** the measurement is neutral across *providers*, **not
+across runtimes** — it measures the agent this harness runs (Pi via
+`pi-run`), packaged so you can apply the discipline to *your configuration of
+the same agent* (provider, model tier, prompts, tasks). A runtime-agnostic
+scorer (measuring Claude Code / Codex / any agent CLI through this contract)
+is a new surface and is explicitly deferred — the honest-reframe debate's
+"shrink the surface, deepen the seam" applies here too.
+
 ## Why (the trigger)
 
 The author, after ~2 weeks of building, was challenged on what the project

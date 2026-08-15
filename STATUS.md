@@ -14,7 +14,8 @@
 | **W7 — Flake-aware gate + evidence artifacts** (EVAL-1/EVAL-2) | **SHIPPED — 2026-08-14** — #87; end-to-end confirmed by next live nightly |
 | **W8 — Dataset versioning + provenance** (EVAL-3) | **SHIPPED — 2026-08-14** — #89; guarded `datasetVersion` + `provenance` in scorecard |
 | **W9 — Self-heal events in provider scorecard** (EVAL-4) | **SHIPPED — 2026-08-14** — #91 |
-| **W10 — Dataset growth 20 → 50** (EVAL-5) | **SHIPPED — 2026-08-14** — 50 live cases + 3 edit-based benchmark tasks; EVAL-12 re-baseline is the follow-up (tonight) |
+| **W10 — Dataset growth 20 → 50** (EVAL-5) | **SHIPPED — 2026-08-14** — 50 live cases + 3 edit-based benchmark tasks; EVAL-12 re-baseline follow-up: **SHIPPED (#140)** |
+| **EVAL-12 — Live re-baseline (data release)** | **SHIPPED — 2026-08-15** — #140: baseline 17 → 55 cases, **0 unbaselined**, provenance recorded; 14 sub-1.0 rates as honest bounds; standing re-baseline cadence established |
 | **Live-suite timeout sizing** (EVAL-12 enabler) | **SHIPPED — 2026-08-14** — #97: per-test 120→600s, job 30→60m so the 55-case nightly can finish |
 | **GOV-2 — Governance relocation + spec archive** | **SHIPPED — 2026-08-14** — #119: 19 dated specs → `docs/governance/specs-archive/` + `decisions.md` index; `docs/governance/` = governance home; living PM docs stay at root (scope decision — session-entry contract + GOV-1 path reads + coding-054 grader); SCOPE.md archived to `docs/governance/scope-history/` |
 | **OSS-2 — Contributor on-ramp v2** | **SHIPPED — 2026-08-14** — #122: CONTRIBUTING first-issue path (`good first issue`) + 7-day review SLA + MIT-in/MIT-out; PR-template bugfix carve-out; LICENSE identity → `forrestbthomas` |
@@ -26,8 +27,8 @@
 
 | Item | RICE | Tag |
 |---|---|---|
-| **v0.11.0 — The gate that can't lie** (EVAL-12 re-baseline → EVAL-16 enforcement) | — | Release |
-| **EPIC-1 — Eval suite → research-grade measurement** (EVAL-12 standing trigger, EVAL-17, EVAL-9, EVAL-11) | top EVAL-17 1.40 | EPIC-1 |
+| **v0.11.0 — The gate that can't lie** (EVAL-12 re-baseline ✓ → EVAL-16 enforcement) | — | Release |
+| **EPIC-1 — Eval suite → research-grade measurement** (EVAL-17, EVAL-9, EVAL-11) | top EVAL-17 1.40 | EPIC-1 |
 | **EPIC-6 — Repo maturity** (OWN-1+SECURITY bundle, TAX-1, PORT-0) | top OWN-1 ~1.5 | EPIC-6 |
 | **EPIC-2 — Self-healing resilience** (HEAL-5, HEAL-2 data-gated, HEAL-3; HEAL-1 demoted) | top HEAL-5 1.20 | EPIC-2 |
 | **EPIC-3 — Cost intelligence & routing** (COST-2; COST-1 deferred) | top COST-2 0.50 | EPIC-3 |
@@ -59,7 +60,7 @@
   EVAL-6 agentic slice 1 (#111), GOV-1 drift guard (#112), GOV-2 relocation +
   spec archive (#119), GOV-3 CI-wiring item + docs-drift cwd fix (#120), OSS-2
   contributor on-ramp (#122), GOV-3 drift guards wired into CI (#123), EVAL-16
-  harness-change gate pilot (#129)
+  harness-change gate pilot (#129), EVAL-12 live re-baseline 17→55 (#140)
 
 ## Open PRs / branches
 

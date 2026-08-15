@@ -21,21 +21,19 @@ one-screen snapshot, `EPICS.md` for the epic grouping layer, and
 
 | 4 | **HEAL-5 — `pi-run hooks` post-rebase hook** (auto-continue wedged rebase) | 1.20 | EPIC-2 | 0.5 pw | post-rebase hook invokes `pi-run self-heal` after agent timeout; hermetic test |
 
-| 5 | **EVAL-12 — Live re-baseline after W10** (standing trigger: fires on the 03:00 UTC nightly — not a pick) | 1.10 | EPIC-1 | 0.25 pw | pull live-results artifact, review the 55-case report, commit `--update-baseline`; **DoD: 0 unbaselined live cases** + standing re-baseline cadence (after every dataset/harness change; history in `eval/baselines/`); gate-safe verified (score_run records unbaselined, never fails) |
+| 5 | **TAX-1 — Opt-in usage evidence via cost ledger** | ~0.7 | EPIC-6 | 0.25 pw | per-provider/per-flag counts from `.pi/cost-ledger.jsonl` (local, opt-in, no keys) → RICE Reach becomes measured |
 
-| 6 | **TAX-1 — Opt-in usage evidence via cost ledger** | ~0.7 | EPIC-6 | 0.25 pw | per-provider/per-flag counts from `.pi/cost-ledger.jsonl` (local, opt-in, no keys) → RICE Reach becomes measured |
+| 6 | **EVAL-11 — Auto-open GitHub issue on N self-heals** | 0.50 | EPIC-1 | 0.5 pw | unblocked by W6; opens an issue when self-heal count crosses a threshold |
 
-| 7 | **EVAL-11 — Auto-open GitHub issue on N self-heals** | 0.50 | EPIC-1 | 0.5 pw | unblocked by W6; opens an issue when self-heal count crosses a threshold |
+| 7 | **COST-2 — Model-catalog auto-refresh in CI** | 0.50 | EPIC-3 | 0.5 pw | hermetic drift check so routing never targets a stale/removed model |
 
-| 8 | **COST-2 — Model-catalog auto-refresh in CI** | 0.50 | EPIC-3 | 0.5 pw | hermetic drift check so routing never targets a stale/removed model |
+| 8 | **EVAL-9 — Known-flaky quarantine mechanism** | 0.40 | EPIC-1 | 0.5 pw | managed flake triage with re-entry review |
 
-| 9 | **EVAL-9 — Known-flaky quarantine mechanism** | 0.40 | EPIC-1 | 0.5 pw | managed flake triage with re-entry review |
+| 9 | **HEAL-2 — Tune watchdog silent-window/restart-budget** | 0.35 | EPIC-2 | 0.25 pw | **data-gated**: ≥1 week non-zero `PI_SELF_HEAL` wedge coverage + W5 Part C verified (EVAL-17 is the pump) |
 
-| 10 | **HEAL-2 — Tune watchdog silent-window/restart-budget** | 0.35 | EPIC-2 | 0.25 pw | **data-gated**: ≥1 week non-zero `PI_SELF_HEAL` wedge coverage + W5 Part C verified (EVAL-17 is the pump) |
+| 10 | **HEAL-3 — Auto-resume decision** (decision ticket) | 0.30 | EPIC-2 | 0.25 pw | record ship-or-park rationale for auto-resume after clean git-state recovery |
 
-| 11 | **HEAL-3 — Auto-resume decision** (decision ticket) | 0.30 | EPIC-2 | 0.25 pw | record ship-or-park rationale for auto-resume after clean git-state recovery |
-
-| 12 | **PORT-0 — Quarterly park re-confirm ticket** (replaces EPIC-4 PORT-1/PORT-2) | ~0.1 | EPIC-6 | 0.1 pw/q | re-confirm "parked, local is enough today" OR unpark on a consumer issue; all EPIC-4's DoD actually demands |
+| 11 | **PORT-0 — Quarterly park re-confirm ticket** (replaces EPIC-4 PORT-1/PORT-2) | ~0.1 | EPIC-6 | 0.1 pw/q | re-confirm "parked, local is enough today" OR unpark on a consumer issue; all EPIC-4's DoD actually demands |
 
 | *(DEFERRED — recorded decisions)* | | | | | |
 | — | **MEM-1 — Memory-engine hook — CLOSED as decided (spike, 2026-08-15)** | ~1.5 | EPIC-6 | 0.5 pw (spike) | no harness memory abstraction; default = none (docs = source of truth; user choice via `.pi/settings.json`); eval runs memory-free (seam invariant); decision: `docs/knowledge-base/decision/2026-08-15-memory-engine-spike.md`; re-open on consumer signal / measured contamination / EVAL-17 data |
@@ -43,6 +41,7 @@ one-screen snapshot, `EPICS.md` for the epic grouping layer, and
 
 
 | *(SHIPPED — see CHANGELOG)* | | | | | |
+| 5 | **EVAL-12 — Live re-baseline after W10 — SHIPPED (#140, 2026-08-15)** | 1.10 | EPIC-1 | 0.25 pw | re-baseline 17 → 55 cases from the first complete 55-case nightly; **DoD: 0 unbaselined live cases**, 0 incomplete omitted; provenance recorded (agentModel cheap / judgeModel gpt-4.1-mini); 14 sub-1.0 rates as honest bounds; standing re-baseline cadence established |
 | 1 | **EVAL-16 — Harness-change eval gate — pilot SHIPPED (#129)** | ~1.6 | EPIC-1 | 0.3–0.5 pw | score_delta.py (classifier + delta renderer) + 15 hermetic tests + report-only eval-delta CI job + nightly delta artifact; **enforcement pending** (evidence-gated: first caught regression or validated delta-vs-noise; v1.0.0 gate "EVAL-16 enforced" still open) |
 | 1 | **GOV-3 — Wire drift guards into CI — SHIPPED (#123)** | ~2.0 | EPIC-6 | 0.15 pw | `test_docs_drift.py` + `test_pm_drift.py` run in python-quick on every push + tags fetch so tag↔changelog invariants enforce (not skip); end-to-end verified: planted drift failed CI (PR #124 throwaway); fresh-checkout false positive fixed (scope change #1) |
 | 1 | **OSS-2 — Contributor on-ramp v2 — SHIPPED (#122)** | ~2.0 | EPIC-6 | 0.5 pw | CONTRIBUTING first-issue path (`good first issue` label) + 7-day review SLA mirroring SECURITY + MIT-in/MIT-out line; PR-template bugfix carve-out (no ROADMAP citation for in-scope fixes); LICENSE copyright name → canonical `forrestbthomas` |

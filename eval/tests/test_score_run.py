@@ -197,6 +197,26 @@ def test_aggregate_mean_pass_rate_and_median_cost():
     assert agg["incomplete"] is False
 
 
+def test_judge_case_not_incomplete_with_one_run():
+    """EVAL-12 blocker (2026-08-15): judge-graded cases (test_live_metrics)
+    record ONE agent run carrying an internal EVAL_JUDGE_RUNS majority; holding
+    them to --runs=5 made every judge case 'incomplete' and failed the gate even
+    when the verdict passed (coding-036..040 on the 2026-08-15 nightly)."""
+    judge_runs = [{
+        "pass": True, "costUsd": 0.0, "judgeCostUsd": 0.003, "tokens": 0,
+        "latencyMs": 500.0, "judgeRuns": 3, "outcome": "passed",
+    }]
+    assert score_run._expected_runs(judge_runs, 5) == 1
+    agg = score_run.aggregate_case(judge_runs, expected_runs=1)
+    assert agg["incomplete"] is False
+    assert agg["passRate"] == 1.0
+    # Deterministic cases are still held to --runs.
+    det_runs = [std_run(True, cost=0.01, judge=0.0, tokens=100, latency=50.0) for _ in range(4)]
+    assert score_run._expected_runs(det_runs, 5) == 5
+    agg2 = score_run.aggregate_case(det_runs, expected_runs=5)
+    assert agg2["incomplete"] is True
+
+
 def test_totals_math():
     cases_raw = {
         "coding-001": [

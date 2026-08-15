@@ -171,6 +171,7 @@ def _zip_runs(props: dict[str, list], outcome: str) -> list[dict]:
                 "pass": props.get("pass", [None] * n)[i],
                 "costUsd": props.get("costUsd", [None] * n)[i],
                 "judgeCostUsd": props.get("judgeCostUsd", [None] * n)[i],
+                "judgeRuns": props.get("judgeRuns", [None] * n)[i],
                 "tokens": props.get("tokens", [None] * n)[i],
                 "latencyMs": props.get("latencyMs", [None] * n)[i],
             }
@@ -232,6 +233,18 @@ def _run_pass(run: dict) -> bool:
 
 def _median(values: list[float]) -> float:
     return statistics.median(values) if values else 0.0
+
+
+def _expected_runs(runs: list[dict], default_runs: int) -> int:
+    """Judge-graded cases (test_live_metrics) record ONE agent run carrying an
+    internal EVAL_JUDGE_RUNS majority (the judge verdict); the gate's --runs
+    applies to the deterministic suite's repeated agent runs. Holding judge
+    cases to --runs makes every one 'incomplete' and fails the gate — the
+    2026-08-15 nightly class (coding-036..040 recorded pass=True yet still
+    gated as incomplete)."""
+    if any(r.get("judgeRuns") for r in runs):
+        return 1
+    return default_runs
 
 
 def aggregate_case(runs: list[dict], expected_runs: int) -> dict:
@@ -688,7 +701,7 @@ def main(argv=None) -> int:
         return 2
 
     cases_raw = collect_cases(report)
-    case_aggs = {case_id: aggregate_case(runs, args.runs) for case_id, runs in cases_raw.items()}
+    case_aggs = {case_id: aggregate_case(runs, _expected_runs(runs, args.runs)) for case_id, runs in cases_raw.items()}
     totals = compute_totals(cases_raw, case_aggs)
     baseline_cases = baseline.get("cases", {}) if isinstance(baseline, dict) else {}
     case_comps = {

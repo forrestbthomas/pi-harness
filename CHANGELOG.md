@@ -4,7 +4,14 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [v0.11.0] - 2026-08-16
+
+> **Release note (recorded owner decision 2026-08-16):** v0.11.0 is "the gate
+> that can't lie" — the gate machinery has been proven honest through five red
+> nightlies (every failure was a stale baseline the gate correctly flagged,
+> fixed honestly; never a false-pass). The two-green-nightlies evidence is
+> deferred to the 15× re-baseline data release (in flight), per
+> `docs/knowledge-base/decision/2026-08-16-v0110-release-decision.md`.
 
 ### Added
 - **EVAL-17 — Agentic slice 2: chat-session runner + multi-turn cases**

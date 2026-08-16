@@ -4,6 +4,8 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [SemVer](https://semver.org/).
 
+## [Unreleased]
+
 ## [v0.11.0] - 2026-08-16
 
 > **Release note (recorded owner decision 2026-08-16):** v0.11.0 is "the gate

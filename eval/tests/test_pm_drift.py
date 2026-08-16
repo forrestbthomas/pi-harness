@@ -125,15 +125,27 @@ def test_every_tag_has_changelog_section():
 
 
 def test_changelog_sections_have_tags():
-    """GOV-1 (inverse): released changelog sections must have a matching tag —
-    a changelog entry for a version that was never tagged is a ledger lie."""
+    """GOV-1 (inverse): released changelog sections must have a matching tag.
+
+    Release preparation is intentionally PR-first: the changelog section lands
+    on main before the tag is created. An explicit release-candidate marker is
+    the narrow exception for that transition; every other untagged section is
+    still a ledger lie.
+    """
     tags = _git_tags()
     if not tags:
         return
     changelog = _changelog_versions()
-    phantom = sorted(changelog - tags)
-    assert not phantom, (
-        f"CHANGELOG sections with no matching git tag: {phantom}"
+    phantom = set(changelog - tags)
+    candidates = set(
+        re.findall(r"<!-- release-candidate:\s*(v\d+\.\d+\.\d+(?:-pre)?)\s* -->", _read("CHANGELOG.md"))
+    )
+    assert candidates <= changelog, (
+        f"release-candidate markers must name changelog sections: {sorted(candidates - changelog)}"
+    )
+    unexpected = sorted(phantom - candidates)
+    assert not unexpected, (
+        f"CHANGELOG sections with no matching git tag: {unexpected}"
     )
 
 

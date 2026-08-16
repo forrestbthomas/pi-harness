@@ -135,6 +135,86 @@ func TestIsHarnessRoot(t *testing.T) {
 	}
 }
 
+func TestSetupInstallOllamaExtensionInstallsCompletePair(t *testing.T) {
+	root, _ := fakeCheckout(t)
+	ext := filepath.Join(root, ".pi", "extensions")
+	if err := os.MkdirAll(filepath.Join(ext, "lib"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(ext, "ollama.ts"), []byte("provider\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(ext, "lib", "ollama-catalog.ts"), []byte("catalog\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	agentDir := t.TempDir()
+	t.Setenv("PI_AGENT_DIR", agentDir)
+
+	if err := setupInstallOllamaExtension(root); err != nil {
+		t.Fatalf("setupInstallOllamaExtension() = %v", err)
+	}
+	for _, rel := range []string{"ollama.ts", filepath.Join("lib", "ollama-catalog.ts")} {
+		got, err := os.ReadFile(filepath.Join(agentDir, "extensions", rel))
+		if err != nil {
+			t.Fatalf("read installed %s: %v", rel, err)
+		}
+		if string(got) == "" {
+			t.Fatalf("installed %s is empty", rel)
+		}
+	}
+}
+
+func TestSetupInstallOllamaExtensionRollsBackPartialPublish(t *testing.T) {
+	root, _ := fakeCheckout(t)
+	ext := filepath.Join(root, ".pi", "extensions")
+	if err := os.MkdirAll(filepath.Join(ext, "lib"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(ext, "ollama.ts"), []byte("new provider\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(ext, "lib", "ollama-catalog.ts"), []byte("new catalog\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	agentDir := t.TempDir()
+	dstDir := filepath.Join(agentDir, "extensions")
+	if err := os.MkdirAll(dstDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	oldProvider := filepath.Join(dstDir, "ollama.ts")
+	if err := os.WriteFile(oldProvider, []byte("old provider\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// Make the second destination impossible to inspect. The first backup must
+	// be restored when publication of the pair cannot proceed.
+	if err := os.WriteFile(filepath.Join(dstDir, "lib"), []byte("not a directory\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PI_AGENT_DIR", agentDir)
+
+	if err := setupInstallOllamaExtension(root); err == nil {
+		t.Fatal("setupInstallOllamaExtension() succeeded despite an invalid destination")
+	}
+	got, err := os.ReadFile(oldProvider)
+	if err != nil {
+		t.Fatalf("read restored provider: %v", err)
+	}
+	if string(got) != "old provider\n" {
+		t.Fatalf("restored provider = %q, want previous contents", got)
+	}
+}
+
+func TestSetupInstallOllamaExtensionRejectsUntrustedRoot(t *testing.T) {
+	agentDir := t.TempDir()
+	t.Setenv("PI_AGENT_DIR", agentDir)
+	if err := setupInstallOllamaExtension(t.TempDir()); err == nil {
+		t.Fatal("setupInstallOllamaExtension() accepted an untrusted root")
+	}
+	if _, err := os.Stat(filepath.Join(agentDir, "extensions")); !os.IsNotExist(err) {
+		t.Fatalf("untrusted install touched destination, stat error = %v", err)
+	}
+}
+
 func TestRepoRootFallsBackToCWD(t *testing.T) {
 	// HARNESS_ROOT unset and the test binary lives outside any checkout, so
 	// repoRoot() must fall back to the current working directory.

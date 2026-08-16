@@ -36,6 +36,20 @@ endpoints, Azure OpenAI, and 9 more OpenAI-/Anthropic-compatible cloud
 providers). Keys are resolved **env-first**, then from an optional secret store
 (`BW_GET` override; Bitwarden is a documented example).
 
+> **Ollama needs the provider extension** (added 2026-08-16): `pi-run setup`
+> installs it to Pi's global agent dir so `pi-run chat --provider ollama`
+> works from **any** project. If you run a pre-v0.11.1 binary or skipped
+> setup, run these commands from the pi-harness checkout:
+> ```sh
+> agent_dir="${PI_AGENT_DIR:-$HOME/.pi/agent}"
+> mkdir -p "$agent_dir/extensions/lib"
+> cp .pi/extensions/ollama.ts "$agent_dir/extensions/"
+> cp .pi/extensions/lib/ollama-catalog.ts "$agent_dir/extensions/lib/"
+> ```
+> (or re-run `pi-run setup`). The model picker discovers the local daemon's
+> installed tags via `/api/tags` (bounded timeout; last-known catalog as
+> fallback).
+
 | provider | key (env var / secret-manager item) | `pi-run --provider` | default model | baseURL (OpenAI- or Anthropic-compatible) |
 |---|---|---|---|---|
 | OpenAI (default) | `OPENAI_API_KEY` | `openai` | `openai/gpt-5.6-terra` | — |
@@ -47,16 +61,6 @@ providers). Keys are resolved **env-first**, then from an optional secret store
 | Local (Ollama/vLLM) | `LOCAL_API_KEY` | `local` | `local/model` | `http://localhost:11434/v1` |
 | Azure OpenAI | `AZURE_OPENAI_API_KEY` | `azure` | `azure/gpt-5.6-terra` | `https://<your-resource>.openai.azure.com/openai/v1` |
 | Ollama (local) | keyless (no key needed) | `ollama` | `ollama/llama3.1` | `http://localhost:11434/v1` |
-
-> **Ollama needs the provider extension** (added 2026-08-16): `pi-run setup`
-> installs it to Pi's global agent dir (`~/.pi/agent/extensions/`) so
-> `pi-run chat --provider ollama` works from **any** project. If you run a
-> pre-v0.11.1 binary or skipped setup, copy the extension manually:
-> `cp .pi/extensions/ollama.ts ~/.pi/agent/extensions/` and
-> `cp .pi/extensions/lib/ollama-catalog.ts ~/.pi/agent/extensions/lib/`
-> (or re-run `pi-run setup`). The model picker discovers the local daemon's
-> installed tags via `/api/tags` (bounded timeout; last-known catalog as
-> fallback).
 | Mistral | `MISTRAL_API_KEY` | `mistral` | `mistral/mistral-large-latest` | `https://api.mistral.ai/v1` |
 | Cohere | `COHERE_API_KEY` | `cohere` | `cohere/command-r-plus` | `https://api.cohere.com/compatibility/v1` |
 | Together | `TOGETHER_API_KEY` | `together` | `together/llama-3.3-70b-instruct` | `https://api.together.xyz/v1` |

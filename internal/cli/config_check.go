@@ -97,8 +97,11 @@ func runConfigCheck() int {
 	// 5. Makefile gone.
 	check("Makefile removed", !pathExists(filepath.Join(root, "Makefile")))
 
-	// 6. Skills.
-	spDir := filepath.Join(home, ".agents", "skills")
+	// 6. Skills. The superpowers collection is the registered durable clone at
+	// ~/.pi/agent/skills/superpowers/skills (scripts/install-skills.sh);
+	// ~/.agents/skills is the user's personal skill dir and is NOT the
+	// collection. The collection currently has 13 skills (2026-08-15).
+	spDir := filepath.Join(home, ".pi", "agent", "skills", "superpowers", "skills")
 	count := 0
 	if entries, err := os.ReadDir(spDir); err == nil {
 		for _, e := range entries {
@@ -111,7 +114,7 @@ func runConfigCheck() int {
 	// config-check passes on a fresh clone that has not installed the curated
 	// skill collections.
 	if personalMode() {
-		check("superpowers skills installed (>= 14)", count >= 14)
+		check("superpowers skills installed (>= 13)", count >= 13)
 		check("agent-skills clone present", pathExists(filepath.Join(home, "Projects", "tmp", "agent-skills", "skills")))
 	} else {
 		fmt.Println("  [info] superpowers/agent-skills checks skipped (set PI_RUN_PERSONAL=1 to enable)")

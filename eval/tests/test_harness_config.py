@@ -17,7 +17,7 @@ HARNESS = Path(__file__).resolve().parents[2]
 PROJECT_SETTINGS = HARNESS / ".pi" / "settings.json"
 HOME = Path.home()
 PERSONAL = os.environ.get("PI_RUN_PERSONAL") == "1"
-MIN_SUPERPOWERS_SKILLS = 14
+MIN_SUPERPOWERS_SKILLS = 13  # matches the current superpowers collection (13 skills, 2026-08-15)
 
 
 def _load_json(path: Path) -> dict:
@@ -155,7 +155,11 @@ def test_personal_dotfiles_no_longer_define_pi_harness_functions():
 
 @pytest.mark.skipif(not PERSONAL, reason="personal-machine check (set PI_RUN_PERSONAL=1)")
 def test_personal_superpowers_skills_installed():
-    skills = HOME / ".agents" / "skills"
+    # The registered durable location (scripts/install-skills.sh clones into
+    # ~/.pi/agent/skills/superpowers). ~/.agents/skills is the user's PERSONAL
+    # skill dir (game-design, context-engine, ...) — not the superpowers
+    # collection; a pre-fix version of this test checked the wrong path.
+    skills = HOME / ".pi" / "agent" / "skills" / "superpowers" / "skills"
     assert skills.is_dir()
     count = sum(1 for p in skills.iterdir() if p.is_dir())
     assert count >= MIN_SUPERPOWERS_SKILLS, f"found {count} skills"

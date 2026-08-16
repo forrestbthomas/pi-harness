@@ -43,6 +43,13 @@ jobs:
           GH_TOKEN: ${{ secrets.TAP_PUSH_TOKEN }}
         run: |
           bash scripts/update-homebrew-formula.sh "${GITHUB_REF_NAME}"
+      - name: Install Homebrew (linuxbrew) for the verify step
+        # verify-homebrew-formula.sh needs a Homebrew on PATH; the ubuntu
+        # runner does not ship one (REL-3 failed on v0.11.0 with
+        # 'brew: command not found' — the release verified manually instead).
+        run: |
+          NONINTERACTIVE=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          echo "/home/linuxbrew/.linuxbrew/bin" >> "$GITHUB_PATH"
       - name: Verify Homebrew install (REL-3)
         # A tag shipped with a broken brew install is a silent distribution lie
         # (the formula push was fire-and-forget). Install into a temp prefix and

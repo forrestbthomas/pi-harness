@@ -46,7 +46,7 @@ providers). Keys are resolved **env-first**, then from an optional secret store
 | Groq | `GROQ_API_KEY` | `groq` | `groq/llama-3.3-70b-versatile` | — |
 | Local (Ollama/vLLM) | `LOCAL_API_KEY` | `local` | `local/model` | `http://localhost:11434/v1` |
 | Azure OpenAI | `AZURE_OPENAI_API_KEY` | `azure` | `azure/gpt-5.6-terra` | `https://<your-resource>.openai.azure.com/openai/v1` |
-| Ollama (local) | `OLLAMA_API_KEY` | `ollama` | `ollama/llama3.1` | `http://localhost:11434/v1` |
+| Ollama (local) | keyless (no key needed) | `ollama` | `ollama/llama3.1` | `http://localhost:11434/v1` |
 | Mistral | `MISTRAL_API_KEY` | `mistral` | `mistral/mistral-large-latest` | `https://api.mistral.ai/v1` |
 | Cohere | `COHERE_API_KEY` | `cohere` | `cohere/command-r-plus` | `https://api.cohere.com/compatibility/v1` |
 | Together | `TOGETHER_API_KEY` | `together` | `together/llama-3.3-70b-instruct` | `https://api.together.xyz/v1` |

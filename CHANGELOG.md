@@ -6,6 +6,8 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+<!-- release-candidate: v0.11.1 -->
+
 ## [0.11.1] - 2026-08-16
 
 ### Fixed

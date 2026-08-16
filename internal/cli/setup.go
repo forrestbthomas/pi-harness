@@ -224,7 +224,6 @@ func setupInstallOllamaExtension(root string) error {
 // catalogs (fetches the deepseek catalog). Idempotent.
 func runSetup() int {
 	root := repoRoot()
-	setupInstallOllamaExtension(root)
 	if code, err := setupInstallDeps(root); err != nil || code != 0 {
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)

@@ -35,6 +35,6 @@ jobs:
         uses: github/codeql-action/autobuild@c4dd10e44af883a891fe31ced449bcb4a6728b9b
       - name: Perform CodeQL Analysis
         # github/codeql-action/analyze@v3.37.6
-        uses: github/codeql-action/analyze@c4dd10e44af883a891fe31ced449bcb4a6728b9b
+        uses: github/codeql-action/analyze@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd
         with:
           category: "/language:${{ matrix.language }}"

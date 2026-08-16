@@ -43,5 +43,6 @@ evidence **deferred to the 15× re-baseline data release** (in flight,
       release, eval lane).
 - [ ] Post-release: verify `pi-run version` == v0.11.0, brew formula shas,
       and the post-release brew verify CI.
-- [ ] The next nightly gates against the 15-sample baselines — a green run
-      then closes the deferred evidence.
+- [ ] The next nightlies gate against the 15-sample baselines — **two
+      consecutive green nightlies** then close the deferred evidence (the
+      original two-run gate, applied to the 15-sample baselines).

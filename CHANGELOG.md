@@ -6,6 +6,15 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+### Fixed
+- **Ollama provider now works from any project** (2026-08-16): the Ollama
+  extension shipped only in the harness repo's `.pi/extensions/`, so Pi
+  auto-discovered it only when running inside the harness — `pi-run
+  --provider ollama` from any other directory failed with Pi's
+  "Unknown provider". `pi-run setup` now installs the extension to Pi's
+  global agent dir (`~/.pi/agent/extensions/`) so the provider registers
+  everywhere; the manual copy is documented in `docs/reference.md`.
+
 ## [0.11.0] - 2026-08-16
 
 > **Release note (recorded owner decision 2026-08-16):** v0.11.0 is "the gate

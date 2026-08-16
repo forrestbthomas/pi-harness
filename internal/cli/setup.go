@@ -110,10 +110,52 @@ func setupInstallDeps(root string) (int, error) {
 	return 0, nil
 }
 
+// setupInstallOllamaExtension installs the Ollama provider extension into Pi's
+// global agent dir (~/.pi/agent/extensions/, or $PI_AGENT_DIR/extensions) so
+// `pi-run --provider ollama` works from ANY project, not just a harness
+// checkout. Pi auto-discovers extensions from the project's .pi/extensions/
+// (cwd) and the global agent dir; shipping the extension only in the harness
+// repo made the provider "unknown" elsewhere (2026-08-16). Idempotent;
+// best-effort (skips silently when the source files are absent, e.g. a
+// Homebrew-installed binary invoked outside a checkout).
+func setupInstallOllamaExtension(root string) {
+	agentDir := os.Getenv("PI_AGENT_DIR")
+	if agentDir == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return
+		}
+		agentDir = filepath.Join(home, ".pi", "agent")
+	}
+	extDir := filepath.Join(root, ".pi", "extensions")
+	dstDir := filepath.Join(agentDir, "extensions")
+	files := []string{"ollama.ts", filepath.Join("lib", "ollama-catalog.ts")}
+	installed := false
+	for _, rel := range files {
+		src := filepath.Join(extDir, rel)
+		b, err := os.ReadFile(src)
+		if err != nil {
+			continue
+		}
+		dst := filepath.Join(dstDir, rel)
+		if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+			continue
+		}
+		if err := os.WriteFile(dst, b, 0o644); err != nil {
+			continue
+		}
+		installed = true
+	}
+	if installed {
+		fmt.Printf("installed Ollama provider extension -> %s\n", filepath.Join(dstDir, "ollama.ts"))
+	}
+}
+
 // runSetup creates eval/.venv, installs Python deps, and refreshes model
 // catalogs (fetches the deepseek catalog). Idempotent.
 func runSetup() int {
 	root := repoRoot()
+	setupInstallOllamaExtension(root)
 	if code, err := setupInstallDeps(root); err != nil || code != 0 {
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)

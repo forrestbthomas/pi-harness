@@ -5,7 +5,7 @@
 # Called from .github/workflows/release.yml after update-homebrew-formula.sh
 # (REL-3). The formula push used to be fire-and-forget: a failed TAP_PUSH_TOKEN
 # push or a bad formula shipped a tag whose brew install was silently broken.
-# This step installs into a temporary prefix and asserts the version.
+# This step installs the tap formula and asserts the installed version.
 #
 # Usage: scripts/verify-homebrew-formula.sh v0.10.0
 # Requires: a Homebrew on PATH (macOS runner or linuxbrew in CI).
@@ -17,19 +17,15 @@ if [ $# -ne 1 ]; then
 fi
 TAG="$1"
 
-TMP_PREFIX="$(mktemp -d)/brew-prefix"
-mkdir -p "${TMP_PREFIX}"
-
-# Tap + install into the isolated prefix; --force-bottle avoids build-from-source
-# surprises, --formula pins the formula path.
-brew install --force-bottle \
-  --prefix "${TMP_PREFIX}" \
-  forrestbthomas/tap/pi-run >/dev/null 2>&1 || {
+# --force-bottle avoids build-from-source surprises. The install prefix is
+# managed by Homebrew; `brew install --prefix` is not a supported option on
+# current Homebrew. Resolve the formula's actual opt prefix after installing.
+brew install --force-bottle --formula forrestbthomas/tap/pi-run >/dev/null 2>&1 || {
   # Retry without --force-bottle (a bottle may not exist for the platform yet).
-  brew install --prefix "${TMP_PREFIX}" forrestbthomas/tap/pi-run >/dev/null
+  brew install --formula forrestbthomas/tap/pi-run >/dev/null
 }
 
-BIN="${TMP_PREFIX}/bin/pi-run"
+BIN="$(brew --prefix pi-run)/bin/pi-run"
 if [ ! -x "${BIN}" ]; then
   echo "::error::pi-run not installed at ${BIN} (brew install failed)" >&2
   exit 1

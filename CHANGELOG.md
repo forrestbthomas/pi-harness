@@ -14,6 +14,11 @@ All notable changes to this project are documented here. Format follows
 > fixed honestly; never a false-pass). The two-green-nightlies evidence is
 > deferred to the 15× re-baseline data release (in flight), per
 > `docs/knowledge-base/decision/2026-08-16-v0110-release-decision.md`.
+>
+> **Released 2026-08-16.** `pi-run v0.11.0` verified manually (binary version
+> stamp + tap formula shas match the assets); the REL-3 brew-verify CI step
+> failed on the ubuntu runner (`brew: command not found`) and was fixed for
+> future releases (linuxbrew install step added to release.yml).
 
 ### Added
 - **EVAL-17 — Agentic slice 2: chat-session runner + multi-turn cases**

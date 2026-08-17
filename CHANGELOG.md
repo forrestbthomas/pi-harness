@@ -8,6 +8,15 @@ All notable changes to this project are documented here. Format follows
 
 <!-- release-candidate: v0.11.1 -->
 
+### Added
+- **`pi-run sessions` fleet view + `--heal` (W11, 2026-08-16)**: list
+  active/recent agent sessions from the existing `.pi/sessions` transcript
+  seam; `--heal` scans session transcripts for repeated connection/transport
+  failures (≥3 in 10m per session) and writes aggregated `connection-flap`
+  events to `.pi/heal/events.jsonl`, surfacing in the scorecard's
+  `selfHeal` block. Closes the chat-path observability hole (previously only
+  the non-interactive watchdog path emitted heal events).
+
 ## [0.11.1] - 2026-08-16
 
 ### Fixed

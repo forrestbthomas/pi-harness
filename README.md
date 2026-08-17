@@ -117,6 +117,10 @@ skill — measured 0.2 → 0.8 after a prompt-scaffold fix, datasetVersion
   **no automatic cross-provider fallback** — the provider is always explicit.
 - **Real cost, no price tables** — spend comes from the actual session files
   (`usage.cost`), per provider/model, with a hard budget cap (exit 6).
+- **Fleet observability** — `pi-run sessions` lists active/recent agent sessions
+  from the session transcript seam; `pi-run sessions --heal` aggregates repeated
+  connection failures into `connection-flap` heal events that surface in the
+  scorecard.
 - **The loop measures itself** — EVAL-16 scorecard-delta reports and GOV-1/3
   drift guards in CI mean the harness's own honesty is enforced, not assumed.
 

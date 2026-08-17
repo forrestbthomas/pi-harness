@@ -159,7 +159,7 @@ Rules:
 **Sequence (dependency-ordered):**
 
 1. COST-2 — model-catalog auto-refresh in CI (routing input must be current)
-2. COST-1 — cost-aware router, **within-provider tier choice only** — **DEFERRED 2026-08-14** (persona debate: 2 pw / zero consumers; re-open on a consumer signal; cross-provider routing explicitly out of scope)
+2. COST-1 — static task→tier router, **within-provider tier choice only** — **RE-OPENED 2026-08-16** (was deferred 2026-08-14; re-scoped static task→tier, ~0.75 pw, owner-override per `.pi/debate/task-routing/` + `docs/knowledge-base/decision/2026-08-16-reopen-cost1-task-routing.md`; gated on COST-2; the cost-aware half stays deferred; **`--task` excludes `eval`/`ci-benchmark` runs** (benchmark keeps `--provider`/`--model` only — scorecard comparability); cross-provider routing explicitly out of scope)
 
 **DoD:**
 
@@ -171,7 +171,7 @@ Rules:
 
 | ID | Item | RICE | Effort |
 |---|---|---|---|
-| COST-1 | Cost-aware router: **within-provider** per-task-tier model choice — **DEFERRED 2026-08-14** (cross-provider routing explicitly out of scope per charter) | 0.80 | 2 pw |
+| COST-1 | Static task→tier router: **within-provider** per-task-tier model choice — **RE-OPENED 2026-08-16** (was deferred 2026-08-14; re-scoped static task→tier, ~0.75 pw; **excludes `eval`/`ci-benchmark` runs** — scorecard comparability; cross-provider routing explicitly out of scope per charter) | ~3.2 (author-lens, gated on COST-2) | 0.75 pw |
 | COST-2 | Model-catalog auto-refresh in CI | 0.50 | 0.5 pw |
 
 ---
@@ -265,7 +265,7 @@ Rules:
 | DX-1 (skill audit) | Dissolved with EPIC-5; data-guard half → GOV-1 | Real skill collision; user re-prioritization |
 | DX-2 (context stats) | User-parked ("treat context as a separate feature") | User re-prioritization |
 | MEM-1 (memory-engine hook) | Closed as decided 2026-08-15 (spike): no harness memory abstraction; default none; eval runs memory-free (seam invariant) | Consumer signal / measured eval contamination / EVAL-17 memory-sensitive data |
-| COST-1 (cost-aware router, within-provider) | Deferred 2026-08-14 by persona debate: 2 pw / zero consumers; COST-2 owns the catalog-drift class | Consumer signal (an external user asking for cost routing) |
+| COST-1 (static task→tier router, within-provider) | **RE-OPENED 2026-08-16** via recorded owner-override (author = charter's only customer), re-scoped static task→tier ~0.75 pw; cost-aware half stays deferred; COST-2 owns the catalog-drift class | Owner promotion to active ROADMAP; COST-2 lands first (blocking dep) |
 | Cloud eval backend | Deferred to backlog per user | EPIC-4 (PORT-2): second machine/CI-with-keys pattern emerges |
 | Upstream pi-subagents release watch | Waiting on release carrying `toolTimeoutMs` | New upstream release (W5 Part C) |
 | Docker weekly eval | Kept weekly by design | If nightly signal degrades without container isolation |

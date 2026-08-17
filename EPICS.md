@@ -159,7 +159,7 @@ Rules:
 **Sequence (dependency-ordered):**
 
 1. COST-2 — model-catalog auto-refresh in CI (routing input must be current)
-2. COST-1 — static task→tier router, **within-provider tier choice only** — **RE-OPENED 2026-08-16** (was deferred 2026-08-14; re-scoped static task→tier, ~0.75 pw, owner-override per `.pi/debate/task-routing/` + `docs/knowledge-base/decision/2026-08-16-reopen-cost1-task-routing.md`; gated on COST-2; the cost-aware half stays deferred; cross-provider routing explicitly out of scope)
+2. COST-1 — static task→tier router, **within-provider tier choice only** — **RE-OPENED 2026-08-16** (was deferred 2026-08-14; re-scoped static task→tier, ~0.75 pw, owner-override per `.pi/debate/task-routing/` + `docs/knowledge-base/decision/2026-08-16-reopen-cost1-task-routing.md`; gated on COST-2; the cost-aware half stays deferred; **`--task` excludes `eval`/`ci-benchmark` runs** (benchmark keeps `--provider`/`--model` only — scorecard comparability); cross-provider routing explicitly out of scope)
 
 **DoD:**
 
@@ -171,7 +171,7 @@ Rules:
 
 | ID | Item | RICE | Effort |
 |---|---|---|---|
-| COST-1 | Static task→tier router: **within-provider** per-task-tier model choice — **RE-OPENED 2026-08-16** (was deferred 2026-08-14; re-scoped static task→tier, ~0.75 pw; cross-provider routing explicitly out of scope per charter) | ~3.2 (author-lens, gated on COST-2) | 0.75 pw |
+| COST-1 | Static task→tier router: **within-provider** per-task-tier model choice — **RE-OPENED 2026-08-16** (was deferred 2026-08-14; re-scoped static task→tier, ~0.75 pw; **excludes `eval`/`ci-benchmark` runs** — scorecard comparability; cross-provider routing explicitly out of scope per charter) | ~3.2 (author-lens, gated on COST-2) | 0.75 pw |
 | COST-2 | Model-catalog auto-refresh in CI | 0.50 | 0.5 pw |
 
 ---

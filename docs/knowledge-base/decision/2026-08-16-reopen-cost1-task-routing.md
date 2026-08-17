@@ -58,7 +58,11 @@ the DoD must carry (all adopted):
 
 **Out of scope (holds the deferral):** the cost-aware routing half; any
 cross-provider routing (charter NOT-6); any README/feature promotion before a
-stranger asks (OSS clause).
+stranger asks (OSS clause); **`--task` tier routing for `eval` / `ci-benchmark`
+runs** — benchmark runs keep `--provider`/`--model` only, so task routing can
+never change which model grades a case or which scorecard is compared (the
+original COST-1 design's eval/benchmark exclusion, carried forward:
+`docs/governance/specs-archive/2026-08-12-cost-aware-routing-design.md`).
 
 ## References
 - Prior deferral: `docs/knowledge-base/2026-08-14-persona-debate-scope.md`

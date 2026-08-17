@@ -35,7 +35,7 @@
 | **v0.11.0 — The gate that can't lie** (EVAL-12 re-baseline ✓ → EVAL-18 variance-aware ✓ → 2 green nightlies → EVAL-16 enforcement) | — | Release |
 | **EPIC-1 — Eval suite → research-grade measurement** (EVAL-17, EVAL-9, EVAL-11) | top EVAL-17 1.40 | EPIC-1 |
 | **EPIC-6 — Repo maturity** (OWN-1+SECURITY bundle, TAX-1, PORT-0) | top OWN-1 ~1.5 | EPIC-6 |
-| **EPIC-2 — Self-healing resilience** (HEAL-5, HEAL-2 data-gated, HEAL-3; HEAL-1 demoted) | top HEAL-5 1.20 | EPIC-2 |
+| **EPIC-2 — Self-healing resilience** (OBS-1/OBS-2 in implementation, HEAL-5, HEAL-2 data-gated, HEAL-3; HEAL-1 demoted) | top OBS-1 ~10 (author-lens) / HEAL-5 1.20 | EPIC-2 |
 | **EPIC-3 — Cost intelligence & routing** (COST-2; COST-1 deferred) | top COST-2 0.50 | EPIC-3 |
 | **EPIC-4 — Portability & distribution** | **PARKED** — PORT-0 quarterly re-confirm only (charter non-goal until a consumer asks) | EPIC-4 |
 | ~~EPIC-5 — Insight & DX~~ | **DISSOLVED** — DX-1/DX-2 → idea inbox | — |

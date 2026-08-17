@@ -112,11 +112,13 @@ Rules:
 
 **Sequence (dependency-ordered):**
 
-1. HEAL-2 — tune watchdog params on real `PI_SELF_HEAL` data (**data-gated**: ≥1 week non-zero wedge coverage + W5 Part C verified; EVAL-6 is the data pump)
-2. HEAL-5 — post-rebase hook (auto-continue wedged rebase)
-3. HEAL-1 — watchdog liveness heartbeat (user-deferred; re-confirm before promotion; re-score from `PI_SELF_HEAL` data, not the 3.20* pitch)
-4. HEAL-3 — auto-resume decision (decision ticket; cheap)
-5. HEAL-4 — loop/stuck detection (evidence-gated; stays deferred without thresholds)
+0. **OBS-1 — `pi-run sessions` live fleet view** (EPIC-2 observability-first slice; reader over existing `.pi/sessions` schema; CLI-only)
+1. **OBS-2 — chat-path heal events** (aggregated `connection-flap` events into the existing `events.jsonl`/`selfHeal` seam; lands with the EVAL-17 pump so chat-path wedge data starts accumulating) — this is what un-gates HEAL-2's data requirement
+2. HEAL-2 — tune watchdog params on real `PI_SELF_HEAL` data (**data-gated**: ≥1 week non-zero wedge coverage + W5 Part C verified; EVAL-17 + OBS-2 are the pump/observer)
+3. HEAL-5 — post-rebase hook (auto-continue wedged rebase)
+4. HEAL-1 — watchdog liveness heartbeat (user-deferred; re-confirm before promotion; re-score from `PI_SELF_HEAL` data, not the 3.20* pitch)
+5. HEAL-3 — auto-resume decision (decision ticket; cheap)
+6. HEAL-4 — loop/stuck detection (evidence-gated; stays deferred without thresholds)
 
 **DoD:**
 
@@ -130,8 +132,10 @@ Rules:
 
 | ID | Item | RICE | Effort |
 |---|---|---|---|
+| OBS-1 | `pi-run sessions` live fleet view (reader over existing `.pi/sessions` schema; CLI-only) — **PROMOTED 2026-08-16** | ~10 (author-lens; band) | 0.25 pw |
+| OBS-2 | Chat-path heal events: aggregated `connection-flap` → existing `events.jsonl`/`selfHeal` seam (hermetic boundary; lands with EVAL-17) — **PROMOTED 2026-08-16** | ~4.8 | 0.3–0.5 pw |
 | HEAL-5 | Post-rebase hook: `pi-run hooks` auto-continues wedged rebase after agent timeout | 1.20 | 0.5 pw |
-| HEAL-2 | Tune watchdog silent-window/restart-budget from `PI_SELF_HEAL` data (**data-gated**; EVAL-6 pump + W5 Part C) | 0.35 | 0.25 pw |
+| HEAL-2 | Tune watchdog silent-window/restart-budget from `PI_SELF_HEAL` data (**data-gated**; EVAL-17+OBS-2 pump/observer + W5 Part C) | 0.35 | 0.25 pw |
 | HEAL-3 | Auto-resume agent run after clean git-state recovery (decision ticket; W1 spec follow-up) | 0.30 | 0.25 pw |
 | HEAL-1 | Watchdog liveness heartbeat — **user-deferred; demoted to idea inbox 2026-08-14**; re-score from data, not pitch | 3.20* | 0.5 pw |
 | HEAL-4 | Loop/stuck-pattern detection (OpenHands StuckDetector class; deferred, needs thresholds) | 0.20 | 2 pw |

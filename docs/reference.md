@@ -137,6 +137,7 @@ configured backend's status (never values).
 | `pi-run cost [--json] [--since <date>] [--reset]` | Aggregate real spend from Pi session files, per provider/model, with total |
 | `pi-run ci-benchmark --providers <a,b> [flags]` | Provider scorecard in CI: gate on pass rate / budget / baseline |
 | `pi-run providers` | List configured providers, default models, and available model tiers |
+| `pi-run sessions [--recent <dur>] [--active] [--json] [--heal]` | List active/recent agent sessions from `.pi/sessions/`; `--heal` scans transcripts for repeated connection failures and writes `connection-flap` events to `.pi/heal/events.jsonl` |
 | `pi-run project-understand [--out <dir>]` | Generate deterministic project-understanding docs from the checkout |
 | `pi-run self-heal [--abort]` | Detect and recover a wedged git state |
 | `pi-run hooks list` / `hooks run <event>` | List or run `.pi/hooks.json` hook commands |

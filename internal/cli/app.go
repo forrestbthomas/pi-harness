@@ -33,6 +33,7 @@ Commands:
   install       Build the binary into bin/ and symlink pi-run onto your PATH
   clean         Remove eval/.venv and pytest caches
   providers     List configured providers and default models
+  sessions      List active/recent agent sessions; --heal writes connection-flap events
   hooks         List or run .pi/hooks.json hooks (pre-eval, post-eval, pre-chat)
   self-heal     Detect and recover in-progress git state (e.g. a wedged rebase)
   version       Print version
@@ -143,6 +144,8 @@ func Run(args []string) int {
 		return runClean()
 	case "providers":
 		return runProviders()
+	case "sessions":
+		return runSessions(args[1:])
 	case "hooks":
 		return runHooksCmd(args[1:])
 	case "self-heal":

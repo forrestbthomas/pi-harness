@@ -36,7 +36,7 @@
 | **EPIC-1 — Eval suite → research-grade measurement** (EVAL-17, EVAL-9, EVAL-11) | top EVAL-17 1.40 | EPIC-1 |
 | **EPIC-6 — Repo maturity** (OWN-1+SECURITY bundle, TAX-1, PORT-0) | top OWN-1 ~1.5 | EPIC-6 |
 | **EPIC-2 — Self-healing resilience** (OBS-1/OBS-2 in implementation, HEAL-5, HEAL-2 data-gated, HEAL-3; HEAL-1 demoted) | top OBS-1 ~10 (author-lens) / HEAL-5 1.20 | EPIC-2 |
-| **EPIC-3 — Cost intelligence & routing** (COST-2; COST-1 deferred) | top COST-2 0.50 | EPIC-3 |
+| **EPIC-3 — Cost intelligence & routing** (COST-2; COST-1 re-opened 2026-08-16 as static task→tier) | top COST-2 0.50 | EPIC-3 |
 | **EPIC-4 — Portability & distribution** | **PARKED** — PORT-0 quarterly re-confirm only (charter non-goal until a consumer asks) | EPIC-4 |
 | ~~EPIC-5 — Insight & DX~~ | **DISSOLVED** — DX-1/DX-2 → idea inbox | — |
 | **v1.0.0 — The contract release** (gates, not dates: EPIC-1+6 DoDs, ≥14 green nightlies, EVAL-16 enforced, install-path CI-proven, consumer OR recorded earned-bar decision) | — | Release |
@@ -48,7 +48,7 @@
   dataset growth 50 → 100 (capped until consumer/regression-catch signal) ·
   cloud eval backend · context-engine un-park (DX-2) · Windows support
   (PORT-1; charter non-goal) · model-catalog auto-refresh in CI · cost-aware
-  routing (COST-1; deferred — re-open on a consumer signal)
+  routing (COST-1; re-opened 2026-08-16 as static task→tier — cost-aware half still deferred; owner to decide promotion)
 
 ## Shipped recently (one spelling: CHANGELOG)
 

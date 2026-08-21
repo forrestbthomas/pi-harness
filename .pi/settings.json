@@ -64,7 +64,8 @@
     "npm:@demigodmode/pi-web-agent",
     "npm:pi-spark",
     "git:github.com/dannote/dot-pi",
-    "npm:pi-subagents@0.48.0"
+    "npm:pi-subagents@0.48.0",
+    "npm:pi-teams@0.9.14"
   ],
   "extensions": [],
   "skills": [],

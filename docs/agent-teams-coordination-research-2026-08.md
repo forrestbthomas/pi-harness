@@ -204,3 +204,19 @@ separation:
 - 2026-08-21: `BACKLOG.md` MSG-1 updated to fold in the bulletin idea (see item).
 - 2026-08-21: Spike scaffolded in worktree `spike-bulletin-protocol` (Pi
   package `pi-bulletin`: shared bulletin file + cheap signals + skill).
+- 2026-08-23: **Eval executed (Phase 1, pi-harness target).** Bulletin leg
+  completed: 4m14s, ~3.51M tokens, $0.80, 34 bulletin events, 3 digest
+  rounds, 0 conflicts, 6 code-cited findings verified read-only
+  (`eval-output/leg-b/`). pi-teams leg FAILED to complete: reproducible
+  teammate startup stall 2/2 attempts (0/5 teammates reached `ready`,
+  zero API tokens, agent loop never ran a model turn; lead fine). The
+  stall is prompt-independent and lives in pi-teams' spawn/readiness
+  layer, which is tightly coupled to agent lifecycle — the architectural
+  difference the research predicted. **Verdict: bulletin design promoted
+  (leg completed, pi-teams did not).**
+- 2026-08-23: **Decision — build pi-bulletin as a separate project, then
+  integrate into pi-harness.** pi-teams removed from this project (local
+  worktree + branch deleted; remote `github/try-pi-teams` pending
+  user-confirmed deletion). The eval verdict feeds MSG-1's
+  charter-conformance DoD: a standalone pi-bulletin OSS package is the
+  vehicle; a harness runtime feature is NOT.

@@ -139,6 +139,9 @@ Rules:
 | HEAL-3 | Auto-resume agent run after clean git-state recovery (decision ticket; W1 spec follow-up) | 0.30 | 0.25 pw |
 | HEAL-1 | Watchdog liveness heartbeat — **user-deferred; demoted to idea inbox 2026-08-14**; re-score from data, not pitch | 3.20* | 0.5 pw |
 | HEAL-4 | Loop/stuck-pattern detection (OpenHands StuckDetector class; deferred, needs thresholds) | 0.20 | 2 pw |
+| MSG-1 | Cross-session peer messaging → **bulletin fold-in; PROMOTED-AS-VEHICLE 2026-08-23** (standalone pi-bulletin OSS package = vehicle; harness wiring only; pi-teams removed after 2/2 eval startup failure; research `docs/agent-teams-coordination-research-2026-08.md`) | ~0.3 | 0.75 pw |
+| HEAL-6 | Fix `pi-run sessions --heal` filename-path mismatch — **SHIPPED (28a3fa6, 2026-08-23)** | ~2.5 | 0.75 pw |
+| HEAL-7 | Subprocess timeout/kill semantics: hooks group-kill, Windows no-op-then-wait, setup unbounded execPi (dogfood review 2026-08-23) | ~2.5 | 1 pw |
 
 \* Rough RICE from the idea-inbox pitch (Reach 2 · Impact 1 · Conf 0.8 / 0.5 pw); demoted 2026-08-14 — a deferred pitch-guess must not hold rank 1 of the queue.
 
@@ -173,6 +176,10 @@ Rules:
 |---|---|---|---|
 | COST-1 | Static task→tier router: **within-provider** per-task-tier model choice — **RE-OPENED 2026-08-16** (was deferred 2026-08-14; re-scoped static task→tier, ~0.75 pw; **excludes `eval`/`ci-benchmark` runs** — scorecard comparability; cross-provider routing explicitly out of scope per charter) | ~3.2 (author-lens, gated on COST-2) | 0.75 pw |
 | COST-2 | Model-catalog auto-refresh in CI | 0.50 | 0.5 pw |
+| SEC-1 | Provider/trust-boundary hardening — **SHIPPED (d95d822, 2026-08-23)** (EPIC-2/3; provider-config security + least-privilege child env) | ~2.5 | 1 pw |
+| BENCH-1 | Benchmark symlink traversal (dogfood review 2026-08-23) | ~2.0 | 0.5 pw |
+| CLI-1 | Flag parsing + provider validation gaps (dogfood review 2026-08-23) | ~1.5 | 0.75 pw |
+| COST-3 | Budget-cap undercount (dogfood review 2026-08-23) | ~1.2 | 0.5 pw |
 
 ---
 

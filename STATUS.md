@@ -32,7 +32,6 @@
 
 | Item | RICE | Tag |
 |---|---|---|
-| **v0.11.0 — The gate that can't lie** (EVAL-12 re-baseline ✓ → EVAL-18 variance-aware ✓ → 2 green nightlies → EVAL-16 enforcement) | — | Release |
 | **EPIC-1 — Eval suite → research-grade measurement** (EVAL-17, EVAL-9, EVAL-11) | top EVAL-17 1.40 | EPIC-1 |
 | **EPIC-6 — Repo maturity** (OWN-1+SECURITY bundle, TAX-1, PORT-0) | top OWN-1 ~1.5 | EPIC-6 |
 | **EPIC-2 — Self-healing resilience** (OBS-1/OBS-2 in implementation, HEAL-5, HEAL-2 data-gated, HEAL-3; HEAL-1 demoted) | top OBS-1 ~10 (author-lens) / HEAL-5 1.20 | EPIC-2 |
@@ -59,10 +58,16 @@
   perms · **v0.9.1** (2026-08-13): W1 self-healing, non-interactive env, exit 9 ·
   **v0.9.0**: eval hardening + live eval v2 · **v0.8.0**: project-understand,
   MCP, OTel, permission modes, hooks, 17 providers
-- **main (post-v0.10.0, v0.11.0 in flight)**: EVAL-13 cost gate (#105), EVAL-14
-  provenance parity (#106), EVAL-15 split-seam (#107), EVAL-8 judge
-  stabilization (#108), REL-3/4 release machinery (#109), TAX-2 audit (#110),
-  EVAL-6 agentic slice 1 (#111), GOV-1 drift guard (#112), GOV-2 relocation +
+- **v0.12.0** (2026-08-23): pi-bulletin wiring for harness-launched sessions
+  (MSG-1) + pi-teams removal (eval verdict 2/2), sessions fleet view + --heal
+  (#171) + HEAL-6 repair (28a3fa6), SEC-1 provider trust + least-privilege
+  child env (d95d822)
+- **v0.11.1** (2026-08-16): Ollama provider works from any project (setup
+  installs the extension to Pi's global agent dir)
+- **v0.11.0** (2026-08-16): EVAL-13 cost gate (#105), EVAL-14 provenance
+  parity (#106), EVAL-15 split-seam (#107), EVAL-8 judge stabilization
+  (#108), REL-3/4 release machinery (#109), TAX-2 audit (#110), EVAL-6
+  agentic slice 1 (#111), GOV-1 drift guard (#112), GOV-2 relocation +
   spec archive (#119), GOV-3 CI-wiring item + docs-drift cwd fix (#120), OSS-2
   contributor on-ramp (#122), GOV-3 drift guards wired into CI (#123), EVAL-16
   harness-change gate pilot (#129), EVAL-12 live re-baseline 17→55 (#140),

@@ -29,8 +29,16 @@ func providerKeyEnvNames(ps []Provider) map[string]bool {
 // the active provider's key (appended later via extraEnv/launchEnv). Without
 // this, a spawned pi child — and every bash tool it runs — can read every
 // provider API key in the parent environment (SEC-1 least privilege).
+//
+// The denylist covers BOTH the canonical default table and the active table:
+// a project-local (even explicit) table may define only a keyless provider and
+// omit the canonical names — the child must still not inherit a default-
+// provider credential (e.g. OPENAI_API_KEY) from the parent env.
 func stripProviderKeys(baseEnv []string) []string {
-	keys := providerKeyEnvNames(Providers)
+	keys := providerKeyEnvNames(defaultProviders)
+	for name := range providerKeyEnvNames(Providers) {
+		keys[name] = true
+	}
 	out := make([]string, 0, len(baseEnv))
 	for _, kv := range baseEnv {
 		name, _, ok := strings.Cut(kv, "=")

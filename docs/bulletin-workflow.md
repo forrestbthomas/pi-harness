@@ -26,6 +26,16 @@ dependencies — a single session or pi-subagents is cheaper there.
 
 ## Launch
 
+> **Setup:** `start-team.py` is NOT part of the npm package — it ships in the
+> separate pi-bulletin checkout. Clone it once (or pull the latest) and keep it
+> at the path referenced below:
+>
+> ```bash
+> git clone git@github.com:forrestbthomas/pi-bulletin.git ~/Projects/pi-bulletin
+> # verify the launcher is present:
+> ls ~/Projects/pi-bulletin/scripts/start-team.py
+> ```
+
 ```bash
 # from any project (harness worktree or elsewhere):
 python3 ~/Projects/pi-bulletin/scripts/start-team.py \

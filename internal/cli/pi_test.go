@@ -339,3 +339,22 @@ func TestChildEnvStripsOtherProviderKeys(t *testing.T) {
 		}
 	}
 }
+
+func TestChildEnvStripsDefaultKeysWhenActiveTableKeyless(t *testing.T) {
+	orig := Providers
+	t.Cleanup(func() { Providers = orig })
+	// A project-local table defining ONLY a keyless local gateway omits the
+	// canonical provider names; a default-provider credential inherited from
+	// the parent env must still be stripped (CodeRabbit SEC-1 finding).
+	Providers = []Provider{{Name: "local-gateway", KeyEnv: "LOCAL_GATEWAY_KEY", DefaultModel: "x/y", BaseURL: "http://localhost:9999/v1", Keyless: true}}
+	t.Setenv("OPENAI_API_KEY", "sk-openai")
+	t.Setenv("LOCAL_GATEWAY_KEY", "sk-gw")
+	env := childEnv("/fake/node/bin", []string{"LOCAL_GATEWAY_KEY=sk-active"})
+	joined := "\n" + strings.Join(env, "\n") + "\n"
+	if strings.Contains(joined, "\nOPENAI_API_KEY=sk-openai\n") {
+		t.Fatal("default-provider key must be stripped even when absent from the active table")
+	}
+	if !strings.Contains(joined, "\nLOCAL_GATEWAY_KEY=sk-active\n") {
+		t.Fatal("active keyless provider's credential must still pass through via extraEnv")
+	}
+}

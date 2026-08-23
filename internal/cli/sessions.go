@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -295,16 +296,30 @@ func classifyConnectionError(msg string) bool {
 
 // scanSessionsForFlaps runs the aggregation over all sessions.
 // parseRecentDuration accepts Go durations plus a day suffix ("7d" -> 168h),
-// which the docs advertise but time.ParseDuration rejects.
+// which the docs advertise but time.ParseDuration rejects. Nonpositive values
+// are rejected: recentSessions treats <= 0 as an unbounded window, which a
+// user-facing --recent flag must never silently select.
 func parseRecentDuration(s string) (time.Duration, error) {
 	if strings.HasSuffix(s, "d") {
 		n, err := strconv.Atoi(strings.TrimSuffix(s, "d"))
 		if err != nil || n <= 0 {
 			return 0, fmt.Errorf("invalid day count %q", s)
 		}
+		// Guard the int64 overflow: max int64 ns / 24h is ~106751 days; a
+		// larger count wraps negative and would become an unbounded window.
+		if int64(n) > math.MaxInt64/int64(24*time.Hour) {
+			return 0, fmt.Errorf("day count %q overflows the recent window", s)
+		}
 		return time.Duration(n) * 24 * time.Hour, nil
 	}
-	return time.ParseDuration(s)
+	d, err := time.ParseDuration(s)
+	if err != nil {
+		return 0, err
+	}
+	if d <= 0 {
+		return 0, fmt.Errorf("recent window must be positive, got %q", s)
+	}
+	return d, nil
 }
 
 // recentSessions returns the summaries whose mtime is within recent of now.
@@ -445,6 +460,12 @@ func writeFlapEvents(healDir string, flaps []flapEvent) error {
 			}
 			if json.Unmarshal([]byte(line), &ev) == nil && ev.Kind != "" {
 				seen[ev.Session+"|"+ev.Kind+"|"+ev.Detail] = true
+				if ev.Session == "" {
+					// Legacy event written before the session field existed:
+					// also index the bare key so a post-upgrade event for that
+					// flap is not appended again (HEAL-6 dedup migration).
+					seen["|"+ev.Kind+"|"+ev.Detail] = true
+				}
 			}
 		}
 	}
@@ -455,7 +476,9 @@ func writeFlapEvents(healDir string, flaps []flapEvent) error {
 	defer f.Close()
 	for _, fl := range flaps {
 		key := fl.SessionID + "|" + fl.Kind + "|" + fl.Detail
-		if seen[key] {
+		// The bare key matches a legacy (pre-session-field) event; the
+		// session-qualified key matches post-upgrade events.
+		if seen[key] || seen["|"+fl.Kind+"|"+fl.Detail] {
 			continue
 		}
 		seen[key] = true

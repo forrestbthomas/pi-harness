@@ -270,8 +270,12 @@ func TestParseRecentDurationDays(t *testing.T) {
 	}{
 		{"7d", 168 * time.Hour, false},
 		{"3d", 72 * time.Hour, false},
+		{"1d", 24 * time.Hour, false},
 		{"24h", 24 * time.Hour, false},
 		{"0d", 0, true},
+		{"0s", 0, true},
+		{"-1h", 0, true},
+		{"106752d", 0, true}, // int64 overflow would wrap negative
 		{"bogus", 0, true},
 	}
 	for _, tc := range cases {
@@ -304,5 +308,29 @@ func TestWriteFlapEventsDedups(t *testing.T) {
 	}
 	if got := strings.Count(string(b), "connection-flap"); got != 1 {
 		t.Fatalf("expected dedup to 1 flap event, got %d:\n%s", got, b)
+	}
+}
+
+func TestWriteFlapEventsDedupsLegacyEventsWithoutSession(t *testing.T) {
+	dir := t.TempDir()
+	heal := filepath.Join(dir, "heal")
+	if err := os.MkdirAll(heal, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	// Pre-existing event from before the session field existed.
+	legacy := `{"ts":"2026-08-22T00:00:00Z","kind":"connection-flap","detail":"session s1: 3 connection failures within 10m0s"}` + "\n"
+	if err := os.WriteFile(filepath.Join(heal, "events.jsonl"), []byte(legacy), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	fl := flapEvent{Kind: "connection-flap", SessionID: "s1", Count: 3, Detail: "session s1: 3 connection failures within 10m0s"}
+	if err := writeFlapEvents(heal, []flapEvent{fl}); err != nil {
+		t.Fatal(err)
+	}
+	b, err := os.ReadFile(filepath.Join(heal, "events.jsonl"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Count(string(b), "connection-flap"); got != 1 {
+		t.Fatalf("legacy event must dedup the post-upgrade append, got %d:\n%s", got, b)
 	}
 }

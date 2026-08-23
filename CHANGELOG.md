@@ -6,7 +6,7 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
-(No unreleased changes — v0.12.0 is the current release.)
+(Tag for v0.12.0 below is pending — created from the merged remote main tip.)
 
 ## [0.12.0] - 2026-08-23
 
@@ -17,8 +17,8 @@ All notable changes to this project are documented here. Format follows
 > sessions (MSG-1: standalone OSS package = vehicle, wiring only), the pi-teams
 > removal (eval verdict: 2/2 startup failure), and two dogfood-driven fixes —
 > SEC-1 (provider trust boundary + least-privilege child env) and HEAL-6
-> (`--heal` repairs). Cut directly from main per owner decision; tag created
-> from the fetched remote main tip by `scripts/tag-release.sh`.
+> (`--heal` repairs). Cut directly from main per owner decision; tag to be
+> created from the merged remote main tip by `scripts/tag-release.sh`.
 
 ### Added
 - **`pi-run sessions` fleet view + `--heal` (W11, 2026-08-16)**: list

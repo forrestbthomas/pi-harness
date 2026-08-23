@@ -1,7 +1,7 @@
 # STATUS — where the harness is right now
 
 > One-screen snapshot. Regenerate at every cycle start per
-> [`docs/roadmap-workflow.md`](docs/roadmap-workflow.md). Last updated: 2026-08-15.
+> [`docs/roadmap-workflow.md`](docs/roadmap-workflow.md). Last updated: 2026-08-23.
 
 ## Now (committed — this cycle)
 
@@ -34,7 +34,7 @@
 |---|---|---|
 | **EPIC-1 — Eval suite → research-grade measurement** (EVAL-17, EVAL-9, EVAL-11) | top EVAL-17 1.40 | EPIC-1 |
 | **EPIC-6 — Repo maturity** (OWN-1+SECURITY bundle, TAX-1, PORT-0) | top OWN-1 ~1.5 | EPIC-6 |
-| **EPIC-2 — Self-healing resilience** (OBS-1/OBS-2 in implementation, HEAL-5, HEAL-2 data-gated, HEAL-3; HEAL-1 demoted) | top OBS-1 ~10 (author-lens) / HEAL-5 1.20 | EPIC-2 |
+| **EPIC-2 — Self-healing resilience** (OBS-1/OBS-2 **SHIPPED v0.12.0** — sessions fleet view + --heal; HEAL-6 SHIPPED v0.12.0; HEAL-7; MSG-1 bulletin PROMOTED-AS-VEHICLE; HEAL-5, HEAL-2 data-gated, HEAL-3; HEAL-1 demoted) | top HEAL-7 ~2.5 / HEAL-5 1.20 | EPIC-2 |
 | **EPIC-3 — Cost intelligence & routing** (COST-2; COST-1 re-opened 2026-08-16 as static task→tier) | top COST-2 0.50 | EPIC-3 |
 | **EPIC-4 — Portability & distribution** | **PARKED** — PORT-0 quarterly re-confirm only (charter non-goal until a consumer asks) | EPIC-4 |
 | ~~EPIC-5 — Insight & DX~~ | **DISSOLVED** — DX-1/DX-2 → idea inbox | — |

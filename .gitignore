@@ -1,4 +1,5 @@
 .pi/sessions/
+.pi/bulletin/
 .pi/subagents/
 .pi/debate/
 eval/.venv/

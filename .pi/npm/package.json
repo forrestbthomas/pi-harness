@@ -8,6 +8,6 @@
     "pi-spark": "^0.20.0",
     "pi-subagents": "0.48.0",
     "pi-web-access": "^0.13.0",
-    "pi-bulletin": "file:../../Projects/pi-bulletin"
+    "pi-bulletin": "0.2.0"
   }
 }

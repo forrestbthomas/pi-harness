@@ -89,13 +89,26 @@ func init() {
 // a missing default repository table remains silent for released binaries.
 func loadActiveProviders(root string) []Provider {
 	path, explicit := providerConfigPath(root)
-	ps, err := loadProviders(path, explicit)
+	ps, fromDisk, err := loadProvidersFromDisk(path, explicit)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "pi-run: providers: warning: %v — using built-in provider defaults\n", err)
 		return defaultProviders
 	}
 	if len(ps) == 0 {
 		return defaultProviders
+	}
+	// A project-local (non-explicit) table is an untrusted artifact of the
+	// checkout: it must never route a real API credential to a custom endpoint.
+	// Malicious tables fall back to the built-in defaults with a loud warning;
+	// an explicit PI_RUN_PROVIDERS_FILE is a deliberate user choice (trusted).
+	// The check runs only for tables actually read from a file — never for the
+	// built-in defaults returned when the file is missing (azure/mistral/...
+	// legitimately pair credentials with base URLs).
+	if fromDisk {
+		if err := checkProviderTrust(ps, explicit); err != nil {
+			fmt.Fprintf(os.Stderr, "pi-run: providers: warning: %v — using built-in provider defaults\n", err)
+			return defaultProviders
+		}
 	}
 	return ps
 }
@@ -138,18 +151,49 @@ func LoadProviders(path string) ([]Provider, error) {
 // repository tables return errors so configuration mistakes are not silent;
 // only a missing or unreadable default repository table falls back to defaults.
 func loadProviders(path string, explicit bool) ([]Provider, error) {
+	ps, _, err := loadProvidersFromDisk(path, explicit)
+	return ps, err
+}
+
+// loadProvidersFromDisk is loadProviders plus a fromDisk flag so callers can
+// apply file-content checks (provider trust) only to tables that actually came
+// from a file — never to the built-in defaults returned for a missing table.
+func loadProvidersFromDisk(path string, explicit bool) ([]Provider, bool, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
 		if explicit {
-			return nil, fmt.Errorf("read explicit providers file %q: %w", path, err)
+			return nil, false, fmt.Errorf("read explicit providers file %q: %w", path, err)
 		}
-		return defaultProviders, nil
+		return defaultProviders, false, nil
 	}
 	ps, err := ProvidersFromJSON(b)
 	if err != nil {
-		return nil, fmt.Errorf("load providers file %q: %w", path, err)
+		return nil, true, fmt.Errorf("load providers file %q: %w", path, err)
 	}
-	return ps, nil
+	return ps, true, nil
+}
+
+// checkProviderTrust rejects provider tables that would route a real API
+// credential to a non-default endpoint. Project-local (non-explicit) tables
+// are untrusted: a malicious checkout could otherwise define
+// keyEnv: OPENAI_API_KEY + baseURL: https://attacker.example and exfiltrate
+// the resolved key on the next launch. Explicit tables (PI_RUN_PROVIDERS_FILE)
+// are a deliberate user choice and are always trusted. Keyless providers
+// (e.g. ollama) carry no credential, so their local base URLs are fine.
+func checkProviderTrust(ps []Provider, explicit bool) error {
+	if explicit {
+		return nil
+	}
+	var offenders []string
+	for _, p := range ps {
+		if providerRequiresCredential(p) && p.BaseURL != "" {
+			offenders = append(offenders, fmt.Sprintf("%s (key %s -> baseURL %s)", p.Name, p.KeyEnv, p.BaseURL))
+		}
+	}
+	if len(offenders) == 0 {
+		return nil
+	}
+	return fmt.Errorf("untrusted project-local provider routing would send real API credentials to custom endpoints: %s — set PI_RUN_PROVIDERS_FILE to opt in explicitly, or remove the baseURL fields", strings.Join(offenders, "; "))
 }
 
 // providerRequiresCredential reports whether launch paths must resolve the

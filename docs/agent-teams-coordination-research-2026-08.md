@@ -220,3 +220,10 @@ separation:
   user-confirmed deletion). The eval verdict feeds MSG-1's
   charter-conformance DoD: a standalone pi-bulletin OSS package is the
   vehicle; a harness runtime feature is NOT.
+- 2026-08-23: **HEAL-6 fixed** (path-reconstruction bug, --recent
+  violation, flap dedup, 7d parsing) — commit `28a3fa6`, found via the
+  pi-bulletin eval + first dogfood run. Dogfood review (3-agent bulletin
+  team on `internal/cli`) also produced SEC-1, BENCH-1, HEAL-7, CLI-1,
+  COST-3 backlog candidates and surfaced pi-bulletin issues #1 (lead waits
+  for direct messages) and the capture self-copy bug — both fixed in the
+  package.

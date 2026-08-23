@@ -8,6 +8,12 @@ All notable changes to this project are documented here. Format follows
 
 <!-- release-candidate: v0.11.1 -->
 
+### Security
+- **SEC-1 — Provider trust boundary + least-privilege child env (2026-08-23, `d95d822`)**: a project-local `providers.json` can no longer pair a real API credential (`keyEnv: OPENAI_API_KEY`) with a custom `baseURL` and exfiltrate the resolved key on launch — the table falls back to built-in defaults with a loud warning (`PI_RUN_PROVIDERS_FILE` opts in explicitly). Spawned pi children no longer inherit every provider API key from the parent environment; only the active provider's credential is passed.
+
+### Fixed
+- **HEAL-6 — `pi-run sessions --heal` repaired (2026-08-23, `28a3fa6`)**: heal scans now use the DISCOVERED transcript path (`<ts>_<id>.jsonl`) instead of a reconstructed `<id>.jsonl` that never existed (the scan previously wrote 0 events); `--heal` honors the `--recent` window; flap events are deduplicated (session+kind+detail) and now record the session id; `--recent` accepts day suffixes (`7d`).
+
 ### Added
 - **`pi-run sessions` fleet view + `--heal` (W11, 2026-08-16)**: list
   active/recent agent sessions from the existing `.pi/sessions` transcript

@@ -1,6 +1,6 @@
 # pi-harness — Backlog (ranked)
 
-**Owner:** forrestthomas · **Last updated:** 2026-08-23
+**Owner:** forrestthomas · **Last updated:** 2026-08-24
 Ranked by RICE (Reach × Impact × Confidence / Effort; from
 `productskills/feature-prioritization`). Higher = do next. Workstreams are
 promoted to `ROADMAP.md` when they become active. See `STATUS.md` for the

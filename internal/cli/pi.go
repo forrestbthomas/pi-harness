@@ -25,24 +25,56 @@ func providerKeyEnvNames(ps []Provider) map[string]bool {
 	return names
 }
 
-// stripProviderKeys filters baseEnv to drop every provider credential EXCEPT
-// the active provider's key (appended later via extraEnv/launchEnv). Without
-// this, a spawned pi child — and every bash tool it runs — can read every
-// provider API key in the parent environment (SEC-1 least privilege).
+// secretManagerEnvPrefixes are env vars that unlock a secret-manager CLI
+// (Bitwarden BW_SESSION, 1Password OP_SESSION_*). Spawned pi children must
+// never inherit them: the harness resolves credentials itself and passes only
+// the active provider's key; a child that can run `bw list items` can dump the
+// ENTIRE vault into its transcript (2026-08-23 incident). Without the session
+// token, `bw`/`op` refuse to operate. Lowercase: names are normalized before
+// comparison (Windows env names are case-insensitive).
+var secretManagerEnvPrefixes = []string{"bw_", "op_session_", "op_account_token"}
+
+// stripChildCredentials filters baseEnv to drop every provider credential and
+// every secret-manager session token, EXCEPT the active provider's key
+// (appended later via extraEnv/launchEnv). Without this, a spawned pi child —
+// and every bash tool it runs — can read every provider API key in the parent
+// environment AND unlock the secret manager (`bw list items` dumps the whole
+// vault into the transcript; the 2026-08-23 incident).
 //
 // The denylist covers BOTH the canonical default table and the active table:
 // a project-local (even explicit) table may define only a keyless provider and
 // omit the canonical names — the child must still not inherit a default-
 // provider credential (e.g. OPENAI_API_KEY) from the parent env.
-func stripProviderKeys(baseEnv []string) []string {
-	keys := providerKeyEnvNames(defaultProviders)
+func stripChildCredentials(baseEnv []string) []string {
+	keys := make(map[string]bool)
+	for name := range providerKeyEnvNames(defaultProviders) {
+		keys[strings.ToLower(name)] = true
+	}
 	for name := range providerKeyEnvNames(Providers) {
-		keys[name] = true
+		keys[strings.ToLower(name)] = true
 	}
 	out := make([]string, 0, len(baseEnv))
 	for _, kv := range baseEnv {
 		name, _, ok := strings.Cut(kv, "=")
-		if ok && keys[name] {
+		if !ok {
+			out = append(out, kv)
+			continue
+		}
+		// Normalize to lowercase: Windows treats env names case-insensitively
+		// (os.Environ preserves raw casing), so a lowercase bw_session or
+		// openai_api_key must not bypass the filters. Harmless on Unix.
+		lower := strings.ToLower(name)
+		if keys[lower] {
+			continue
+		}
+		blocked := false
+		for _, pfx := range secretManagerEnvPrefixes {
+			if strings.HasPrefix(lower, pfx) {
+				blocked = true
+				break
+			}
+		}
+		if blocked {
 			continue
 		}
 		out = append(out, kv)
@@ -59,7 +91,7 @@ func stripProviderKeys(baseEnv []string) []string {
 // provider's credential, which extraEnv carries.
 func childEnv(binDir string, extraEnv []string) []string {
 	env := make([]string, 0, len(os.Environ())+len(extraEnv)+2)
-	for _, kv := range stripProviderKeys(os.Environ()) {
+	for _, kv := range stripChildCredentials(os.Environ()) {
 		if strings.HasPrefix(kv, "NODE_OPTIONS=") {
 			continue // replaced below
 		}

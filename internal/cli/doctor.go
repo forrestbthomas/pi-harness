@@ -107,6 +107,24 @@ func runDoctor() int {
 		fmt.Println("  [info] pi-run symlink check skipped (set PI_RUN_PERSONAL=1 to enable)")
 	}
 
+	// Secret guard (deterministic, 2026-08-23 vault-dump incident class):
+	// live transcripts must not contain vault-dump commands or key material.
+	// A finding is a hard FAIL — the material should be rotated and removed.
+	sessDir := filepath.Join(root, ".pi", "sessions")
+	if _, err := os.Stat(sessDir); err == nil {
+		findings, err := scanSecrets([]string{sessDir})
+		if err != nil {
+			fmt.Printf("  [info] secret scan: %v\n", err)
+		} else if len(findings) > 0 {
+			fmt.Printf("  [FAIL] secret scan: %d finding(s) in .pi/sessions — run `pi-run scan-secrets` to list them (rotate + remove)\n", len(findings))
+			fail = true
+		} else {
+			check("no secrets in .pi/sessions", true)
+		}
+	} else {
+		fmt.Println("  [info] secret scan: no .pi/sessions (clean)")
+	}
+
 	if fail {
 		fmt.Println("== doctor: FAILURES FOUND ==")
 		return 1

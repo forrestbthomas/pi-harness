@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# pre-commit — block sensitive/artifact paths from being committed.
+#
+# The 2026-08-23 release incident: `git add -A` swept the untracked
+# bulletin-runs/ capture dir (real session transcripts containing credential
+# material) into a commit, and it reached a remote branch before the CI
+# gitleaks workflow caught it. This hook is the author-side gate so that
+# class never leaves the machine again.
+#
+# Three layers, all cheap and deterministic:
+#   1. Path denylist (no dependencies): refuse to stage known runtime
+#      artifact/secret dirs. The launcher and pi-run write these; they are
+#      gitignored, and a stray `git add -A` must not resurrect them.
+#   2. Content scan of the STAGED BLOB (git show :path — never the worktree
+#      file, so staging a secret then deleting it from the worktree cannot
+#      bypass the hook) for the vault-dump execution signature and
+#      high-precision key formats.
+#   3. gitleaks protect --staged (best-effort, when installed): scan the
+#      staged diff with the same engine CI uses. Exit 1 = real finding;
+#      other non-zero (deprecated/removed command in newer gitleaks) warns
+#      and lets CI be the hard gate.
+#
+# Install with: scripts/install-git-hooks.sh  (sets core.hooksPath)
+set -u
+
+fail=0
+
+# Layer 1 + 2: iterate staged names null-delimited (paths with spaces/globs
+# are handled correctly), checking the path denylist and the staged blob.
+while IFS= read -r -d '' name; do
+  case "$name" in
+    bulletin-runs/*|bulletin-runs) echo "blocked: $name (bulletin-runs/ is a local artifact dir — see docs/bulletin-workflow.md)"; fail=1 ;;
+    .pi/sessions/*|.pi/sessions) echo "blocked: $name (.pi/sessions holds live agent transcripts)"; fail=1 ;;
+    .pi/heal/*|.pi/heal) echo "blocked: $name (.pi/heal holds escalation packets)"; fail=1 ;;
+    .pi/bulletin/*|.pi/bulletin) echo "blocked: $name (.pi/bulletin holds live bulletin state)"; fail=1 ;;
+    .pi/cost-ledger.jsonl) echo "blocked: $name (spend ledger)"; fail=1 ;;
+    .review-sweep/*|.review-sweep) echo "blocked: $name (review sweep artifacts)"; fail=1 ;;
+  esac
+  blob="$(git show ":$name" 2>/dev/null)" || continue
+  if printf '%s\n' "$blob" | grep -qE '"command"[[:space:]]*:[[:space:]]*"[^"]*bw[[:space:]]+(list|get|sync)[[:space:]]+items?'; then
+    echo "blocked: $name contains a vault-dump execution (bw list/get/sync items)"; fail=1
+  fi
+  if printf '%s\n' "$blob" | grep -qE 'sk-or-[A-Za-z0-9]{20,}|sk-ant-[A-Za-z0-9]{20,}|gh[pousr]_[A-Za-z0-9]{30,}|sk-[A-Za-z0-9]{40,}'; then
+    echo "blocked: $name contains a high-precision secret pattern"; fail=1
+  fi
+done < <(git diff --cached --name-only -z)
+
+# Layer 3: gitleaks on the staged diff (best-effort — CI is the hard gate).
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged -v >/dev/null 2>&1
+  rc=$?
+  if [ "$rc" -eq 1 ]; then
+    echo "blocked: gitleaks found secrets in the staged diff — fix or explicitly allow before committing."
+    fail=1
+  elif [ "$rc" -ne 0 ]; then
+    echo "hook: gitleaks exited $rc (deprecated/removed in this version?) — CI secret-scan remains the hard gate" >&2
+  fi
+fi
+
+if [ "$fail" -ne 0 ]; then
+  echo "pre-commit hook: refusing to commit (remove the blocked paths from the index, or use --no-verify deliberately)."
+  exit 1
+fi
+exit 0

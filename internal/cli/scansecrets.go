@@ -1,8 +1,11 @@
 package cli
 
 import (
+	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -111,31 +114,44 @@ func scanSecrets(paths []string) ([]secretFinding, error) {
 	return findings, nil
 }
 
-// scanFile reads the whole file and checks each line for every secret marker.
-// Whole-file read (not bufio.Scanner) so oversized transcript lines (tool
-// outputs can exceed any fixed token limit) cannot abort the scan — a guard
-// that errors out instead of flagging is a bypass.
+// scanFile scans a file line by line for every secret marker. Streaming via
+// bufio.Reader.ReadString keeps memory bounded to the largest single line (not
+// the whole file), while still handling oversized transcript lines (tool
+// outputs can be many MB) without a token-limit abort. All markers are
+// per-line, so line streaming is complete.
 func scanFile(path string) ([]secretFinding, error) {
-	b, err := os.ReadFile(path)
+	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
+	defer f.Close()
 	var out []secretFinding
-	for i, text := range strings.Split(string(b), "\n") {
-		for _, m := range secretMarkers {
-			loc := m.Pattern.FindStringIndex(text)
-			if loc == nil {
-				continue
+	r := bufio.NewReader(f)
+	line := 0
+	for {
+		text, err := r.ReadString('\n')
+		if len(text) > 0 {
+			line++
+			for _, m := range secretMarkers {
+				loc := m.Pattern.FindStringIndex(text)
+				if loc == nil {
+					continue
+				}
+				out = append(out, secretFinding{
+					File:    path,
+					Line:    line,
+					Marker:  m.Name,
+					Snippet: redactSnippet(text, loc),
+				})
 			}
-			out = append(out, secretFinding{
-				File:    path,
-				Line:    i + 1,
-				Marker:  m.Name,
-				Snippet: redactSnippet(text, loc),
-			})
+		}
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return out, nil
+			}
+			return nil, err
 		}
 	}
-	return out, nil
 }
 
 // redactSnippet returns up to 10 characters either side of the match with the
@@ -191,6 +207,11 @@ func runScanSecretsCmd(args []string) int {
 	if len(paths) == 0 {
 		def := filepath.Join(repoRoot(), ".pi", "sessions")
 		if _, err := os.Stat(def); err != nil {
+			if !errors.Is(err, os.ErrNotExist) {
+				// A permission/IO error is NOT a clean state — report it.
+				fmt.Fprintf(os.Stderr, "pi-run: scan-secrets: %v\n", err)
+				return 1
+			}
 			// No live transcripts: nothing to scan (not an error). In --json
 			// mode emit valid JSON (an empty list) so parsers always work.
 			if jsonOut {

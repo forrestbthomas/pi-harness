@@ -1,0 +1,55 @@
+#!/bin/sh
+# pre-commit — block sensitive/artifact paths from being committed.
+#
+# The 2026-08-23 release incident: `git add -A` swept the untracked
+# bulletin-runs/ capture dir (real session transcripts containing credential
+# material) into a commit, and it reached a remote branch before the CI
+# gitleaks workflow caught it. This hook is the author-side gate so that
+# class never leaves the machine again.
+#
+# Two layers, both cheap:
+#   1. Path denylist (no dependencies): refuse to stage known runtime
+#      artifact/secret dirs. The launcher and pi-run write these; they are
+#      gitignored, and a stray `git add -A` must not resurrect them.
+#   2. gitleaks --staged (best-effort, when installed): scan the staged diff
+#      for real secret patterns with the same engine CI uses.
+#
+# Install with: scripts/install-git-hooks.sh  (sets core.hooksPath)
+set -u
+
+SENSITIVE_PATTERNS='
+^bulletin-runs/
+^\.pi/sessions/
+^\.pi/heal/
+^\.pi/bulletin/
+^\.pi/cost-ledger\.jsonl
+^\.review-sweep/
+'
+
+fail=0
+
+# Layer 1: path denylist over staged names (quoted, so spaces are safe).
+for name in $(git diff --cached --name-only -z | tr '\0' '\n'); do
+  case "$name" in
+    bulletin-runs/*|bulletin-runs) echo "blocked: $name (bulletin-runs/ is a local artifact dir — see docs/bulletin-workflow.md)"; fail=1 ;;
+    .pi/sessions/*|.pi/sessions) echo "blocked: $name (.pi/sessions holds live agent transcripts)"; fail=1 ;;
+    .pi/heal/*|.pi/heal) echo "blocked: $name (.pi/heal holds escalation packets)"; fail=1 ;;
+    .pi/bulletin/*|.pi/bulletin) echo "blocked: $name (.pi/bulletin holds live bulletin state)"; fail=1 ;;
+    .pi/cost-ledger.jsonl) echo "blocked: $name (spend ledger)"; fail=1 ;;
+    .review-sweep/*|.review-sweep) echo "blocked: $name (review sweep artifacts)"; fail=1 ;;
+  esac
+done
+
+# Layer 2: gitleaks on the staged diff (best-effort — CI is the hard gate).
+if command -v gitleaks >/dev/null 2>&1; then
+  if ! gitleaks protect --staged -v >/dev/null 2>&1; then
+    echo "blocked: gitleaks found secrets in the staged diff — fix or explicitly allow before committing."
+    fail=1
+  fi
+fi
+
+if [ "$fail" -ne 0 ]; then
+  echo "pre-commit hook: refusing to commit (remove the blocked paths from the index, or use --no-verify deliberately)."
+  exit 1
+fi
+exit 0

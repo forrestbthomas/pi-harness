@@ -4,10 +4,12 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -41,6 +43,7 @@ type sessionSummary struct {
 	Mtime     time.Time
 	Age       time.Duration // now - mtime
 	Active    bool          // mtime within the liveness window
+	Path      string        // the DISCOVERED transcript path (listSessions); the heal scanner must use this, never a reconstructed <id>.jsonl path
 }
 
 // flapEvent is an aggregated connection-flap observation for one session.
@@ -86,10 +89,10 @@ func runSessions(args []string) int {
 			heal = true
 		case "--recent":
 			if i+1 >= len(args) {
-				fmt.Fprintf(os.Stderr, "pi-run: sessions: --recent requires a duration (e.g. 24h)\n\n%s", sessionsUsage)
+				fmt.Fprintf(os.Stderr, "pi-run: sessions: --recent requires a duration (e.g. 24h or 7d)\n\n%s", sessionsUsage)
 				return 2
 			}
-			d, err := time.ParseDuration(args[i+1])
+			d, err := parseRecentDuration(args[i+1])
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "pi-run: sessions: invalid --recent duration %q\n\n%s", args[i+1], sessionsUsage)
 				return 2
@@ -135,7 +138,7 @@ func runSessions(args []string) int {
 		// seam. The scan is an explicit user action, so it bypasses the
 		// PI_SELF_HEAL env gate and writes regardless.
 		threshold, window := flapSettings()
-		flaps := scanSessionsForFlaps(all, threshold, window, now)
+		flaps := scanSessionsForFlaps(recentSessions(all, recent, now), threshold, window, now)
 		healDir := filepath.Join(root, ".pi", "heal")
 		if err := writeFlapEvents(healDir, flaps); err != nil {
 			fmt.Fprintf(os.Stderr, "pi-run: sessions: --heal: %v\n", err)
@@ -212,7 +215,7 @@ func listSessions(dir string) ([]sessionSummary, error) {
 		if err != nil {
 			continue
 		}
-		s := sessionSummary{Mtime: info.ModTime(), Age: time.Since(info.ModTime())}
+		s := sessionSummary{Mtime: info.ModTime(), Age: time.Since(info.ModTime()), Path: path}
 		parseSessionHeader(path, &s)
 		// A transcript that does not yield a session id (malformed header) is
 		// not a session we can list — skip it rather than show an empty row.
@@ -292,13 +295,64 @@ func classifyConnectionError(msg string) bool {
 }
 
 // scanSessionsForFlaps runs the aggregation over all sessions.
+// parseRecentDuration accepts Go durations plus a day suffix ("7d" -> 168h),
+// which the docs advertise but time.ParseDuration rejects. Nonpositive values
+// are rejected: recentSessions treats <= 0 as an unbounded window, which a
+// user-facing --recent flag must never silently select.
+func parseRecentDuration(s string) (time.Duration, error) {
+	if strings.HasSuffix(s, "d") {
+		n, err := strconv.Atoi(strings.TrimSuffix(s, "d"))
+		if err != nil || n <= 0 {
+			return 0, fmt.Errorf("invalid day count %q", s)
+		}
+		// Guard the int64 overflow: max int64 ns / 24h is ~106751 days; a
+		// larger count wraps negative and would become an unbounded window.
+		if int64(n) > math.MaxInt64/int64(24*time.Hour) {
+			return 0, fmt.Errorf("day count %q overflows the recent window", s)
+		}
+		return time.Duration(n) * 24 * time.Hour, nil
+	}
+	d, err := time.ParseDuration(s)
+	if err != nil {
+		return 0, err
+	}
+	if d <= 0 {
+		return 0, fmt.Errorf("recent window must be positive, got %q", s)
+	}
+	return d, nil
+}
+
+// recentSessions returns the summaries whose mtime is within recent of now.
+// The heal scan uses this so --heal honors the --recent window instead of
+// scanning every transcript ever written.
+func recentSessions(all []sessionSummary, recent time.Duration, now time.Time) []sessionSummary {
+	if recent <= 0 {
+		return all
+	}
+	out := make([]sessionSummary, 0, len(all))
+	for _, s := range all {
+		if now.Sub(s.Mtime) <= recent {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
 func scanSessionsForFlaps(all []sessionSummary, threshold int, window time.Duration, now time.Time) []flapEvent {
 	var out []flapEvent
 	for _, s := range all {
 		if s.ID == "" {
 			continue
 		}
-		out = append(out, scanSessionConnectionFlaps(filepath.Join(repoRoot(), ".pi", "sessions", s.ID+".jsonl"), threshold, window, now)...)
+		// Use the DISCOVERED path when present (listSessions records it); a
+		// reconstructed <id>.jsonl path never matches the real timestamp-
+		// prefixed transcript filename (HEAL-6). The fallback keeps hand-built
+		// summaries working in tests/callers.
+		p := s.Path
+		if p == "" {
+			p = filepath.Join(repoRoot(), ".pi", "sessions", s.ID+".jsonl")
+		}
+		out = append(out, scanSessionConnectionFlaps(p, threshold, window, now)...)
 	}
 	return out
 }
@@ -392,16 +446,47 @@ func writeFlapEvents(healDir string, flaps []flapEvent) error {
 	if err := os.MkdirAll(healDir, 0o700); err != nil {
 		return err
 	}
-	f, err := os.OpenFile(filepath.Join(healDir, "events.jsonl"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
+	path := filepath.Join(healDir, "events.jsonl")
+	// Dedup: re-running --heal must not append the same flap again (HEAL-6:
+	// repeated scans inflated self-heal metrics). Key on session+kind+detail;
+	// events written before the session field existed key on |kind|detail.
+	seen := map[string]bool{}
+	if b, err := os.ReadFile(path); err == nil {
+		for _, line := range strings.Split(string(b), "\n") {
+			var ev struct {
+				Session string `json:"session"`
+				Kind    string `json:"kind"`
+				Detail  string `json:"detail"`
+			}
+			if json.Unmarshal([]byte(line), &ev) == nil && ev.Kind != "" {
+				seen[ev.Session+"|"+ev.Kind+"|"+ev.Detail] = true
+				if ev.Session == "" {
+					// Legacy event written before the session field existed:
+					// also index the bare key so a post-upgrade event for that
+					// flap is not appended again (HEAL-6 dedup migration).
+					seen["|"+ev.Kind+"|"+ev.Detail] = true
+				}
+			}
+		}
+	}
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 	for _, fl := range flaps {
+		key := fl.SessionID + "|" + fl.Kind + "|" + fl.Detail
+		// The bare key matches a legacy (pre-session-field) event; the
+		// session-qualified key matches post-upgrade events.
+		if seen[key] || seen["|"+fl.Kind+"|"+fl.Detail] {
+			continue
+		}
+		seen[key] = true
 		ev := map[string]string{
-			"ts":     time.Now().Format(time.RFC3339),
-			"kind":   fl.Kind,
-			"detail": fl.Detail,
+			"ts":      time.Now().Format(time.RFC3339),
+			"session": fl.SessionID,
+			"kind":    fl.Kind,
+			"detail":  fl.Detail,
 		}
 		b, err := json.Marshal(ev)
 		if err != nil {

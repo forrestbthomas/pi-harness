@@ -224,3 +224,113 @@ func TestWriteFlapEventsSeamFormat(t *testing.T) {
 		t.Fatalf("event missing ts/detail: %+v", ev)
 	}
 }
+
+// Regression for HEAL-6: listSessions discovers timestamp-prefixed
+// transcripts (<ISO-timestamp>_<id>.jsonl); the heal scanner must use the
+// DISCOVERED path, never a reconstructed <id>.jsonl path (which never exists).
+func TestHealScansDiscoveredTimestampPrefixedTranscripts(t *testing.T) {
+	dir := t.TempDir()
+	now := time.Date(2026, 8, 23, 15, 0, 0, 0, time.UTC)
+	writeSessionFile(t, dir, "flappy", now,
+		errMsgEvent("a", "Network connection lost."),
+		errMsgEvent("b", "Network connection lost."),
+		errMsgEvent("c", "Network connection lost."))
+
+	all, err := listSessions(dir)
+	if err != nil {
+		t.Fatalf("listSessions: %v", err)
+	}
+	if len(all) != 1 {
+		t.Fatalf("expected 1 session, got %d", len(all))
+	}
+	flaps := scanSessionsForFlaps(all, 3, 10*time.Minute, now.Add(time.Hour))
+	if len(flaps) != 1 {
+		t.Fatalf("expected 1 flap via discovered path, got %d (path-reconstruction bug)", len(flaps))
+	}
+	if flaps[0].SessionID != "flappy" {
+		t.Fatalf("unexpected flap: %+v", flaps[0])
+	}
+}
+
+func TestRecentSessionsFiltersOld(t *testing.T) {
+	now := time.Date(2026, 8, 23, 15, 0, 0, 0, time.UTC)
+	fresh := sessionSummary{ID: "fresh", Mtime: now.Add(-time.Hour)}
+	old := sessionSummary{ID: "old", Mtime: now.Add(-48 * time.Hour)}
+	got := recentSessions([]sessionSummary{fresh, old}, 24*time.Hour, now)
+	if len(got) != 1 || got[0].ID != "fresh" {
+		t.Fatalf("expected only fresh, got %+v", got)
+	}
+}
+
+func TestParseRecentDurationDays(t *testing.T) {
+	cases := []struct {
+		in      string
+		want    time.Duration
+		wantErr bool
+	}{
+		{"7d", 168 * time.Hour, false},
+		{"3d", 72 * time.Hour, false},
+		{"1d", 24 * time.Hour, false},
+		{"24h", 24 * time.Hour, false},
+		{"0d", 0, true},
+		{"0s", 0, true},
+		{"-1h", 0, true},
+		{"106752d", 0, true}, // int64 overflow would wrap negative
+		{"bogus", 0, true},
+	}
+	for _, tc := range cases {
+		got, err := parseRecentDuration(tc.in)
+		if tc.wantErr {
+			if err == nil {
+				t.Errorf("parseRecentDuration(%q): expected error, got %v", tc.in, got)
+			}
+			continue
+		}
+		if err != nil || got != tc.want {
+			t.Errorf("parseRecentDuration(%q) = %v, %v; want %v", tc.in, got, err, tc.want)
+		}
+	}
+}
+
+func TestWriteFlapEventsDedups(t *testing.T) {
+	dir := t.TempDir()
+	heal := filepath.Join(dir, "heal")
+	fl := flapEvent{Kind: "connection-flap", SessionID: "s1", Count: 3, Detail: "session s1: 3 connection failures within 10m0s"}
+	if err := writeFlapEvents(heal, []flapEvent{fl}); err != nil {
+		t.Fatalf("write 1: %v", err)
+	}
+	if err := writeFlapEvents(heal, []flapEvent{fl}); err != nil {
+		t.Fatalf("write 2: %v", err)
+	}
+	b, err := os.ReadFile(filepath.Join(heal, "events.jsonl"))
+	if err != nil {
+		t.Fatalf("read events: %v", err)
+	}
+	if got := strings.Count(string(b), "connection-flap"); got != 1 {
+		t.Fatalf("expected dedup to 1 flap event, got %d:\n%s", got, b)
+	}
+}
+
+func TestWriteFlapEventsDedupsLegacyEventsWithoutSession(t *testing.T) {
+	dir := t.TempDir()
+	heal := filepath.Join(dir, "heal")
+	if err := os.MkdirAll(heal, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	// Pre-existing event from before the session field existed.
+	legacy := `{"ts":"2026-08-22T00:00:00Z","kind":"connection-flap","detail":"session s1: 3 connection failures within 10m0s"}` + "\n"
+	if err := os.WriteFile(filepath.Join(heal, "events.jsonl"), []byte(legacy), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	fl := flapEvent{Kind: "connection-flap", SessionID: "s1", Count: 3, Detail: "session s1: 3 connection failures within 10m0s"}
+	if err := writeFlapEvents(heal, []flapEvent{fl}); err != nil {
+		t.Fatal(err)
+	}
+	b, err := os.ReadFile(filepath.Join(heal, "events.jsonl"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Count(string(b), "connection-flap"); got != 1 {
+		t.Fatalf("legacy event must dedup the post-upgrade append, got %d:\n%s", got, b)
+	}
+}

@@ -320,3 +320,41 @@ func TestLaunchEnvAnthropicCompatibleProvider(t *testing.T) {
 		t.Fatalf("plain anthropic launch environment missing non-interactive vars: %v", plain)
 	}
 }
+
+func TestChildEnvStripsOtherProviderKeys(t *testing.T) {
+	t.Setenv("OPENAI_API_KEY", "sk-openai")
+	t.Setenv("DEEPSEEK_API_KEY", "sk-deepseek")
+	t.Setenv("OPENROUTER_API_KEY", "sk-or")
+	t.Setenv("HOME", "/tmp/fake-home")
+	env := childEnv("/fake/node/bin", []string{"OPENAI_API_KEY=sk-active"})
+	joined := "\n" + strings.Join(env, "\n") + "\n"
+	for _, want := range []string{"OPENAI_API_KEY=sk-active", "HOME=/tmp/fake-home", "PATH=/fake/node/bin" + string(os.PathListSeparator)} {
+		if !strings.Contains(joined, "\n"+want) {
+			t.Fatalf("child env must keep %q; got:\n%s", want, joined)
+		}
+	}
+	for _, absent := range []string{"DEEPSEEK_API_KEY=sk-deepseek", "OPENROUTER_API_KEY=sk-or", "OPENAI_API_KEY=sk-openai"} {
+		if strings.Contains(joined, "\n"+absent+"\n") {
+			t.Fatalf("child env must strip unrelated provider key %q; got:\n%s", absent, joined)
+		}
+	}
+}
+
+func TestChildEnvStripsDefaultKeysWhenActiveTableKeyless(t *testing.T) {
+	orig := Providers
+	t.Cleanup(func() { Providers = orig })
+	// A project-local table defining ONLY a keyless local gateway omits the
+	// canonical provider names; a default-provider credential inherited from
+	// the parent env must still be stripped (CodeRabbit SEC-1 finding).
+	Providers = []Provider{{Name: "local-gateway", KeyEnv: "LOCAL_GATEWAY_KEY", DefaultModel: "x/y", BaseURL: "http://localhost:9999/v1", Keyless: true}}
+	t.Setenv("OPENAI_API_KEY", "sk-openai")
+	t.Setenv("LOCAL_GATEWAY_KEY", "sk-gw")
+	env := childEnv("/fake/node/bin", []string{"LOCAL_GATEWAY_KEY=sk-active"})
+	joined := "\n" + strings.Join(env, "\n") + "\n"
+	if strings.Contains(joined, "\nOPENAI_API_KEY=sk-openai\n") {
+		t.Fatal("default-provider key must be stripped even when absent from the active table")
+	}
+	if !strings.Contains(joined, "\nLOCAL_GATEWAY_KEY=sk-active\n") {
+		t.Fatal("active keyless provider's credential must still pass through via extraEnv")
+	}
+}

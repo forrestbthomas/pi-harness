@@ -6,7 +6,19 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
-<!-- release-candidate: v0.11.1 -->
+(Tag for v0.12.0 below is pending — created from the merged remote main tip.)
+
+## [0.12.0] - 2026-08-23
+
+<!-- release-candidate: v0.12.0 -->
+
+> **Release note:** v0.12.0 ships the `pi-run sessions` fleet view + `--heal`
+> (new command), the pi-bulletin coordination wiring for harness-launched
+> sessions (MSG-1: standalone OSS package = vehicle, wiring only), the pi-teams
+> removal (eval verdict: 2/2 startup failure), and two dogfood-driven fixes —
+> SEC-1 (provider trust boundary + least-privilege child env) and HEAL-6
+> (`--heal` repairs). Cut directly from main per owner decision; tag to be
+> created from the merged remote main tip by `scripts/tag-release.sh`.
 
 ### Added
 - **`pi-run sessions` fleet view + `--heal` (W11, 2026-08-16)**: list
@@ -16,6 +28,25 @@ All notable changes to this project are documented here. Format follows
   events to `.pi/heal/events.jsonl`, surfacing in the scorecard's
   `selfHeal` block. Closes the chat-path observability hole (previously only
   the non-interactive watchdog path emitted heal events).
+- **pi-bulletin wiring for harness-launched sessions (MSG-1, 2026-08-23)**:
+  the harness pins `npm:pi-bulletin@0.2.0` (standalone OSS package,
+  `github.com/forrestbthomas/pi-bulletin`) so a team of Pi agents can
+  coordinate through a shared bulletin (events + digests + conflict
+  resolution) with zero runtime integration — wiring only, per the charter
+  conformance decision MSG-1. Workflow: `docs/bulletin-workflow.md`.
+
+### Security
+- **SEC-1 — Provider trust boundary + least-privilege child env (2026-08-23, `d95d822`)**: a project-local `providers.json` can no longer pair a real API credential (`keyEnv: OPENAI_API_KEY`) with a custom `baseURL` and exfiltrate the resolved key on launch — the table falls back to built-in defaults with a loud warning (`PI_RUN_PROVIDERS_FILE` opts in explicitly). Spawned pi children no longer inherit every provider API key from the parent environment; only the active provider's credential is passed.
+
+### Fixed
+- **HEAL-6 — `pi-run sessions --heal` repaired (2026-08-23, `28a3fa6`)**: heal scans now use the DISCOVERED transcript path (`<ts>_<id>.jsonl`) instead of a reconstructed `<id>.jsonl` that never existed (the scan previously wrote 0 events); `--heal` honors the `--recent` window; flap events are deduplicated (session+kind+detail) and now record the session id; `--recent` accepts day suffixes (`7d`).
+
+### Removed
+- **pi-teams removed (2026-08-23, eval verdict)**: the agent-teams try-out
+  (`npm:pi-teams@0.9.14`, PR #173) is gone — the side-by-side eval failed it
+  2/2 (reproducible teammate spawn/readiness stall, 0/5 ready) and promoted
+  pi-bulletin. Decision log:
+  `docs/agent-teams-coordination-research-2026-08.md`.
 
 ## [0.11.1] - 2026-08-16
 

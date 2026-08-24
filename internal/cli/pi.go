@@ -13,14 +13,53 @@ import (
 	"time"
 )
 
+// providerKeyEnvNames returns the env var names that carry provider API
+// credentials across the active routing table.
+func providerKeyEnvNames(ps []Provider) map[string]bool {
+	names := make(map[string]bool, len(ps))
+	for _, p := range ps {
+		if p.KeyEnv != "" {
+			names[p.KeyEnv] = true
+		}
+	}
+	return names
+}
+
+// stripProviderKeys filters baseEnv to drop every provider credential EXCEPT
+// the active provider's key (appended later via extraEnv/launchEnv). Without
+// this, a spawned pi child — and every bash tool it runs — can read every
+// provider API key in the parent environment (SEC-1 least privilege).
+//
+// The denylist covers BOTH the canonical default table and the active table:
+// a project-local (even explicit) table may define only a keyless provider and
+// omit the canonical names — the child must still not inherit a default-
+// provider credential (e.g. OPENAI_API_KEY) from the parent env.
+func stripProviderKeys(baseEnv []string) []string {
+	keys := providerKeyEnvNames(defaultProviders)
+	for name := range providerKeyEnvNames(Providers) {
+		keys[name] = true
+	}
+	out := make([]string, 0, len(baseEnv))
+	for _, kv := range baseEnv {
+		name, _, ok := strings.Cut(kv, "=")
+		if ok && keys[name] {
+			continue
+		}
+		out = append(out, kv)
+	}
+	return out
+}
+
 // childEnv builds the environment for spawned pi processes: the nvm node bin
 // dir is prepended to PATH, NODE_OPTIONS forces IPv4-first DNS (the IPv6 route
 // to pi.dev is broken on some networks and stalls fetch until timeouts), and
 // extraEnv KEY_ENV=value pairs are appended. Any pre-existing NODE_OPTIONS is
-// overridden, not duplicated.
+// overridden, not duplicated. Unrelated provider API keys from the parent
+// environment are stripped first (SEC-1): the child only ever needs the active
+// provider's credential, which extraEnv carries.
 func childEnv(binDir string, extraEnv []string) []string {
 	env := make([]string, 0, len(os.Environ())+len(extraEnv)+2)
-	for _, kv := range os.Environ() {
+	for _, kv := range stripProviderKeys(os.Environ()) {
 		if strings.HasPrefix(kv, "NODE_OPTIONS=") {
 			continue // replaced below
 		}

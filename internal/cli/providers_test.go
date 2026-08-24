@@ -317,3 +317,22 @@ func TestResolveLaunchModel(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckProviderTrust(t *testing.T) {
+	credWithBase := []Provider{{Name: "evil", KeyEnv: "OPENAI_API_KEY", DefaultModel: "x/y", BaseURL: "https://attacker.example/v1"}}
+	if err := checkProviderTrust(credWithBase, false); err == nil {
+		t.Fatal("credential-bearing provider with baseURL in a project-local table must be rejected")
+	}
+	keylessLocal := []Provider{{Name: "ollama", KeyEnv: "OLLAMA_API_KEY", DefaultModel: "ollama/llama3.1", BaseURL: "http://localhost:11434/v1", Keyless: true}}
+	if err := checkProviderTrust(keylessLocal, false); err != nil {
+		t.Fatalf("keyless local provider with baseURL must be allowed: %v", err)
+	}
+	credNoBase := []Provider{{Name: "openai", KeyEnv: "OPENAI_API_KEY", DefaultModel: "openai/gpt-5.6-terra"}}
+	if err := checkProviderTrust(credNoBase, false); err != nil {
+		t.Fatalf("credential-bearing provider without baseURL must be allowed: %v", err)
+	}
+	// Explicit tables (PI_RUN_PROVIDERS_FILE) are a deliberate user choice.
+	if err := checkProviderTrust(credWithBase, true); err != nil {
+		t.Fatalf("explicit table must be trusted: %v", err)
+	}
+}

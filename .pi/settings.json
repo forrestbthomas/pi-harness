@@ -65,7 +65,7 @@
     "npm:pi-spark",
     "git:github.com/dannote/dot-pi",
     "npm:pi-subagents@0.48.0",
-    "npm:pi-teams@0.9.14"
+    "npm:pi-bulletin@0.2.0"
   ],
   "extensions": [],
   "skills": [],

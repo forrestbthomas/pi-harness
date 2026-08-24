@@ -38,6 +38,17 @@ for name in $(git diff --cached --name-only -z | tr '\0' '\n'); do
     .pi/cost-ledger.jsonl) echo "blocked: $name (spend ledger)"; fail=1 ;;
     .review-sweep/*|.review-sweep) echo "blocked: $name (review sweep artifacts)"; fail=1 ;;
   esac
+  # Layer 1b: content scan on staged files for the incident signature and
+  # high-precision key formats — catches a differently-named capture dir or a
+  # transcript that was never supposed to leave .pi/sessions.
+  if [ -f "$name" ]; then
+    if grep -qE '"command"[[:space:]]*:[[:space:]]*"[^"]*bw[[:space:]]+(list|get|sync)[[:space:]]+items?' "$name" 2>/dev/null; then
+      echo "blocked: $name contains a vault-dump execution (bw list/get/sync items)"; fail=1
+    fi
+    if grep -qE 'sk-or-[A-Za-z0-9]{20,}|sk-ant-[A-Za-z0-9]{20,}|gh[pousr]_[A-Za-z0-9]{30,}|sk-[A-Za-z0-9]{40,}' "$name" 2>/dev/null; then
+      echo "blocked: $name contains a high-precision secret pattern"; fail=1
+    fi
+  fi
 done
 
 # Layer 2: gitleaks on the staged diff (best-effort — CI is the hard gate).

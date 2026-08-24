@@ -358,3 +358,23 @@ func TestChildEnvStripsDefaultKeysWhenActiveTableKeyless(t *testing.T) {
 		t.Fatal("active keyless provider's credential must still pass through via extraEnv")
 	}
 }
+
+func TestChildEnvStripsSecretManagerSessionTokens(t *testing.T) {
+	t.Setenv("BW_SESSION", "vault-session-token")
+	t.Setenv("BW_ACCOUNT_ID", "account-id")
+	t.Setenv("OP_SESSION_MY_VAULT", "op-token")
+	t.Setenv("HOME", "/tmp/fake-home")
+	env := childEnv("/fake/node/bin", []string{"OPENAI_API_KEY=sk-active"})
+	joined := "\n" + strings.Join(env, "\n") + "\n"
+	for _, absent := range []string{"BW_SESSION=vault-session-token", "BW_ACCOUNT_ID=account-id", "OP_SESSION_MY_VAULT=op-token"} {
+		if strings.Contains(joined, "\n"+absent+"\n") {
+			t.Fatalf("child env must strip secret-manager token %q (bw/op unusable in sessions); got:\n%s", absent, joined)
+		}
+	}
+	if !strings.Contains(joined, "\nOPENAI_API_KEY=sk-active\n") {
+		t.Fatal("active provider credential must still be present")
+	}
+	if !strings.Contains(joined, "\nHOME=/tmp/fake-home\n") {
+		t.Fatal("non-secret env must survive")
+	}
+}

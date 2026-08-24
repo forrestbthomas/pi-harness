@@ -134,3 +134,17 @@ func TestScanSecretsIgnoresProseMentioningBw(t *testing.T) {
 		t.Fatalf("prose mentioning bw must not flag; got %+v", findings)
 	}
 }
+
+func TestScanSecretsHandlesOversizedLine(t *testing.T) {
+	// A transcript line larger than any fixed scanner token limit must not
+	// abort the scan (a guard that errors out is a bypass).
+	big := strings.Repeat("x", 3*1024*1024)
+	p := writeScanFixture(t, "big.jsonl", `{"command":"bw list items"}`+"\n"+big+"\n")
+	findings, err := scanSecrets([]string{p})
+	if err != nil {
+		t.Fatalf("oversized line must not error the scan: %v", err)
+	}
+	if len(findings) != 1 || findings[0].Marker != "vault-dump-command" {
+		t.Fatalf("expected the vault-dump finding despite the oversized line, got %+v", findings)
+	}
+}

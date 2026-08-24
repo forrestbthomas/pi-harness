@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -112,20 +111,17 @@ func scanSecrets(paths []string) ([]secretFinding, error) {
 	return findings, nil
 }
 
-// scanFile scans one file line by line for every secret marker.
+// scanFile reads the whole file and checks each line for every secret marker.
+// Whole-file read (not bufio.Scanner) so oversized transcript lines (tool
+// outputs can exceed any fixed token limit) cannot abort the scan — a guard
+// that errors out instead of flagging is a bypass.
 func scanFile(path string) ([]secretFinding, error) {
-	f, err := os.Open(path)
+	b, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
 	var out []secretFinding
-	sc := bufio.NewScanner(f)
-	sc.Buffer(make([]byte, 0, 64*1024), 1024*1024)
-	line := 0
-	for sc.Scan() {
-		line++
-		text := sc.Text()
+	for i, text := range strings.Split(string(b), "\n") {
 		for _, m := range secretMarkers {
 			loc := m.Pattern.FindStringIndex(text)
 			if loc == nil {
@@ -133,13 +129,13 @@ func scanFile(path string) ([]secretFinding, error) {
 			}
 			out = append(out, secretFinding{
 				File:    path,
-				Line:    line,
+				Line:    i + 1,
 				Marker:  m.Name,
 				Snippet: redactSnippet(text, loc),
 			})
 		}
 	}
-	return out, sc.Err()
+	return out, nil
 }
 
 // redactSnippet returns up to 10 characters either side of the match with the
@@ -195,8 +191,15 @@ func runScanSecretsCmd(args []string) int {
 	if len(paths) == 0 {
 		def := filepath.Join(repoRoot(), ".pi", "sessions")
 		if _, err := os.Stat(def); err != nil {
-			// No live transcripts: nothing to scan (not an error).
-			fmt.Println("scan-secrets: clean (no .pi/sessions)")
+			// No live transcripts: nothing to scan (not an error). In --json
+			// mode emit valid JSON (an empty list) so parsers always work.
+			if jsonOut {
+				enc := json.NewEncoder(os.Stdout)
+				enc.SetIndent("", "  ")
+				_ = enc.Encode([]secretFinding{})
+			} else {
+				fmt.Println("scan-secrets: clean (no .pi/sessions)")
+			}
 			return 0
 		}
 		paths = []string{def}
@@ -207,6 +210,7 @@ func runScanSecretsCmd(args []string) int {
 		return 1
 	}
 	if jsonOut {
+		// stdout is pure JSON — status text goes to stderr only.
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
 		_ = enc.Encode(findings)
@@ -219,6 +223,8 @@ func runScanSecretsCmd(args []string) int {
 		fmt.Fprintf(os.Stderr, "scan-secrets: %d finding(s) — resolve/rotate and remove the material before committing or copying transcripts\n", len(findings))
 		return 1
 	}
-	fmt.Printf("scan-secrets: clean (%d path(s))\n", len(paths))
+	if !jsonOut {
+		fmt.Printf("scan-secrets: clean (%d path(s))\n", len(paths))
+	}
 	return 0
 }

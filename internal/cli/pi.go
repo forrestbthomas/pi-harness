@@ -30,8 +30,9 @@ func providerKeyEnvNames(ps []Provider) map[string]bool {
 // never inherit them: the harness resolves credentials itself and passes only
 // the active provider's key; a child that can run `bw list items` can dump the
 // ENTIRE vault into its transcript (2026-08-23 incident). Without the session
-// token, `bw`/`op` refuse to operate.
-var secretManagerEnvPrefixes = []string{"BW_", "OP_SESSION_", "OP_ACCOUNT_TOKEN"}
+// token, `bw`/`op` refuse to operate. Lowercase: names are normalized before
+// comparison (Windows env names are case-insensitive).
+var secretManagerEnvPrefixes = []string{"bw_", "op_session_", "op_account_token"}
 
 // stripChildCredentials filters baseEnv to drop every provider credential and
 // every secret-manager session token, EXCEPT the active provider's key
@@ -45,9 +46,12 @@ var secretManagerEnvPrefixes = []string{"BW_", "OP_SESSION_", "OP_ACCOUNT_TOKEN"
 // omit the canonical names — the child must still not inherit a default-
 // provider credential (e.g. OPENAI_API_KEY) from the parent env.
 func stripChildCredentials(baseEnv []string) []string {
-	keys := providerKeyEnvNames(defaultProviders)
+	keys := make(map[string]bool)
+	for name := range providerKeyEnvNames(defaultProviders) {
+		keys[strings.ToLower(name)] = true
+	}
 	for name := range providerKeyEnvNames(Providers) {
-		keys[name] = true
+		keys[strings.ToLower(name)] = true
 	}
 	out := make([]string, 0, len(baseEnv))
 	for _, kv := range baseEnv {
@@ -56,12 +60,16 @@ func stripChildCredentials(baseEnv []string) []string {
 			out = append(out, kv)
 			continue
 		}
-		if keys[name] {
+		// Normalize to lowercase: Windows treats env names case-insensitively
+		// (os.Environ preserves raw casing), so a lowercase bw_session or
+		// openai_api_key must not bypass the filters. Harmless on Unix.
+		lower := strings.ToLower(name)
+		if keys[lower] {
 			continue
 		}
 		blocked := false
 		for _, pfx := range secretManagerEnvPrefixes {
-			if strings.HasPrefix(name, pfx) {
+			if strings.HasPrefix(lower, pfx) {
 				blocked = true
 				break
 			}

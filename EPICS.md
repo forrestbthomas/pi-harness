@@ -180,6 +180,8 @@ Rules:
 | BENCH-1 | Benchmark symlink traversal (dogfood review 2026-08-23) | ~2.0 | 0.5 pw |
 | CLI-1 | Flag parsing + provider validation gaps (dogfood review 2026-08-23) | ~1.5 | 0.75 pw |
 | COST-3 | Budget-cap undercount (dogfood review 2026-08-23) | ~1.2 | 0.5 pw |
+| SEC-2 | Agent transcript secret hygiene (APPEND_SYSTEM bw rule + `sessions --prune-old` + CI scan) — post-incident 2026-08-24 | ~2.0 | 1 pw |
+| SEC-3 | Launcher capture redaction (pi-bulletin#15 coordination) — post-incident 2026-08-24 | ~2.0 | 0.5 pw |
 
 ---
 

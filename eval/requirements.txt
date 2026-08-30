@@ -8,7 +8,7 @@
 # pytest_runtest_logreport hook via PI_EVAL_REPORT (the plugin silently fails
 # to write under pytest 9.1.1, per conftest.py).
 # Run `pi-run setup` to install into eval/.venv.
-deepeval~=4.1
+deepeval~=4.2
 pytest~=9.1
 python-dotenv~=1.2
 pypdf~=6.15

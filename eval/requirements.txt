@@ -11,6 +11,6 @@
 deepeval~=4.1
 pytest~=9.1
 python-dotenv~=1.2
-pypdf~=6.15
+pypdf~=6.18
 pytest-timeout~=2.4
 pytest-json-report~=1.5

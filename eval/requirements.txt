@@ -9,7 +9,7 @@
 # to write under pytest 9.1.1, per conftest.py).
 # Run `pi-run setup` to install into eval/.venv.
 deepeval~=4.1
-pytest~=9.1
+pytest~=9.2
 python-dotenv~=1.2
 pypdf~=6.15
 pytest-timeout~=2.4
